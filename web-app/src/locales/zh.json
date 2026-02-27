@@ -1,0 +1,57 @@
+{
+  "common": {
+    "button": {
+      "save": "保存",
+      "cancel": "取消",
+      "delete": "删除",
+      "edit": "编辑",
+      "add": "添加",
+      "submit": "提交"
+    },
+    "message": {
+      "success": "操作成功！",
+      "error": "发生错误。",
+      "loading": "加载中..."
+    }
+  },
+  "nav": {
+    "home": "首页",
+    "settings": "设置",
+    "prompts": "提示词",
+    "apiKeys": "API 密钥"
+  },
+  "home": {
+    "welcome": "欢迎使用 Pen AI",
+    "description": "您的 AI 写作助手",
+    "tryNow": "立即尝试"
+  },
+  "settings": {
+    "title": "设置",
+    "defaultAiModel": "默认 AI 模型",
+    "writingStyle": "写作风格",
+    "tone": "语气",
+    "length": "长度",
+    "professional": "专业",
+    "casual": "随意",
+    "formal": "正式",
+    "medium": "中等",
+    "short": "简短",
+    "long": "冗长"
+  },
+  "prompts": {
+    "title": "提示词",
+    "addPrompt": "添加新提示词",
+    "name": "名称",
+    "content": "内容",
+    "defaultPrompts": "默认提示词",
+    "customPrompts": "自定义提示词"
+  },
+  "apiKeys": {
+    "title": "API 密钥",
+    "openai": "OpenAI",
+    "deepseek": "深度求索",
+    "qwen": "通义千问",
+    "enterKey": "输入 API 密钥",
+    "saveKey": "保存 API 密钥"
+  }
+}

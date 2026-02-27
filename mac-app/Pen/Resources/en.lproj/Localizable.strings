@@ -1,0 +1,68 @@
+/* Greeting message when user is logged in */
+"hello_user" = "Hello, %@, I'm Pen, your AI writing assistent.";
+
+/* Greeting message when user is not logged in */
+"hello_guest" = "Hello, I'm Pen, your AI writing assistent. Please login to continue";
+
+/* Message when internet connection fails */
+"internet_failure" = "You don't seem to have an internet connection, please check your network settings";
+
+/* Message when database connection fails */
+"database_failure" = "Oops, something went wrong with our service, please try again later...";
+
+/* Message when selected file is too large */
+"file_too_large" = "Please choose an image file smaller than 1MB.";
+
+/* Test pop-up message */
+"test_popup_message" = "Test Pop up message";
+
+/* Menu bar tooltips */
+"pen_ai" = "Pen AI";
+"pen_ai_offline" = "Pen AI (Offline)";
+"click_to_reload" = "Click to reload";
+
+/* Preferences window */
+"pen_ai_preferences" = "Pen AI Preferences";
+"close" = "Close";
+"general" = "General";
+"account" = "Account";
+"ai_connections" = "AI Connections";
+"prompts" = "Prompts";
+"history" = "History";
+"leave_blank_current_image" = "Leave blank to keep current image";
+"maximum_file_size" = "Maximum file size: 1M";
+"name" = "Name:";
+"email" = "Email:";
+"new_password" = "New Password:";
+"leave_blank_current_password" = "Leave blank to keep current password";
+"confirm_password" = "Confirm Password:";
+"save_changes" = "Save Changes";
+"logout" = "Logout";
+"select_profile_image" = "Select Profile Image";
+"crop_profile_image" = "Crop Profile Image";
+"crop_image_instructions" = "Adjust the image and click Crop to set your profile picture";
+"crop" = "Crop";
+
+/* Login window */
+"register_new_account" = "Register New Account";
+"forgot_password" = "Forgot Password?";
+
+/* General tab */
+"keyboard_shortcut_title" = "Keyboard Shortcut To Toggle Pen";
+"record_shortcut_instruction" = "Click to record your own shortcut:";
+"press_key_combination" = "Press a key combination...";
+"press_key_combination_instruction" = "Press the key combination you want to use...";
+"record_shortcut_prompt" = "Click the text field to record a new shortcut key combination";
+"accessibility_permission_note" = "Note: You may need to grant accessibility permissions for global keyboard monitoring";
+"accessibility_permission_required" = "Please grant accessibility permissions in System Preferences";
+"shortcut_recorded_successfully" = "Shortcut key recorded successfully";
+"shortcut_conflict" = "Shortcut Conflict: %@ conflicts with an existing system or application shortcut. Please choose a different combination.";
+"custom_shortcut_set" = "Custom shortcut set: %@";
+"history_settings_title" = "History Settings";
+"content_history_to_save" = "Content history to save:";
+"language_title" = "Language";
+"select_language" = "Select language:";
+"english_language" = "English";
+"chinese_language" = "简体中文 (Simplified Chinese)";
+"save_button" = "Save";
+"settings_saved_successfully" = "Settings saved successfully";

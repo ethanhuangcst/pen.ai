@@ -1,0 +1,57 @@
+{
+  "common": {
+    "button": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "add": "Add",
+      "submit": "Submit"
+    },
+    "message": {
+      "success": "Operation successful!",
+      "error": "An error occurred.",
+      "loading": "Loading..."
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "settings": "Settings",
+    "prompts": "Prompts",
+    "apiKeys": "API Keys"
+  },
+  "home": {
+    "welcome": "Welcome to Pen AI",
+    "description": "Your AI-powered writing assistant",
+    "tryNow": "Try it now"
+  },
+  "settings": {
+    "title": "Settings",
+    "defaultAiModel": "Default AI Model",
+    "writingStyle": "Writing Style",
+    "tone": "Tone",
+    "length": "Length",
+    "professional": "Professional",
+    "casual": "Casual",
+    "formal": "Formal",
+    "medium": "Medium",
+    "short": "Short",
+    "long": "Long"
+  },
+  "prompts": {
+    "title": "Prompts",
+    "addPrompt": "Add New Prompt",
+    "name": "Name",
+    "content": "Content",
+    "defaultPrompts": "Default Prompts",
+    "customPrompts": "Custom Prompts"
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "openai": "OpenAI",
+    "deepseek": "DeepSeek",
+    "qwen": "Qwen",
+    "enterKey": "Enter API Key",
+    "saveKey": "Save API Key"
+  }
+}

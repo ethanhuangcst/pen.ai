@@ -1,0 +1,321 @@
+I see your full `PenAIDelegate` implementation. Since you didn’t include a specific question, I’ll give you a **focused architectural + behavior review** based on what this code is currently doing, especially around:
+
+* Menu bar positioning
+* Window lifecycle
+* Global shortcut behavior
+* Multi-space handling
+* Potential edge cases
+
+If you actually want a specific modification, tell me the goal and I’ll tailor it exactly.
+
+---
+
+# 🔎 1️⃣ Your Architecture Is Actually Well Structured
+
+You’ve cleanly separated:
+
+* `InitializationService`
+* `ShortcutService`
+* `WindowManager`
+* `LoginWindow`
+* `PreferencesWindow`
+* `BaseWindow`
+
+That’s solid. The delegate is acting as a coordinator — good design.
+
+---
+
+# ⚠️ 2️⃣ Important Issue: `NSScreen.main!` Is Not Reliable
+
+You use this in multiple places:
+
+```swift
+let screen = NSScreen.main!
+```
+
+⚠️ This can be wrong in multi-monitor setups.
+
+If the menu bar icon is on another display, your window may:
+
+* Appear on the wrong monitor
+* Appear partially off screen
+* Misalign vertically
+
+---
+
+## ✅ Fix: Always Use Button’s Screen
+
+In `positionWindowRelativeToMenuBarIcon`, replace:
+
+```swift
+let screen = NSScreen.main!
+```
+
+With:
+
+```swift
+guard let screen = buttonWindow.screen else { return }
+```
+
+Then use:
+
+```swift
+let screenFrame = screen.frame
+let visibleFrame = screen.visibleFrame
+```
+
+This ensures correct behavior on multi-display systems.
+
+---
+
+# ⚠️ 3️⃣ Your Mouse Position Conversion Is Incorrect (In Two Places)
+
+You wrote:
+
+```swift
+// NSEvent.mouseLocation returns coordinates from the top-left
+```
+
+❌ That is incorrect.
+
+`NSEvent.mouseLocation` returns coordinates in **global screen space with origin at bottom-left**.
+
+So this calculation:
+
+```swift
+let windowY = screenHeight - mouseLocation.y - mouseOffset
+```
+
+Is wrong.
+
+---
+
+## ✅ Correct Way
+
+Replace:
+
+```swift
+let windowY = screenHeight - mouseLocation.y - mouseOffset
+```
+
+With:
+
+```swift
+let windowY = mouseLocation.y - mouseOffset
+```
+
+If you want the window to appear below the cursor:
+
+```swift
+let windowY = mouseLocation.y - window.frame.height - mouseOffset
+```
+
+---
+
+# ⚠️ 4️⃣ Your Window Can Go Off-Screen
+
+Neither positioning method clamps the window inside visible bounds.
+
+If cursor is near:
+
+* Right edge
+* Bottom edge
+* Top edge
+
+The window can be partially invisible.
+
+---
+
+## ✅ Production-Grade Safe Positioning
+
+Add boundary clamping:
+
+```swift
+func clampWindowToScreen(_ window: NSWindow, screen: NSScreen) {
+    let visible = screen.visibleFrame
+    var frame = window.frame
+    
+    if frame.maxX > visible.maxX {
+        frame.origin.x = visible.maxX - frame.width
+    }
+    
+    if frame.minX < visible.minX {
+        frame.origin.x = visible.minX
+    }
+    
+    if frame.minY < visible.minY {
+        frame.origin.y = visible.minY
+    }
+    
+    if frame.maxY > visible.maxY {
+        frame.origin.y = visible.maxY - frame.height
+    }
+    
+    window.setFrame(frame, display: false)
+}
+```
+
+Call this after setting the position.
+
+---
+
+# ⚠️ 5️⃣ `.canJoinAllSpaces` Is Not Enough for Some Cases
+
+You set:
+
+```swift
+window?.collectionBehavior = .canJoinAllSpaces
+```
+
+If you want true “Spotlight-style” behavior, you should use:
+
+```swift
+window?.collectionBehavior = [
+    .canJoinAllSpaces,
+    .fullScreenAuxiliary,
+    .transient
+]
+```
+
+This ensures:
+
+* Appears over fullscreen apps
+* Doesn’t create new space
+* Behaves like utility panel
+
+---
+
+# ⚠️ 6️⃣ Shortcut Does Not Activate App Properly
+
+In `openPenAI()`:
+
+You do:
+
+```swift
+window.makeKeyAndOrderFront(nil)
+```
+
+But you don’t always activate app.
+
+Better:
+
+```swift
+NSApp.activate(ignoringOtherApps: true)
+window.makeKeyAndOrderFront(nil)
+```
+
+You already do this in `toggleMainWindow()` — good.
+
+Make it consistent everywhere.
+
+---
+
+# ⚠️ 7️⃣ Subtle Memory Leak Risk
+
+You keep strong references:
+
+```swift
+private var loginWindow: LoginWindow?
+private var preferencesWindow: PreferencesWindow?
+```
+
+If those windows also strongly reference `PenAIDelegate`,
+you create a retain cycle.
+
+Make sure inside those window classes:
+
+```swift
+weak var penDelegate: PenAIDelegate?
+```
+
+Not strong.
+
+---
+
+# ⚠️ 8️⃣ Icon Loading From Current Directory Is Fragile
+
+This:
+
+```swift
+let currentDirectory = fileManager.currentDirectoryPath
+```
+
+Will break when app is bundled.
+
+Instead use:
+
+```swift
+Bundle.main.path(forResource: "icon", ofType: "png")
+```
+
+Much safer for production.
+
+---
+
+# ⚠️ 9️⃣ Your Reload Window Should Be Non-Key
+
+You currently do:
+
+```swift
+reloadWindow.makeKeyAndOrderFront(nil)
+```
+
+This steals focus.
+
+Instead:
+
+```swift
+reloadWindow.orderFrontRegardless()
+```
+
+So it doesn’t interrupt typing.
+
+---
+
+# 🧠 10️⃣ Your Window Behavior Design Is Very Good
+
+You have:
+
+* Menu-bar anchored window
+* Mouse anchored window (shortcut)
+* Floating level
+* All spaces support
+* Login mode switching
+* Offline mode handling
+
+This is close to Spotlight-style architecture.
+
+Very solid foundation.
+
+---
+
+# 🚀 If You Want Next-Level Polishing
+
+You can upgrade this into a true “native macOS panel” feel by:
+
+* Using `NSPanel` instead of `NSWindow`
+* Setting:
+
+```swift
+panel.isFloatingPanel = true
+panel.becomesKeyOnlyIfNeeded = true
+panel.hidesOnDeactivate = true
+```
+
+Then your window auto-hides when user clicks elsewhere.
+
+---
+
+# 🎯 So What Do You Want To Improve?
+
+Tell me which direction:
+
+1. Make window behave like Spotlight?
+2. Fix multi-monitor issues?
+3. Improve shortcut reliability?
+4. Improve animation?
+5. Convert to NSPanel?
+6. Refactor into cleaner architecture?
+7. Fix a specific bug?
+
+Tell me the target behavior and I’ll give you exact production-level code.

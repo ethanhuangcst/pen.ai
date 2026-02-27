@@ -1,0 +1,68 @@
+/* Greeting message when user is logged in */
+"hello_user" = "你好，%@，我是 Pen，你的 AI 写作助手。";
+
+/* Greeting message when user is not logged in */
+"hello_guest" = "你好，我是 Pen，你的 AI 写作助手。请登录继续";
+
+/* Message when internet connection fails */
+"internet_failure" = "您似乎没有互联网连接，请检查您的网络设置";
+
+/* Message when database connection fails */
+"database_failure" = "抱歉，我们的服务出现了问题，请稍后再试...";
+
+/* Message when selected file is too large */
+"file_too_large" = "请选择小于 1MB 的图像文件。";
+
+/* Test pop-up message */
+"test_popup_message" = "测试弹出消息";
+
+/* Menu bar tooltips */
+"pen_ai" = "Pen AI";
+"pen_ai_offline" = "Pen AI（离线）";
+"click_to_reload" = "点击重新加载";
+
+/* Preferences window */
+"pen_ai_preferences" = "Pen AI 偏好设置";
+"close" = "关闭";
+"general" = "通用";
+"account" = "账户";
+"ai_connections" = "AI 连接";
+"prompts" = "提示词";
+"history" = "历史";
+"leave_blank_current_image" = "留空以保持当前图像";
+"maximum_file_size" = "最大文件大小：1M";
+"name" = "姓名：";
+"email" = "邮箱：";
+"new_password" = "新密码：";
+"leave_blank_current_password" = "留空以保持当前密码";
+"confirm_password" = "确认密码：";
+"save_changes" = "保存更改";
+"logout" = "登出";
+"select_profile_image" = "选择头像";
+"crop_profile_image" = "裁剪头像";
+"crop_image_instructions" = "调整图像并点击裁剪以设置您的个人资料图片";
+"crop" = "裁剪";
+
+/* Login window */
+"register_new_account" = "注册新账户";
+"forgot_password" = "忘记密码？";
+
+/* General tab */
+"keyboard_shortcut_title" = "切换 Pen 窗口的键盘快捷键";
+"record_shortcut_instruction" = "点击记录自定义快捷键：";
+"press_key_combination" = "按下按键组合...";
+"press_key_combination_instruction" = "按下您想要使用的按键组合...";
+"record_shortcut_prompt" = "点击文本框记录新的快捷键组合";
+"accessibility_permission_note" = "注意：您可能需要为全局键盘监控授予辅助功能权限";
+"accessibility_permission_required" = "请在系统偏好设置中授予辅助功能权限";
+"shortcut_recorded_successfully" = "快捷键记录成功";
+"shortcut_conflict" = "快捷键冲突：%@ 与现有的快捷键冲突。请重试。";
+"custom_shortcut_set" = "自定义快捷键已设置：%@";
+"history_settings_title" = "历史记录设置";
+"content_history_to_save" = "要保存的内容历史记录：";
+"language_title" = "语言";
+"select_language" = "选择语言：";
+"english_language" = "English";
+"chinese_language" = "简体中文";
+"save_button" = "保存";
+"settings_saved_successfully" = "设置保存成功";
