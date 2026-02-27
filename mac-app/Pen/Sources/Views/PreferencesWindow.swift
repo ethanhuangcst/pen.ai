@@ -99,6 +99,13 @@ class PreferencesWindow: BaseWindow {
             // Use the new GeneralTabView
             let generalTabView = GeneralTabView(frame: tabContentView.bounds, parentWindow: self)
             tabContentView.addSubview(generalTabView)
+        } else if title == LocalizationService.shared.localizedString(for: "ai_connections") {
+            // Use the new AIConnectionTabView
+            let aiConnectionTabView = AIConnectionTabView(frame: tabContentView.bounds)
+            if let userName = user?.name {
+                aiConnectionTabView.setUserName(userName)
+            }
+            tabContentView.addSubview(aiConnectionTabView)
         }
         
         tabItem.view = tabContentView

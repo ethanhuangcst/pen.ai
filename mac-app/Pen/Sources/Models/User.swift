@@ -56,8 +56,18 @@ class User {
             print("[User] Missing or invalid createdAt: \(row["createdAt"] ?? "nil")")
         }
         
-        guard let id = row["id"] as? Int,
-              let name = row["name"] as? String,
+        // Handle id as string or int
+        let id: Int
+        if let idInt = row["id"] as? Int {
+            id = idInt
+        } else if let idString = row["id"] as? String, let idInt = Int(idString) {
+            id = idInt
+        } else {
+            print("[User] Missing or invalid id: \(row["id"] ?? "nil")")
+            return nil
+        }
+        
+        guard let name = row["name"] as? String,
               let email = row["email"] as? String else {
             print("[User] Failed to extract required fields")
             return nil

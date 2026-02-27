@@ -1,6 +1,26 @@
 -----------------
 AI Connection Management
 -----------------
+
+## User Story ID: US-003
+As a Pen user, I want to list all my AI connections, so that I can manage them easily.
+
+### Acceptance Criteria ID: US-003-001
+Scenario: List all AI connections
+Given: The app is running
+AND the user has logged in
+AND the user has multiple AI connections
+When: The user navigates to the AI connections section
+Then: The AI_CONNECTION service retrieves all connections for the user
+AND displays them in a list
+- Column 1: Provider Name, dropdown menu, loaded from AI_MODEL_PROVIDER objects
+- Column 2: API Key (prefilled with existing key if any), text field, editable
+- Column 3: Delete button, to delete the connection from database and remove from the list
+- Column 4: Test button, to test the AI connection by calling the provider's API with a test prompt
+AND supports scrolling to view all connections if there are more than fit on the screen
+
+
+
 ## User Story ID: US-001
 As a Pen user, I want to create AI connections by using the AIConnectionService, so that I can use AI connection from multiple providers.
 
@@ -25,7 +45,7 @@ Given: The app is running
 AND the user has logged in
 AND the AI_MODEL_PROVIDER objects are created
 AND have providers' information loaded from the database
-When: The user starts creating an AI_API_CONNECTION
+When: The user starts creating an AI_CONNECTION
 AND the user has selected a provider
 AND the user clicks the save button to save the new AI_CONNECTION
 AND the database connection fails
@@ -34,19 +54,6 @@ AND fails to save the connection object information to the database
 AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ Failed to save AI Connection " + provider + " !!!  $$$$$$$$$$$$$$$$$$$$"
 AND displays an error message to the user
 
-### Acceptance Criteria ID: US-001-003
-Scenario: Create AI connection with invalid API key
-Given: The app is running
-AND the user has logged in
-AND the AI_MODEL_PROVIDER objects are created
-AND have providers' information loaded from the database
-When: The user starts creating an AI_API_CONNECTION
-AND the user has selected a provider
-AND the user enters an invalid API key
-AND the user clicks the save button
-Then: The AI_CONNECTION service validates the API key
-AND displays an error message to the user
-AND does not save the connection to the database
 
 ## User Story ID: US-002
 As a Pen user, I want to test AI connections, so that I can verify they work correctly before using them.
@@ -76,18 +83,7 @@ AND receives an error response
 AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection " + provider + " is failed $$$$$$$$$$$$$$$$$$$$"
 AND displays an error message to the user
 
-## User Story ID: US-003
-As a Pen user, I want to list all my AI connections, so that I can manage them easily.
 
-### Acceptance Criteria ID: US-003-001
-Scenario: List all AI connections
-Given: The app is running
-AND the user has logged in
-AND the user has multiple AI connections
-When: The user navigates to the AI connections section
-Then: The AI_CONNECTION service retrieves all connections for the user
-AND displays them in a list
-AND shows the provider name and API key (masked) for each connection
 
 ## User Story ID: US-004
 As a Pen user, I want to update AI connections, so that I can change API keys or providers when needed.
