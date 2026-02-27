@@ -31,11 +31,11 @@ This document describes the database structure for the Pen AI application. The d
 | Column | Type | Null | Key | Default | Extra |
 |--------|------|------|-----|---------|-------|
 | id | int | NO | PRI | NULL | auto_increment |
-| user_id | int | NO | | NULL | |
-| apiKey | varchar(191) | NO | | NULL | |
-| apiProvider | varchar(191) | NO | | NULL | |
-| createdAt | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-| updatedAt | datetime(3) | YES | | NULL | |
+| user_id | int | NO | MUL | NULL | |
+| apiKey | varchar(255) | NO | | NULL | |
+| apiProvider | varchar(50) | NO | | NULL | |
+| createdAt | timestamp | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updatedAt | timestamp | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
 
 **Relationships:**
 - `user_id` references `users.id`

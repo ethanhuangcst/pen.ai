@@ -55,14 +55,24 @@ class AIModelProvider {
             } 
             // Try to parse as array of strings
             else if let urlArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [String] {
-                // Map array to dictionary with default keys
+                // Map array to dictionary with default keys and construct full endpoints
                 if !urlArray.isEmpty {
-                    baseURLs["completion"] = urlArray[0]
-                    if urlArray.count > 1 {
-                        baseURLs["embedding"] = urlArray[1]
-                    }
-                    if urlArray.count > 2 {
-                        baseURLs["image"] = urlArray[2]
+                    // For each base URL, construct full endpoints
+                    for (index, baseURL) in urlArray.enumerated() {
+                        // Remove any trailing slashes
+                        let cleanBaseURL = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                        
+                        // Construct full endpoints based on provider type
+                        switch index {
+                        case 0: // completion endpoint
+                            baseURLs["completion"] = "\(cleanBaseURL)/chat/completions"
+                        case 1: // embedding endpoint
+                            baseURLs["embedding"] = "\(cleanBaseURL)/embeddings"
+                        case 2: // image endpoint
+                            baseURLs["image"] = "\(cleanBaseURL)/images/generations"
+                        default:
+                            break
+                        }
                     }
                 }
             }
