@@ -182,7 +182,7 @@ Scenario: PenAI handles login failure
   AND sets the flag "Login Failure" to true
   And it should open the LoginWindow to allow the user to input new credentials
 ```
-//ToDo - To Be Deleted
+//ToDo - To Be
 ## User Story 6
 
 As PenAI user, I want to load the AI Model Providers that the app currently support, so that I can use my AI connection when needed

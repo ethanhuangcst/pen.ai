@@ -93,9 +93,17 @@ class MySQLConnection: DatabaseConnection {
             for row in rows {
                 var rowData: [String: Any] = [:]
                 
-                // Process common columns used by the application
-                if let idData = row.column("id"), let id = idData.string {
-                    rowData["id"] = id
+                // Debug: Print all column names
+                print("[MySQLConnection] Debug: Row columns:")
+                
+                // Process all columns dynamically
+                // First, try common columns
+                if let idData = row.column("id") {
+                    if let id = idData.string {
+                        rowData["id"] = id
+                    } else if let id = idData.int {
+                        rowData["id"] = id
+                    }
                 }
                 if let nameData = row.column("name"), let name = nameData.string {
                     rowData["name"] = name
@@ -162,6 +170,17 @@ class MySQLConnection: DatabaseConnection {
                     rowData["updated_at"] = updatedAt
                 }
                 
+                // Try to get all other columns (for JSON columns like base_urls)
+                // We'll try common column names that might be present
+                let possibleColumns = ["base_urls", "config", "metadata", "settings"]
+                for columnName in possibleColumns {
+                    if !rowData.keys.contains(columnName), let columnData = row.column(columnName) {
+                        if let stringValue = columnData.string {
+                            rowData[columnName] = stringValue
+                        }
+                    }
+                }
+                
                 resultRows.append(rowData)
             }
             
@@ -186,6 +205,11 @@ class MySQLConnection: DatabaseConnection {
         }
         isConnected = false
         print("[MySQLConnection] Connection closed")
+    }
+    
+    /// Gets the underlying MySQLKit connection for direct access
+    func getConnection() -> MySQLKit.MySQLConnection? {
+        return connection
     }
 }
 

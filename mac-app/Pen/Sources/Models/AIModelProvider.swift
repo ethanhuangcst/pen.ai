@@ -48,12 +48,27 @@ class AIModelProvider {
         // Parse base_urls JSON (optional)
         var baseURLs: [String: String] = [:]
         if let baseURLsJSON = row["base_urls"] as? String,
-           let data = baseURLsJSON.data(using: .utf8),
-           let urls = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String] {
-            baseURLs = urls
+           let data = baseURLsJSON.data(using: .utf8) {
+            // Try to parse as dictionary first
+            if let urls = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: String] {
+                baseURLs = urls
+            } 
+            // Try to parse as array of strings
+            else if let urlArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [String] {
+                // Map array to dictionary with default keys
+                if !urlArray.isEmpty {
+                    baseURLs["completion"] = urlArray[0]
+                    if urlArray.count > 1 {
+                        baseURLs["embedding"] = urlArray[1]
+                    }
+                    if urlArray.count > 2 {
+                        baseURLs["image"] = urlArray[2]
+                    }
+                }
+            }
         } else {
             // Set default base URLs based on provider name
-            baseURLs["completion"] = getDefaultBaseURL(for: name)
+            baseURLs = getDefaultBaseURLs(for: name)
         }
         
         // Parse timestamps
@@ -83,17 +98,21 @@ class AIModelProvider {
         )
     }
     
-    /// Gets default base URL for a provider
-    private static func getDefaultBaseURL(for providerName: String) -> String {
+    /// Gets default base URLs for a provider
+    private static func getDefaultBaseURLs(for providerName: String) -> [String: String] {
         switch providerName.lowercased() {
         case "deepseek3.2":
-            return "https://api.deepseek.com/v1/chat/completions"
+            return ["completion": "https://api.deepseek.com/v1/chat/completions"]
         case "gpt-4o-mini":
-            return "https://api.openai.com/v1/chat/completions"
+            return [
+                "completion": "https://api.openai.com/v1/chat/completions",
+                "embedding": "https://api.openai.com/v1/embeddings",
+                "image": "https://api.openai.com/v1/images/generations"
+            ]
         case "qwen-plus":
-            return "https://api.baichuan-ai.com/v1/chat/completions"
+            return ["completion": "https://api.baichuan-ai.com/v1/chat/completions"]
         default:
-            return "https://api.openai.com/v1/chat/completions"
+            return ["completion": "https://api.openai.com/v1/chat/completions"]
         }
     }
     
