@@ -103,7 +103,7 @@ class PreferencesWindow: BaseWindow {
             // Use the new AIConnectionTabView
             let databasePool = DatabaseConnectivityPool.shared
             
-            let aiConnectionTabView = AIConnectionTabView(frame: tabContentView.bounds, user: user, databasePool: databasePool)
+            let aiConnectionTabView = AIConnectionTabView(frame: tabContentView.bounds, user: user, databasePool: databasePool, parentWindow: self)
             if let userName = user?.name {
                 aiConnectionTabView.setUserName(userName)
             }

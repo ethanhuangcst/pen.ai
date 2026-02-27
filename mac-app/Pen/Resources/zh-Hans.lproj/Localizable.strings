@@ -79,3 +79,11 @@
 "test_column" = "测试";
 "first_connection_default" = "第一个连接将被用作默认连接";
 "connections_saved_successfully" = "连接保存成功";
+"delete_ai_connection" = "删除 AI 连接";
+"delete_confirmation" = "确定要删除 %@ 连接吗？";
+"cancel_button" = "取消";
+"only_non_duplicate_connections_saved" = "重复的 AI 连接未保存！";
+"only_valid_api_key_connections_saved" = "只保存具有有效 API 密钥的 AI 连接！";
+"only_valid_no_duplicate_connections_saved" = "只保存具有有效 API 密钥且非重复的 AI 连接！";
+"failed_to_save_connections" = "保存 AI 连接失败！";
+"are_you_sure" = "确定吗？";

@@ -335,4 +335,70 @@ class AIConnectionService {
             throw error
         }
     }
+    
+    /// Tests an AI connection by making an actual API call
+    /// - Parameters:
+    ///   - apiKey: API key for the provider
+    ///   - providerName: AI provider name
+    /// - Returns: True if connection was successful
+    /// - Throws: Error if API call fails
+    func testConnection(apiKey: String, providerName: String) async throws -> Bool {
+        do {
+            // Load the provider
+            guard let provider = try await loadProviderByName(providerName) else {
+                throw NSError(domain: "AIConnectionService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Provider not found"])
+            }
+            
+            // Get the completion URL from base_urls
+            guard let baseURL = provider.baseURLs["completion"] else {
+                throw NSError(domain: "AIConnectionService", code: 3, userInfo: [NSLocalizedDescriptionKey: "No completion URL found for provider"])
+            }
+            
+            // Create URL object
+            guard let url = URL(string: baseURL) else {
+                throw NSError(domain: "AIConnectionService", code: 4, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+            }
+            
+            // Create URLRequest
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            // Add authorization header
+            if provider.requiresAuth {
+                request.setValue("Bearer \(apiKey)", forHTTPHeaderField: provider.authHeader)
+            }
+            
+            // Create test payload
+            let testPayload: [String: Any] = [
+                "model": provider.defaultModel,
+                "messages": [
+                    ["role": "user", "content": "Hello, test message"]
+                ],
+                "max_tokens": 10
+            ]
+            
+            // Encode payload to JSON
+            let jsonData = try JSONSerialization.data(withJSONObject: testPayload)
+            request.httpBody = jsonData
+            
+            // Make API call
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            // Check response status code
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                throw NSError(domain: "AIConnectionService", code: 5, userInfo: [NSLocalizedDescriptionKey: "API call failed"])
+            }
+            
+            // Parse response to ensure it's valid
+            guard let _ = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw NSError(domain: "AIConnectionService", code: 6, userInfo: [NSLocalizedDescriptionKey: "Invalid API response"])
+            }
+            
+            return true
+        } catch {
+            print("Error testing AI connection: \(error)")
+            throw error
+        }
+    }
 }
