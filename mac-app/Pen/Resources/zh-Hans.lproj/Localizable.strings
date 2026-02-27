@@ -66,3 +66,16 @@
 "chinese_language" = "简体中文";
 "save_button" = "保存";
 "settings_saved_successfully" = "设置保存成功";
+
+/* AI Connections tab */
+"ai_connections_for" = "AI连接 - %@";
+"ai_model_provider" = "AI提供商";
+"api_key" = "API 密钥";
+"new_button" = "新建";
+"delete_button" = "删除";
+"test_button" = "测试";
+"provider_column" = "提供商";
+"delete_column" = "删除";
+"test_column" = "测试";
+"first_connection_default" = "第一个连接将被用作默认连接";
+"connections_saved_successfully" = "连接保存成功";

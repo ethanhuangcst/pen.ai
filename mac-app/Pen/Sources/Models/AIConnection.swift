@@ -3,10 +3,10 @@ import Foundation
 class AIConnection {
     let id: Int
     let userId: Int
-    let apiKey: String
-    let apiProvider: String
+    var apiKey: String
+    var apiProvider: String
     let createdAt: Date
-    let updatedAt: Date?
+    var updatedAt: Date?
     
     init(id: Int, userId: Int, apiKey: String, apiProvider: String, createdAt: Date, updatedAt: Date?) {
         self.id = id
@@ -21,10 +21,31 @@ class AIConnection {
     
     /// Creates an AIConnection instance from database row
     static func fromDatabaseRow(_ row: [String: Any]) -> AIConnection? {
-        guard let id = row["id"] as? Int,
-              let userId = row["user_id"] as? Int,
-              let apiKey = row["apiKey"] as? String,
+        // Handle id as string or int
+        let id: Int
+        if let idInt = row["id"] as? Int {
+            id = idInt
+        } else if let idString = row["id"] as? String, let idInt = Int(idString) {
+            id = idInt
+        } else {
+            print("[AIConnection] Missing or invalid id: \(row["id"] ?? "nil")")
+            return nil
+        }
+        
+        // Handle userId as string or int
+        let userId: Int
+        if let userIdInt = row["user_id"] as? Int {
+            userId = userIdInt
+        } else if let userIdString = row["user_id"] as? String, let userIdInt = Int(userIdString) {
+            userId = userIdInt
+        } else {
+            print("[AIConnection] Missing or invalid user_id: \(row["user_id"] ?? "nil")")
+            return nil
+        }
+        
+        guard let apiKey = row["apiKey"] as? String,
               let apiProvider = row["apiProvider"] as? String else {
+            print("[AIConnection] Missing or invalid apiKey or apiProvider")
             return nil
         }
         

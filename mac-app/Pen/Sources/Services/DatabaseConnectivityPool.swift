@@ -170,6 +170,23 @@ class MySQLConnection: DatabaseConnection {
                     rowData["updated_at"] = updatedAt
                 }
                 
+                // Add AI connection specific columns
+                if let userIdData = row.column("user_id"), let userId = userIdData.int {
+                    rowData["user_id"] = userId
+                }
+                if let apiKeyData = row.column("apiKey"), let apiKey = apiKeyData.string {
+                    rowData["apiKey"] = apiKey
+                }
+                if let apiProviderData = row.column("apiProvider"), let apiProvider = apiProviderData.string {
+                    rowData["apiProvider"] = apiProvider
+                }
+                if let createdAtData = row.column("createdAt"), let createdAt = createdAtData.string {
+                    rowData["createdAt"] = createdAt
+                }
+                if let updatedAtData = row.column("updatedAt"), let updatedAt = updatedAtData.string {
+                    rowData["updatedAt"] = updatedAt
+                }
+                
                 // Try to get all other columns (for JSON columns like base_urls)
                 // We'll try common column names that might be present
                 let possibleColumns = ["base_urls", "config", "metadata", "settings"]
