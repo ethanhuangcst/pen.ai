@@ -94,7 +94,7 @@ class MySQLConnection: DatabaseConnection {
                 var rowData: [String: Any] = [:]
                 
                 // Process common columns used by the application
-                if let idData = row.column("id"), let id = idData.int {
+                if let idData = row.column("id"), let id = idData.string {
                     rowData["id"] = id
                 }
                 if let nameData = row.column("name"), let name = nameData.string {
@@ -140,6 +140,26 @@ class MySQLConnection: DatabaseConnection {
                 }
                 if let columnNameData = row.column("COLUMN_NAME"), let columnName = columnNameData.string {
                     rowData["COLUMN_NAME"] = columnName
+                }
+                
+                // Add AI provider specific columns
+                if let baseURLsData = row.column("base_urls"), let baseURLs = baseURLsData.string {
+                    rowData["base_urls"] = baseURLs
+                }
+                if let defaultModelData = row.column("default_model"), let defaultModel = defaultModelData.string {
+                    rowData["default_model"] = defaultModel
+                }
+                if let requiresAuthData = row.column("requires_auth"), let requiresAuth = requiresAuthData.int {
+                    rowData["requires_auth"] = requiresAuth
+                }
+                if let authHeaderData = row.column("auth_header"), let authHeader = authHeaderData.string {
+                    rowData["auth_header"] = authHeader
+                }
+                if let createdAtData = row.column("created_at"), let createdAt = createdAtData.string {
+                    rowData["created_at"] = createdAt
+                }
+                if let updatedAtData = row.column("updated_at"), let updatedAt = updatedAtData.string {
+                    rowData["updated_at"] = updatedAt
                 }
                 
                 resultRows.append(rowData)

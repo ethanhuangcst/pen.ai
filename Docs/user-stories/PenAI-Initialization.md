@@ -182,28 +182,31 @@ Scenario: PenAI handles login failure
   AND sets the flag "Login Failure" to true
   And it should open the LoginWindow to allow the user to input new credentials
 ```
-//ToDo
+//ToDo - To Be Deleted
 ## User Story 6
 
-As PenAI user, I want to do AI cconnectivity test for all the AI model providers I previously configured in my preference, so that I have working AI connections to use
+As PenAI user, I want to load the AI Model Providers that the app currently support, so that I can use my AI connection when needed
 
 ### Acceptance Criteria
 
 ```gherkin
-Scenario: PenAI tests AI model provider connectivity
-  Given the Pen app is launching
-  And the user has configured AI model providers
-  When step 3 of initialization runs
-  Then the app tests connectivity to each configured AI model provider
-  And the app reports the status of each connection
-  And the app marks providers as available/unavailable
-  And the user can see which providers are working
+Scenario: Pen app loads AI Model Providers
+  Given Pen app is running
+  When the app has  completed step 3 initialization
+  AND launched successfully
+  Then it should load the AI Model Providers that the app currently support
+  And create a global AI Model Providers object for each AI Model Provider to store the AI Model Providers
+  And print in terminal: "********************************** Load AI Model Providers: " + aiModelProviders + " **********************************"
 
-Scenario: PenAI handles AI provider connectivity failure
-  Given the Pen app is launching
-  And one or more AI model providers are unavailable
-  When the AI connectivity test runs
+
+
+Scenario: Pen app handles AI Model Provider loading failure
+  Given the Pen app is running
+  AND the app has completed step 3 initialization
+  AND launched successfully
+  AND started loading the AI Model Providers from the database
+  When loading the AI Model Providers from the database fails
   Then the app marks the unavailable providers as offline
   And the app continues with available providers
-  And the user is notified of which providers are unavailable
+  And the user is notified of which providers are unavailable (print in terminal: "********************************** AI Model Provider Loading Failed: " + failedProviders + " **********************************")
 ```

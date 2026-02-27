@@ -100,6 +100,122 @@ if arguments.count > 1 {
         // Run the task
         RunLoop.main.run()
     }
+    
+    if command == "test-ai-providers" {
+        print("Testing AIConnectionService.loadAllProviders()...")
+        
+        Task {
+            do {
+                // Get the database pool
+                let pool = DatabaseConnectivityPool.shared
+                
+                // Wait for pool to be ready
+                print("Waiting for database pool to be ready...")
+                Thread.sleep(forTimeInterval: 2.0)
+                
+                if !pool.isReady {
+                    print("Error: Database pool is not ready")
+                    exit(1)
+                }
+                
+                // Create AIConnectionService
+                let aiService = AIConnectionService(databasePool: pool)
+                
+                // Load providers
+                let providers = try await aiService.loadAllProviders()
+                
+                print("\nSuccessfully loaded \(providers.count) AI providers:")
+                print("=====================================")
+                
+                for (index, provider) in providers.enumerated() {
+                    print("\nProvider \(index + 1):")
+                    print("ID: \(provider.id)")
+                    print("Name: \(provider.name)")
+                    print("Default Model: \(provider.defaultModel)")
+                    print("Requires Auth: \(provider.requiresAuth)")
+                    print("Auth Header: \(provider.authHeader)")
+                    print("Base URLs: \(provider.baseURLs)")
+                    print("Created At: \(provider.createdAt)")
+                    if let updatedAt = provider.updatedAt {
+                        print("Updated At: \(updatedAt)")
+                    }
+                    print("-------------------------------------")
+                }
+                
+                print("\nTest completed successfully!")
+                exit(0)
+                
+            } catch {
+                print("Error loading providers: \(error)")
+                exit(1)
+            }
+        }
+        
+        // Run the task
+        RunLoop.main.run()
+    } else if command == "inspect-ai-providers" {
+        print("Inspecting ai_providers table...")
+        
+        Task {
+            do {
+                // Get the database pool
+                let pool = DatabaseConnectivityPool.shared
+                
+                // Wait for pool to be ready
+                print("Waiting for database pool to be ready...")
+                Thread.sleep(forTimeInterval: 2.0)
+                
+                // Get a connection from the pool
+                guard let connection = pool.getConnection() else {
+                    print("Failed to get database connection")
+                    exit(1)
+                }
+                
+                defer {
+                    pool.returnConnection(connection)
+                }
+                
+                // Query table structure
+                print("\n=== Table structure for wingman_db.ai_providers ====")
+                let describeQuery = "DESCRIBE wingman_db.ai_providers"
+                let describeRows = try await connection.execute(query: describeQuery)
+                
+                for row in describeRows {
+                    if let field = row["Field"] as? String,
+                       let type = row["Type"] as? String,
+                       let nullable = row["Null"] as? String,
+                       let key = row["Key"] as? String,
+                       let extra = row["Extra"] as? String {
+                        let defaultVal = row["Default"] as? String ?? "NULL"
+                        print("\(field)\t\(type)\t\(nullable)\t\(key)\t\(defaultVal)\t\(extra)")
+                    }
+                }
+                
+                // Check sample data
+                print("\n=== Sample data from ai_providers table ====")
+                let sampleQuery = "SELECT * FROM wingman_db.ai_providers"
+                let sampleRows = try await connection.execute(query: sampleQuery)
+                
+                print("Found \(sampleRows.count) AI providers:")
+                for row in sampleRows {
+                    print("\nProvider:")
+                    for (key, value) in row {
+                        print("  \(key): \(value)")
+                    }
+                }
+                
+                print("\n=== Table inspection completed ====")
+                exit(0)
+                
+            } catch {
+                print("Error inspecting database: \(error)")
+                exit(1)
+            }
+        }
+        
+        // Run the task
+        RunLoop.main.run()
+    }
 }
 
 // Create the application instance
