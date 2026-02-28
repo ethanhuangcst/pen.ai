@@ -166,23 +166,23 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         
         let apiKeyColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("apiKey"))
         apiKeyColumn.title = LocalizationService.shared.localizedString(for: "api_key")
-        apiKeyColumn.width = 308
-        apiKeyColumn.minWidth = 308
-        apiKeyColumn.maxWidth = 308
+        apiKeyColumn.width = 318
+        apiKeyColumn.minWidth = 318
+        apiKeyColumn.maxWidth = 318
         configurationsTable.addTableColumn(apiKeyColumn)
         
         let deleteColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("delete"))
         deleteColumn.title = LocalizationService.shared.localizedString(for: "delete_column")
-        deleteColumn.width = 38
-        deleteColumn.minWidth = 38
-        deleteColumn.maxWidth = 38
+        deleteColumn.width = 33
+        deleteColumn.minWidth = 33
+        deleteColumn.maxWidth = 33
         configurationsTable.addTableColumn(deleteColumn)
         
         let testColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("test"))
         testColumn.title = LocalizationService.shared.localizedString(for: "test_column")
-        testColumn.width = 38
-        testColumn.minWidth = 38
-        testColumn.maxWidth = 38
+        testColumn.width = 33
+        testColumn.minWidth = 33
+        testColumn.maxWidth = 33
         configurationsTable.addTableColumn(testColumn)
         
         // Add header view

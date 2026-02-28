@@ -333,7 +333,7 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     }
     
     private func createEditButton(tag: Int) -> NSButton {
-        let button = NSButton(frame: NSRect(x: 9, y: 2, width: 20, height: 20))
+        let button = NSButton(frame: NSRect(x: 9, y: 5, width: 20, height: 20))
         button.bezelStyle = .texturedRounded
         button.setButtonType(.momentaryPushIn)
         button.isBordered = false
@@ -348,7 +348,7 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     }
     
     private func createDeleteButton(tag: Int) -> NSButton {
-        let button = NSButton(frame: NSRect(x: 9, y: 2, width: 20, height: 20))
+        let button = NSButton(frame: NSRect(x: 9, y: 5, width: 20, height: 20))
         button.bezelStyle = .texturedRounded
         button.setButtonType(.momentaryPushIn)
         button.isBordered = false
