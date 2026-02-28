@@ -127,8 +127,17 @@
 "delete_prompt_confirmation" = "Are you sure you want to delete this prompt?";
 "prompt_deleted_successfully" = "Prompt deleted successfully";
 "edit_prompt_title" = "Edit Prompt";
+"new_prompt_title" = "New Prompt";
+"prompt_name_label" = "Prompt Name";
+"enter_prompt_name_placeholder" = "Enter Prompt Name";
+"enter_prompt_name_tooltip" = "Enter Prompt Name";
+"markdown_format_recommended_tooltip" = "Mark down format recommended for your prompt";
+"all_fields_required" = "All fields are required";
 "name_label" = "Name:";
 "prompt_label" = "Prompt:";
 "save_button" = "Save";
 "cancel_button" = "Cancel";
 "prompt_updated_successfully" = "Prompt updated successfully";
+"prompt_created_successfully" = "Prompt created successfully";
+"create_new_prompt_canceled" = "Create new prompt canceled, all changes discarded";
+"edit_prompt_canceled" = "Edit prompt canceled, all changes discarded";

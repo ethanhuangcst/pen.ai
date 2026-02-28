@@ -1,0 +1,22 @@
+# Feature 2: View Stored Predefined Prompts
+
+## User Story 2.1: View list of stored prompts
+As a user,
+I want to view all the predefined prompts I previously stored,
+So that I can quickly reuse them without retyping.
+
+### Acceptance Criteria 2.1.1: Display prompt list on request
+Given the user has previously stored at least one predefined prompt
+AND the user is logged into the Pen application
+When the user navigates to the "Prompts" section
+Then the system displays a scrollable list of all stored prompts
+
+
+### Acceptance Criteria 2.1.2: Empty state handling
+Given the user has not stored any predefined prompts
+AND the user is logged into the Pen application
+When the user navigates to the "Prompts" section
+Then the system displays an empty state view
+And the empty state contains:
+    - An illustration icon
+    - Text: "No prompts saved yet"

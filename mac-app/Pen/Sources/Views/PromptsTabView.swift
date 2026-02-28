@@ -7,12 +7,15 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     private let scrollView = NSScrollView()
     private let defaultLabel = NSTextField()
     private let userLabel = NSTextField()
+    private let addButton = FocusableButton()
     private var prompts: [Prompt] = []
     private var user: User?
+    private weak var parentWindow: NSWindow?
     
     // MARK: - Initialization
-    init(frame: CGRect, user: User?) {
+    init(frame: CGRect, user: User?, parentWindow: NSWindow? = nil) {
         self.user = user
+        self.parentWindow = parentWindow
         super.init(frame: frame)
         
         // Setup view
@@ -40,9 +43,23 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         setupUserLabel()
         setupDefaultLabel()
         setupTableView()
+        setupActionButtons()
         
         // Load mock data
         loadMockData()
+    }
+    
+    private func setupActionButtons() {
+        // New button
+        addButton.frame = NSRect(x: 20, y: 10, width: 88, height: 32)
+        addButton.title = LocalizationService.shared.localizedString(for: "new_button")
+        addButton.bezelStyle = .rounded
+        addButton.layer?.borderWidth = 1.0
+        addButton.layer?.borderColor = NSColor.systemGreen.cgColor
+        addButton.layer?.cornerRadius = 6.0
+        addButton.target = self
+        addButton.action = #selector(addNewPrompt)
+        addSubview(addButton)
     }
     
     private func setupUserLabel() {
@@ -307,99 +324,169 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         let row = sender.tag
         if row < prompts.count {
             let prompt = prompts[row]
-            // Open edit window
-            let editWindow = createEditWindow(for: prompt)
+            // Open edit window using the new NewOrEditPrompt class
+            let editWindow = NewOrEditPrompt(prompt: prompt, originatingWindow: parentWindow)
+            editWindow.onSave = { updatedPrompt in
+                // Update the prompt in the array
+                self.prompts[row] = updatedPrompt
+                self.tableView.reloadData()
+                WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_updated_successfully"))
+            }
             editWindow.showAndFocus()
         }
     }
     
+    // Store prompts temporarily for delete confirmation
+    private var promptsForDelete: [Prompt] = []
+    
     @objc private func deleteButtonClicked(_ sender: NSButton) {
         let row = sender.tag
         if row < prompts.count {
-            // Show confirmation dialog
-            let alert = NSAlert()
-            alert.messageText = LocalizationService.shared.localizedString(for: "delete_prompt_title")
-            alert.informativeText = LocalizationService.shared.localizedString(for: "delete_prompt_confirmation")
-            alert.addButton(withTitle: LocalizationService.shared.localizedString(for: "delete_button"))
-            alert.addButton(withTitle: LocalizationService.shared.localizedString(for: "cancel_button"))
-            
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                // Delete the prompt
-                prompts.remove(at: row)
-                tableView.reloadData()
-                WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_deleted_successfully"))
-            }
+            let prompt = prompts[row]
+            showDeleteConfirmationDialog(prompt: prompt, row: row)
         }
     }
     
-    // MARK: - Edit Window
-    private func createEditWindow(for prompt: Prompt) -> BaseWindow {
-        let windowSize = NSSize(width: 600, height: 500)
-        let window = BaseWindow(size: windowSize, styleMask: [.titled, .closable, .resizable])
-        window.title = LocalizationService.shared.localizedString(for: "edit_prompt_title")
+    private func showDeleteConfirmationDialog(prompt: Prompt, row: Int) {
+        // Get mouse location for positioning
+        let mouseLocation = NSEvent.mouseLocation
         
-        let contentView = window.createStandardContentView(size: windowSize)
+        // Create custom dialog window
+        let dialogWidth: CGFloat = 238
+        let dialogHeight: CGFloat = 100
         
-        // Name field
-        let nameLabel = NSTextField(frame: NSRect(x: 20, y: windowSize.height - 100, width: 100, height: 24))
-        nameLabel.stringValue = LocalizationService.shared.localizedString(for: "name_label")
-        nameLabel.isBezeled = false
-        nameLabel.drawsBackground = false
-        nameLabel.isEditable = false
-        nameLabel.isSelectable = false
-        contentView.addSubview(nameLabel)
+        // Calculate window position: bottom-right corner at mouse cursor + 6px
+        let originX = mouseLocation.x + 6 - dialogWidth
+        let originY = mouseLocation.y + 6 - dialogHeight
         
-        let nameField = NSTextField(frame: NSRect(x: 120, y: windowSize.height - 100, width: 460, height: 24))
-        nameField.stringValue = prompt.promptName
-        contentView.addSubview(nameField)
+        let dialogWindow = NSWindow(
+            contentRect: NSRect(x: originX, y: originY, width: dialogWidth, height: dialogHeight),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
         
-        // Prompt field
-        let promptLabel = NSTextField(frame: NSRect(x: 20, y: windowSize.height - 140, width: 100, height: 24))
-        promptLabel.stringValue = LocalizationService.shared.localizedString(for: "prompt_label")
-        promptLabel.isBezeled = false
-        promptLabel.drawsBackground = false
-        promptLabel.isEditable = false
-        promptLabel.isSelectable = false
-        contentView.addSubview(promptLabel)
+        // Configure window
+        dialogWindow.isMovable = true
+        dialogWindow.isMovableByWindowBackground = true
+        dialogWindow.isOpaque = false
+        dialogWindow.backgroundColor = .clear
+        dialogWindow.level = .floating
+        dialogWindow.hasShadow = true
         
-        let promptField = NSTextView(frame: NSRect(x: 120, y: 100, width: 460, height: 280))
-        promptField.string = prompt.promptText
-        promptField.font = NSFont.systemFont(ofSize: 14)
+        // Create content view
+        let contentView = NSView(frame: NSRect(x: 0, y: 0, width: dialogWidth, height: dialogHeight))
+        contentView.wantsLayer = true
+        contentView.layer?.backgroundColor = NSColor.white.cgColor
+        contentView.layer?.cornerRadius = 12
+        contentView.layer?.masksToBounds = true
         
-        let promptScrollView = NSScrollView(frame: NSRect(x: 120, y: 100, width: 460, height: 280))
-        promptScrollView.documentView = promptField
-        promptScrollView.hasVerticalScroller = true
-        contentView.addSubview(promptScrollView)
+        // Add shadow
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.shadowOffset = NSSize(width: 0, height: -3)
+        shadow.shadowBlurRadius = 8
         
-        // Save button
-        let saveButton = FocusableButton(frame: NSRect(x: 200, y: 40, width: 100, height: 32))
-        saveButton.title = LocalizationService.shared.localizedString(for: "save_button")
-        saveButton.bezelStyle = .rounded
-        saveButton.target = self
-        saveButton.action = #selector(saveButtonClicked)
-        contentView.addSubview(saveButton)
+        // Add title label
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: dialogHeight - 40, width: dialogWidth - 40, height: 20))
+        titleLabel.stringValue = LocalizationService.shared.localizedString(for: "are_you_sure")
+        titleLabel.isBezeled = false
+        titleLabel.drawsBackground = false
+        titleLabel.isEditable = false
+        titleLabel.isSelectable = false
+        titleLabel.font = NSFont.boldSystemFont(ofSize: 16)
+        titleLabel.alignment = .center
+        contentView.addSubview(titleLabel)
         
-        // Cancel button
-        let cancelButton = FocusableButton(frame: NSRect(x: 320, y: 40, width: 100, height: 32))
+        // Add cancel button
+        let cancelButton = NSButton(frame: NSRect(x: 41, y: 20, width: 68, height: 32))
         cancelButton.title = LocalizationService.shared.localizedString(for: "cancel_button")
         cancelButton.bezelStyle = .rounded
-        cancelButton.target = window
-        cancelButton.action = #selector(BaseWindow.closeWindow)
+        cancelButton.layer?.borderWidth = 1.0
+        cancelButton.layer?.borderColor = NSColor.systemGray.cgColor
+        cancelButton.layer?.cornerRadius = 6.0
+        cancelButton.target = self
+        cancelButton.action = #selector(cancelDeleteDialog(_:))
         contentView.addSubview(cancelButton)
         
-        window.contentView = contentView
-        return window
+        // Store the prompt for later use
+        promptsForDelete = [prompt]
+        
+        // Add delete button
+        let deleteButton = NSButton(frame: NSRect(x: 129, y: 20, width: 68, height: 32))
+        deleteButton.title = LocalizationService.shared.localizedString(for: "delete_button")
+        deleteButton.bezelStyle = .rounded
+        deleteButton.layer?.borderWidth = 1.0
+        deleteButton.layer?.borderColor = NSColor.systemRed.cgColor
+        deleteButton.layer?.cornerRadius = 6.0
+        deleteButton.contentTintColor = NSColor.systemRed
+        deleteButton.target = self
+        deleteButton.action = #selector(confirmDeleteDialog(_:))
+        deleteButton.tag = row
+        contentView.addSubview(deleteButton)
+        
+        // Set content view
+        dialogWindow.contentView = contentView
+        
+        // Clamp window to screen bounds
+        if let screen = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) ?? NSScreen.main {
+            let visibleFrame = screen.visibleFrame
+            var frame = dialogWindow.frame
+            
+            // Clamp horizontally
+            if frame.maxX > visibleFrame.maxX {
+                frame.origin.x = visibleFrame.maxX - frame.width
+            }
+            if frame.minX < visibleFrame.minX {
+                frame.origin.x = visibleFrame.minX
+            }
+            
+            // Clamp vertically
+            if frame.minY < visibleFrame.minY {
+                frame.origin.y = visibleFrame.minY
+            }
+            if frame.maxY > visibleFrame.maxY {
+                frame.origin.y = visibleFrame.maxY - frame.height
+            }
+            
+            // Apply the clamped position
+            dialogWindow.setFrame(frame, display: false)
+        }
+        
+        // Show the dialog
+        dialogWindow.makeKeyAndOrderFront(nil)
     }
     
-    @objc private func saveButtonClicked(_ sender: NSButton) {
-        // Handle save logic
-        WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_updated_successfully"))
-        // Close the window
-        if let window = sender.window as? BaseWindow {
-            window.closeWindow()
+    @objc private func cancelDeleteDialog(_ sender: Any) {
+        if let window = sender as? NSButton, let dialogWindow = window.window {
+            dialogWindow.orderOut(nil)
+            promptsForDelete = []
         }
-        // Reload table view
-        tableView.reloadData()
+    }
+    
+    @objc private func confirmDeleteDialog(_ sender: Any) {
+        if let button = sender as? NSButton, let dialogWindow = button.window, !promptsForDelete.isEmpty {
+            let prompt = promptsForDelete[0]
+            let row = button.tag
+            dialogWindow.orderOut(nil)
+            promptsForDelete = []
+            
+            // Delete the prompt
+            prompts.remove(at: row)
+            tableView.reloadData()
+            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_deleted_successfully"))
+        }
+    }
+    
+    @objc private func addNewPrompt() {
+        // Open NewOrEditPrompt window with empty fields
+        let newPromptWindow = NewOrEditPrompt(prompt: nil, originatingWindow: parentWindow)
+        newPromptWindow.onSave = { newPrompt in
+            // Add the new prompt to the array
+            self.prompts.insert(newPrompt, at: 0) // Add to the beginning (newest first)
+            self.tableView.reloadData()
+            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_created_successfully"))
+        }
+        newPromptWindow.showAndFocus()
     }
 }

@@ -127,8 +127,17 @@
 "delete_prompt_confirmation" = "确定要删除这个提示词吗？";
 "prompt_deleted_successfully" = "提示词删除成功";
 "edit_prompt_title" = "编辑提示词";
+"new_prompt_title" = "新建提示词";
+"prompt_name_label" = "提示词名称";
+"enter_prompt_name_placeholder" = "输入提示词名称";
+"enter_prompt_name_tooltip" = "输入提示词名称";
+"markdown_format_recommended_tooltip" = "建议使用 Markdown 格式编写提示词";
+"all_fields_required" = "所有字段都是必填项";
 "name_label" = "名称：";
 "prompt_label" = "提示词：";
 "save_button" = "保存";
 "cancel_button" = "取消";
 "prompt_updated_successfully" = "提示词更新成功";
+"prompt_created_successfully" = "提示词创建成功";
+"create_new_prompt_canceled" = "新建提示词已取消，所有更改已丢弃";
+"edit_prompt_canceled" = "编辑提示词已取消，所有更改已丢弃";
