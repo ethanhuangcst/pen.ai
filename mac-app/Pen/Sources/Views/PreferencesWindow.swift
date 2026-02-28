@@ -100,14 +100,14 @@ class PreferencesWindow: BaseWindow {
             let generalTabView = GeneralTabView(frame: tabContentView.bounds, parentWindow: self)
             tabContentView.addSubview(generalTabView)
         } else if title == LocalizationService.shared.localizedString(for: "ai_connections") {
-            // Use the new AIConnectionTabView
+            // Use the new AIConfigurationTabView
             let databasePool = DatabaseConnectivityPool.shared
             
-            let aiConnectionTabView = AIConnectionTabView(frame: tabContentView.bounds, user: user, databasePool: databasePool, parentWindow: self)
+            let aiConfigurationTabView = AIConfigurationTabView(frame: tabContentView.bounds, user: user, databasePool: databasePool, parentWindow: self)
             if let userName = user?.name {
-                aiConnectionTabView.setUserName(userName)
+                aiConfigurationTabView.setUserName(userName)
             }
-            tabContentView.addSubview(aiConnectionTabView)
+            tabContentView.addSubview(aiConfigurationTabView)
         }
         
         tabItem.view = tabContentView

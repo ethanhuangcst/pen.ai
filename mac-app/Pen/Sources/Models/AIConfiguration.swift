@@ -1,6 +1,6 @@
 import Foundation
 
-class AIConnection {
+class AIConfiguration {
     let id: Int
     let userId: Int
     var apiKey: String
@@ -19,8 +19,8 @@ class AIConnection {
     
     // MARK: - Convenience Methods
     
-    /// Creates an AIConnection instance from database row
-    static func fromDatabaseRow(_ row: [String: Any]) -> AIConnection? {
+    /// Creates an AIConfiguration instance from database row
+    static func fromDatabaseRow(_ row: [String: Any]) -> AIConfiguration? {
         // Handle id as string or int
         let id: Int
         if let idInt = row["id"] as? Int {
@@ -28,7 +28,7 @@ class AIConnection {
         } else if let idString = row["id"] as? String, let idInt = Int(idString) {
             id = idInt
         } else {
-            print("[AIConnection] Missing or invalid id: \(row["id"] ?? "nil")")
+            print("[AIConfiguration] Missing or invalid id: \(row["id"] ?? "nil")")
             return nil
         }
         
@@ -39,13 +39,13 @@ class AIConnection {
         } else if let userIdString = row["user_id"] as? String, let userIdInt = Int(userIdString) {
             userId = userIdInt
         } else {
-            print("[AIConnection] Missing or invalid user_id: \(row["user_id"] ?? "nil")")
+            print("[AIConfiguration] Missing or invalid user_id: \(row["user_id"] ?? "nil")")
             return nil
         }
         
         guard let apiKey = row["apiKey"] as? String,
               let apiProvider = row["apiProvider"] as? String else {
-            print("[AIConnection] Missing or invalid apiKey or apiProvider")
+            print("[AIConfiguration] Missing or invalid apiKey or apiProvider")
             return nil
         }
         
@@ -64,6 +64,6 @@ class AIConnection {
             updatedAt = date
         }
         
-        return AIConnection(id: id, userId: userId, apiKey: apiKey, apiProvider: apiProvider, createdAt: createdAt, updatedAt: updatedAt)
+        return AIConfiguration(id: id, userId: userId, apiKey: apiKey, apiProvider: apiProvider, createdAt: createdAt, updatedAt: updatedAt)
     }
 }

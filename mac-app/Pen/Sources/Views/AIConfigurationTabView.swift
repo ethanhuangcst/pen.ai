@@ -6,17 +6,17 @@ import Foundation
 // Import models and services
 import Pen
 
-class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
+class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     // MARK: - Properties
     private let userLabel = NSTextField()
     private let defaultLabel = NSTextField()
-    private let connectionsTable = NSTableView()
+    private let configurationsTable = NSTableView()
     private let addButton = FocusableButton()
     private let saveButton = FocusableButton()
     private let tableContainer = NSView()
     
     // Data properties
-    private var connections: [AIConnection] = []
+    private var configurations: [AIConfiguration] = []
     private var providers: [AIModelProvider] = []
     private var user: User?
     private weak var parentWindow: NSWindow?
@@ -46,29 +46,29 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         fatalError("init(coder:) has not been implemented")
     }
     
-    static func createAIConnectionTab(user: User?, databasePool: DatabaseConnectivityPool, parentWindow: NSWindow? = nil) -> AIConnectionTabView {
+    static func createAIConfigurationTab(user: User?, databasePool: DatabaseConnectivityPool, parentWindow: NSWindow? = nil) -> AIConfigurationTabView {
         let frame = CGRect(x: 0, y: 0, width: 680, height: 520)
-        return AIConnectionTabView(frame: frame, user: user, databasePool: databasePool, parentWindow: parentWindow)
+        return AIConfigurationTabView(frame: frame, user: user, databasePool: databasePool, parentWindow: parentWindow)
     }
     
     private func setupTableView() {
         // Set data source and delegate
-        connectionsTable.dataSource = self
-        connectionsTable.delegate = self
+        configurationsTable.dataSource = self
+        configurationsTable.delegate = self
         
         // Add scroll view
         let scrollView = NSScrollView(frame: tableContainer.bounds)
-        scrollView.documentView = connectionsTable
+        scrollView.documentView = configurationsTable
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         tableContainer.addSubview(scrollView)
     }
     
     private func loadData() {
-        // Load AI providers and connections asynchronously
+        // Load AI providers and configurations asynchronously
         Task {
             await loadProviders()
-            await loadConnections()
+            await loadConfigurations()
         }
     }
     
@@ -81,20 +81,20 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         }
     }
     
-    private func loadConnections() async {
+    private func loadConfigurations() async {
         guard let userId = user?.id else { return }
         
         do {
-            let connectionData = try await aiConnectionService.getConnections(for: userId)
-            connections = connectionData.compactMap { AIConnection.fromDatabaseRow($0) }
-            print("Loaded \(connections.count) AI connections")
+            let configurationData = try await aiConnectionService.getConnections(for: userId)
+            configurations = configurationData.compactMap { AIConfiguration.fromDatabaseRow($0) }
+            print("Loaded \(configurations.count) AI configurations")
             
             // Reload table view on main thread
             DispatchQueue.main.async {
-                self.connectionsTable.reloadData()
+                self.configurationsTable.reloadData()
             }
         } catch {
-            print("Error loading AI connections: \(error)")
+            print("Error loading AI configurations: \(error)")
         }
     }
     
@@ -142,13 +142,13 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         tableContainer.layer?.cornerRadius = 8.0
         addSubview(tableContainer)
         
-        setupConnectionsTable()
+        setupConfigurationsTable()
     }
     
-    private func setupConnectionsTable() {
+    private func setupConfigurationsTable() {
         // Create table view
-        connectionsTable.frame = NSRect(x: 0, y: 0, width: tableContainer.frame.width, height: tableContainer.frame.height)
-        connectionsTable.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
+        configurationsTable.frame = NSRect(x: 0, y: 0, width: tableContainer.frame.width, height: tableContainer.frame.height)
+        configurationsTable.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
         
         // Create columns
         let providerColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("provider"))
@@ -156,38 +156,38 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         providerColumn.width = 68
         providerColumn.minWidth = 68
         providerColumn.maxWidth = 68
-        connectionsTable.addTableColumn(providerColumn)
+        configurationsTable.addTableColumn(providerColumn)
         
         let apiKeyColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("apiKey"))
         apiKeyColumn.title = LocalizationService.shared.localizedString(for: "api_key")
         apiKeyColumn.width = 308
         apiKeyColumn.minWidth = 308
         apiKeyColumn.maxWidth = 308
-        connectionsTable.addTableColumn(apiKeyColumn)
+        configurationsTable.addTableColumn(apiKeyColumn)
         
         let deleteColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("delete"))
         deleteColumn.title = LocalizationService.shared.localizedString(for: "delete_column")
         deleteColumn.width = 38
         deleteColumn.minWidth = 38
         deleteColumn.maxWidth = 38
-        connectionsTable.addTableColumn(deleteColumn)
+        configurationsTable.addTableColumn(deleteColumn)
         
         let testColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("test"))
         testColumn.title = LocalizationService.shared.localizedString(for: "test_column")
         testColumn.width = 38
         testColumn.minWidth = 38
         testColumn.maxWidth = 38
-        connectionsTable.addTableColumn(testColumn)
+        configurationsTable.addTableColumn(testColumn)
         
         // Add header view
         let headerView = NSTableHeaderView()
-        headerView.frame = NSRect(x: 0, y: connectionsTable.frame.height - 22, width: connectionsTable.frame.width, height: 22)
-        connectionsTable.headerView = headerView
+        headerView.frame = NSRect(x: 0, y: configurationsTable.frame.height - 22, width: configurationsTable.frame.width, height: 22)
+        configurationsTable.headerView = headerView
         
         // Add sample rows for UI demonstration
         addSampleRows()
         
-        tableContainer.addSubview(connectionsTable)
+        tableContainer.addSubview(configurationsTable)
     }
     
     private func addSampleRows() {
@@ -205,7 +205,7 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         addButton.layer?.borderColor = NSColor.systemGreen.cgColor
         addButton.layer?.cornerRadius = 6.0
         addButton.target = self
-        addButton.action = #selector(addNewConnection)
+        addButton.action = #selector(addNewConfiguration)
         addSubview(addButton)
         
         // Save button
@@ -216,7 +216,7 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         saveButton.layer?.borderColor = NSColor.systemBlue.cgColor
         saveButton.layer?.cornerRadius = 6.0
         saveButton.target = self
-        saveButton.action = #selector(saveConnections)
+        saveButton.action = #selector(saveConfigurations)
         addSubview(saveButton)
     }
     
@@ -227,20 +227,20 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     
     // MARK: - NSTableViewDataSource
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return connections.count
+        return configurations.count
     }
     
     // MARK: - NSTableViewDelegate
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard let tableColumn = tableColumn, row < connections.count else { return nil }
+        guard let tableColumn = tableColumn, row < configurations.count else { return nil }
         
-        let connection = connections[row]
+        let configuration = configurations[row]
         
         switch tableColumn.identifier.rawValue {
         case "provider":
-            return createProviderPopup(for: connection, row: row)
+            return createProviderPopup(for: configuration, row: row)
         case "apiKey":
-            return createAPIKeyTextField(for: connection, row: row)
+            return createAPIKeyTextField(for: configuration, row: row)
         case "delete":
             return createDeleteButton(row: row)
         case "test":
@@ -250,7 +250,7 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         }
     }
     
-    private func createProviderPopup(for connection: AIConnection, row: Int) -> NSPopUpButton {
+    private func createProviderPopup(for configuration: AIConfiguration, row: Int) -> NSPopUpButton {
         let popupButton = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 180, height: 24))
         
         // Add provider options
@@ -259,7 +259,7 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         }
         
         // Select the current provider
-        if let index = providers.firstIndex(where: { $0.name == connection.apiProvider }) {
+        if let index = providers.firstIndex(where: { $0.name == configuration.apiProvider }) {
             popupButton.selectItem(at: index)
         }
         
@@ -271,9 +271,9 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         return popupButton
     }
     
-    private func createAPIKeyTextField(for connection: AIConnection, row: Int) -> NSTextField {
+    private func createAPIKeyTextField(for configuration: AIConfiguration, row: Int) -> NSTextField {
         let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 308, height: 24))
-        textField.stringValue = connection.apiKey
+        textField.stringValue = configuration.apiKey
         textField.placeholderString = LocalizationService.shared.localizedString(for: "api_key")
         
         // Enable text truncation
@@ -297,7 +297,7 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         button.setButtonType(.momentaryPushIn)
         button.image = NSImage(systemSymbolName: "trash", accessibilityDescription: "Delete")
         button.target = self
-        button.action = #selector(deleteConnection(_:))
+        button.action = #selector(deleteConfiguration(_:))
         button.tag = row
         button.contentTintColor = NSColor.systemRed
         return button
@@ -309,7 +309,7 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         button.setButtonType(.momentaryPushIn)
         button.image = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: "Test")
         button.target = self
-        button.action = #selector(testConnection(_:))
+        button.action = #selector(testConfiguration(_:))
         button.tag = row
         button.contentTintColor = NSColor.systemBlue
         return button
@@ -318,89 +318,89 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     // MARK: - Actions
     @objc private func providerChanged(_ sender: NSPopUpButton) {
         let row = sender.tag
-        if row < connections.count, let selectedItem = sender.selectedItem {
-            connections[row].apiProvider = selectedItem.title
+        if row < configurations.count, let selectedItem = sender.selectedItem {
+            configurations[row].apiProvider = selectedItem.title
         }
     }
     
-    @objc private func deleteConnection(_ sender: NSButton) {
+    @objc private func deleteConfiguration(_ sender: NSButton) {
         let row = sender.tag
-        if row < connections.count {
-            let connection = connections[row]
+        if row < configurations.count {
+            let configuration = configurations[row]
             
             // Show custom confirmation dialog
-            showDeleteConfirmationDialog(connection: connection, row: row)
+            showDeleteConfirmationDialog(configuration: configuration, row: row)
         }
     }
     
-    private func deleteAIConnection(connection: AIConnection, row: Int) {
+    private func deleteAIConfiguration(configuration: AIConfiguration, row: Int) {
         Task {
             do {
-                if connection.id != 0 {
+                if configuration.id != 0 {
                     // Delete from database
-                    try await aiConnectionService.deleteConnection(connection.id)
+                    try await aiConnectionService.deleteConnection(configuration.id)
                 }
                 
                 // Remove from local array
                 DispatchQueue.main.async {
-                    self.connections.remove(at: row)
-                    self.connectionsTable.reloadData()
+                    self.configurations.remove(at: row)
+                    self.configurationsTable.reloadData()
                 }
                 
-                print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(connection.apiProvider) deleted! $$$$$$$$$$$$$$$$$$$$")
+                print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) deleted! $$$$$$$$$$$$$$$$$$$$")
             } catch {
-                print("Error deleting AI connection: \(error)")
+                print("Error deleting AI configuration: \(error)")
                 DispatchQueue.main.async {
-                    WindowManager.displayPopupMessage("Failed to delete AI Connection!")
+                    WindowManager.displayPopupMessage("Failed to delete AI Configuration!")
                 }
             }
         }
     }
     
-    @objc private func testConnection(_ sender: NSButton) {
+    @objc private func testConfiguration(_ sender: NSButton) {
         let row = sender.tag
-        if row < connections.count {
-            let connection = connections[row]
-            print("Testing connection: \(connection.apiProvider)")
+        if row < configurations.count {
+            let configuration = configurations[row]
+            print("Testing configuration: \(configuration.apiProvider)")
             
-            // Test the connection
-            testAIConnection(connection: connection)
+            // Test the configuration
+            testAIConfiguration(configuration: configuration)
         }
     }
     
-    private func testAIConnection(connection: AIConnection) {
-        // Make actual API call to test the connection
+    private func testAIConfiguration(configuration: AIConfiguration) {
+        // Make actual API call to test the configuration
         Task {
             do {
-                // Test the connection using AIConnectionService
+                // Test the configuration using AIConnectionService
                 try await aiConnectionService.testConnection(
-                    apiKey: connection.apiKey,
-                    providerName: connection.apiProvider
+                    apiKey: configuration.apiKey,
+                    providerName: configuration.apiProvider
                 )
                 
                 // Test successful
-                print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(connection.apiProvider) is established $$$$$$$$$$$$$$$$$$$$")
+                print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) is established $$$$$$$$$$$$$$$$$$$$")
                 
                 DispatchQueue.main.async {
-                    WindowManager.displayPopupMessage("AI Connection \(connection.apiProvider) is established successfully!")
+                    WindowManager.displayPopupMessage("AI Configuration \(configuration.apiProvider) is established successfully!")
                 }
             } catch {
                 // Test failed
-                print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(connection.apiProvider) is failed $$$$$$$$$$$$$$$$$$$$")
-                print("Error testing connection: \(error)")
+                print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) is failed $$$$$$$$$$$$$$$$$$$$")
+                print("Error testing configuration: \(error)")
                 
                 DispatchQueue.main.async {
-                    WindowManager.displayPopupMessage("Failed to establish AI Connection \(connection.apiProvider)!")
+                    WindowManager.displayPopupMessage("Failed to establish AI Configuration \(configuration.apiProvider)!")
                 }
             }
         }
     }
     
-    @objc private func addNewConnection() {
+    @objc private func addNewConfiguration() {
         guard let userId = user?.id else { return }
         
-        // Create a new connection with default values
-        let newConnection = AIConnection(
+        // Create a new configuration with default values
+        let newConfiguration = AIConfiguration(
             id: 0, // Temporary ID, will be replaced by database
             userId: userId,
             apiKey: "",
@@ -409,36 +409,36 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
             updatedAt: nil
         )
         
-        connections.append(newConnection)
-        connectionsTable.reloadData()
+        configurations.append(newConfiguration)
+        configurationsTable.reloadData()
     }
     
-    @objc private func saveConnections() {
+    @objc private func saveConfigurations() {
         guard let userId = user?.id else { return }
         
-        // Validate connections
-        var validConnections: [AIConnection] = []
-        var hasInvalidConnections = false
-        var hasDuplicateConnections = false
+        // Validate configurations
+        var validConfigurations: [AIConfiguration] = []
+        var hasInvalidConfigurations = false
+        var hasDuplicateConfigurations = false
         var invalidRows: [Int] = []
         var duplicateRows: [Int] = []
         
         // Check for duplicates
-        var seenConnections: Set<String> = []
+        var seenConfigurations: Set<String> = []
         
-        for (index, connection) in connections.enumerated() {
-            if connection.apiKey.isEmpty {
-                hasInvalidConnections = true
+        for (index, configuration) in configurations.enumerated() {
+            if configuration.apiKey.isEmpty {
+                hasInvalidConfigurations = true
                 invalidRows.append(index)
             } else {
                 // Check for duplicates based on provider and API key
-                let connectionKey = "\(connection.apiProvider)-\(connection.apiKey)"
-                if seenConnections.contains(connectionKey) {
-                    hasDuplicateConnections = true
+                let configurationKey = "\(configuration.apiProvider)-\(configuration.apiKey)"
+                if seenConfigurations.contains(configurationKey) {
+                    hasDuplicateConfigurations = true
                     duplicateRows.append(index)
                 } else {
-                    seenConnections.insert(connectionKey)
-                    validConnections.append(connection)
+                    seenConfigurations.insert(configurationKey)
+                    validConfigurations.append(configuration)
                 }
             }
         }
@@ -448,53 +448,53 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         
         Task {
             var saveSuccess = true
-            var newlyCreatedConnections: [AIConnection] = []
+            var newlyCreatedConfigurations: [AIConfiguration] = []
             
-            for connection in validConnections {
+            for configuration in validConfigurations {
                 do {
-                    // For new connections (id == 0), create them
-                    if connection.id == 0 {
+                    // For new configurations (id == 0), create them
+                    if configuration.id == 0 {
                         try await aiConnectionService.createConnection(
                             userId: userId,
-                            apiKey: connection.apiKey,
-                            providerName: connection.apiProvider
+                            apiKey: configuration.apiKey,
+                            providerName: configuration.apiProvider
                         )
-                        print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(connection.apiProvider) saved! $$$$$$$$$$$$$$$$$$$$")
-                        newlyCreatedConnections.append(connection)
+                        print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) saved! $$$$$$$$$$$$$$$$$$$$")
+                        newlyCreatedConfigurations.append(configuration)
                     } else {
                         // TODO: Implement update functionality
-                        print("Updating connection: \(connection.id)")
+                        print("Updating configuration: \(configuration.id)")
                     }
                 } catch {
-                    print(" $$$$$$$$$$$$$$$$$$$$ Failed to save AI Connection \(connection.apiProvider) !!!  $$$$$$$$$$$$$$$$$$$$")
-                    print("Error saving connection: \(error)")
+                    print(" $$$$$$$$$$$$$$$$$$$$ Failed to save AI Configuration \(configuration.apiProvider) !!!  $$$$$$$$$$$$$$$$$$$$")
+                    print("Error saving configuration: \(error)")
                     saveSuccess = false
                 }
             }
             
-            // Only reload connections if all connections were saved successfully
-            if saveSuccess && !hasInvalidConnections && !hasDuplicateConnections {
-                await loadConnections()
-            } else if saveSuccess && (hasInvalidConnections || hasDuplicateConnections) {
+            // Only reload configurations if all configurations were saved successfully
+            if saveSuccess && !hasInvalidConfigurations && !hasDuplicateConfigurations {
+                await loadConfigurations()
+            } else if saveSuccess && (hasInvalidConfigurations || hasDuplicateConfigurations) {
                 // Combine duplicate and invalid rows, ensuring no duplicates
                 var rowsToRemove = Set<Int>()
                 rowsToRemove.formUnion(duplicateRows)
                 rowsToRemove.formUnion(invalidRows)
                 
                 DispatchQueue.main.async {
-                    self.connectionsTable.reloadData()
+                    self.configurationsTable.reloadData()
                     
-                    // Remove invalid and duplicate connections after 1 second
+                    // Remove invalid and duplicate configurations after 1 second
                     if !rowsToRemove.isEmpty {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                             // Sort rows in reverse order to avoid index shifting issues
                             let sortedRows = Array(rowsToRemove).sorted(by: >)
                             for row in sortedRows {
-                                if row < self.connections.count {
-                                    self.connections.remove(at: row)
+                                if row < self.configurations.count {
+                                    self.configurations.remove(at: row)
                                 }
                             }
-                            self.connectionsTable.reloadData()
+                            self.configurationsTable.reloadData()
                         }
                     }
                 }
@@ -503,16 +503,16 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
             // Show appropriate message
             DispatchQueue.main.async {
                 if !saveSuccess {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_save_connections"))
-                } else if hasInvalidConnections && hasDuplicateConnections {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_valid_no_duplicate_connections_saved"))
-                } else if hasInvalidConnections {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_valid_api_key_connections_saved"))
-                } else if hasDuplicateConnections {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_non_duplicate_connections_saved"))
-                    print(" $$$$$$$$$$$$$$$$$$$$ AI Connections saved! $$$$$$$$$$$$$$$$$$$$")
+                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_save_configurations"))
+                } else if hasInvalidConfigurations && hasDuplicateConfigurations {
+                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_valid_no_duplicate_configurations_saved"))
+                } else if hasInvalidConfigurations {
+                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_valid_api_key_configurations_saved"))
+                } else if hasDuplicateConfigurations {
+                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_non_duplicate_configurations_saved"))
+                    print(" $$$$$$$$$$$$$$$$$$$$ AI Configurations saved! $$$$$$$$$$$$$$$$$$$$")
                 } else {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "connections_saved_successfully"))
+                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "configurations_saved_successfully"))
                 }
             }
         }
@@ -520,9 +520,9 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     
     private func highlightInvalidFields(invalidRows: [Int], duplicateRows: [Int]) {
         // Loop through all rows and highlight fields
-        for row in 0..<connections.count {
+        for row in 0..<configurations.count {
             // Get the API key text field for this row
-            let view = connectionsTable.view(atColumn: 1, row: row, makeIfNecessary: false)
+            let view = configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false)
             if let textField = view as? NSTextField {
                 if invalidRows.contains(row) {
                     // Highlight empty API key fields in red
@@ -531,11 +531,11 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
                     textField.layer?.cornerRadius = 4.0
                     textField.toolTip = "API Key is required"
                 } else if duplicateRows.contains(row) {
-                    // Highlight duplicate connections in red
+                    // Highlight duplicate configurations in red
                     textField.layer?.borderWidth = 1.0
                     textField.layer?.borderColor = NSColor.systemRed.cgColor
                     textField.layer?.cornerRadius = 4.0
-                    textField.toolTip = "Duplicated connection.."
+                    textField.toolTip = "Duplicated configuration.."
                 } else {
                     // Reset border for valid fields
                     textField.layer?.borderWidth = 0.0
@@ -545,10 +545,10 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         }
     }
     
-    // Store connections temporarily for delete confirmation
-    private var connectionsForDelete: [AIConnection] = []
+    // Store configurations temporarily for delete confirmation
+    private var configurationsForDelete: [AIConfiguration] = []
     
-    private func showDeleteConfirmationDialog(connection: AIConnection, row: Int) {
+    private func showDeleteConfirmationDialog(configuration: AIConfiguration, row: Int) {
         // Get mouse location for positioning
         let mouseLocation = NSEvent.mouseLocation
         
@@ -610,8 +610,8 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         cancelButton.action = #selector(cancelDeleteDialog(_:))
         contentView.addSubview(cancelButton)
         
-        // Store the connection for later use
-        connectionsForDelete = [connection]
+        // Store the configuration for later use
+        configurationsForDelete = [configuration]
         
         // Add delete button
         let deleteButton = NSButton(frame: NSRect(x: 129, y: 20, width: 68, height: 32))
@@ -661,17 +661,17 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     @objc private func cancelDeleteDialog(_ sender: Any) {
         if let window = sender as? NSButton, let dialogWindow = window.window {
             dialogWindow.orderOut(nil)
-            connectionsForDelete = []
+            configurationsForDelete = []
         }
     }
     
     @objc private func confirmDeleteDialog(_ sender: Any) {
-        if let button = sender as? NSButton, let dialogWindow = button.window, !connectionsForDelete.isEmpty {
-            let connection = connectionsForDelete[0]
+        if let button = sender as? NSButton, let dialogWindow = button.window, !configurationsForDelete.isEmpty {
+            let configuration = configurationsForDelete[0]
             let row = button.tag
             dialogWindow.orderOut(nil)
-            connectionsForDelete = []
-            deleteAIConnection(connection: connection, row: row)
+            configurationsForDelete = []
+            deleteAIConfiguration(configuration: configuration, row: row)
         }
     }
     
@@ -679,11 +679,11 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
 }
 
 // MARK: - NSTextFieldDelegate
- extension AIConnectionTabView: NSTextFieldDelegate {
+ extension AIConfigurationTabView: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         if let textField = obj.object as? NSTextField, let row = textField.tag as? Int {
-            if row < connections.count {
-                connections[row].apiKey = textField.stringValue
+            if row < configurations.count {
+                configurations[row].apiKey = textField.stringValue
                 // Reset border when text is entered
                 textField.layer?.borderWidth = 0.0
             }
@@ -692,7 +692,7 @@ class AIConnectionTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     
     func controlTextDidChange(_ obj: Notification) {
         if let textField = obj.object as? NSTextField, let row = textField.tag as? Int {
-            if row < connections.count {
+            if row < configurations.count {
                 // Reset border as soon as user starts typing
                 textField.layer?.borderWidth = 0.0
             }

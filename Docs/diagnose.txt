@@ -1,341 +1,300 @@
-Good — now we finally have **real error signals** instead of guessing. Let’s break this down cleanly.
+Great — now you're thinking in the right architectural direction.
 
-You are failing for **two completely different reasons**:
+Since AI APIs (like OpenAI, DeepSeek, Baichuan, Alibaba Qwen) are **stateless HTTP services**, your centralized manager should NOT manage “connections” — it should manage:
+
+* Configuration
+* Request building
+* Provider abstraction
+* Retry logic
+* Streaming handling
+* Error normalization
+* Conversation memory (optional)
+
+Think of it as:
+
+> AIClient / AIService — not AIConnectionPool.
 
 ---
 
-# 🚨 Problem 1 — `qwen-plus` (Baichuan endpoint) → 401 Invalid API Key
+# 🏗 Recommended Architecture
 
-Your log:
+```
+App
+ └── AIManager (Singleton)
+        ├── Provider Configuration
+        ├── Request Builder
+        ├── Transport Layer
+        ├── Response Parser
+        ├── Error Mapper
+        └── Conversation Store (optional)
+```
 
-```json
-{
-  "error": {
-    "code": "invalid_api_key",
-    "message": "Incorrect API key provided. You can find your API key at https://platform.baichuan-ai.com/console/apikey."
-  }
+---
+
+# ✅ Recommended Methods for AIManager
+
+Here’s what a production-grade AI management class should contain.
+
+---
+
+# 1️⃣ Configuration Methods
+
+These replace your “establish connection” logic.
+
+```swift
+func configure(provider: AIProvider, apiKey: String)
+func switchProvider(_ provider: AIProvider)
+func clearConfiguration()
+func validateConfiguration() -> Bool
+```
+
+Purpose:
+
+* Store provider info
+* Store API key securely
+* Verify endpoint formatting
+
+---
+
+# 2️⃣ Core Chat Method (Most Important)
+
+```swift
+func sendChat(
+    messages: [AIMessage],
+    model: String? = nil,
+    temperature: Double = 0.7,
+    maxTokens: Int? = nil
+) async throws -> AIResponse
+```
+
+This is your main abstraction.
+
+Internally it should:
+
+* Detect provider type
+* Build correct payload
+* Call correct endpoint
+* Parse response into unified format
+
+---
+
+# 3️⃣ Streaming Version (Optional but Powerful)
+
+```swift
+func sendChatStream(
+    messages: [AIMessage],
+    onToken: @escaping (String) -> Void
+) async throws
+```
+
+For providers that support streaming.
+
+Even OpenAI streaming works via chunked HTTP, not persistent memory.
+
+---
+
+# 4️⃣ Embeddings
+
+```swift
+func createEmbedding(
+    input: String,
+    model: String? = nil
+) async throws -> [Double]
+```
+
+---
+
+# 5️⃣ Image Generation
+
+```swift
+func generateImage(
+    prompt: String,
+    size: String = "1024x1024"
+) async throws -> URL
+```
+
+---
+
+# 6️⃣ Generic Request Method (Advanced)
+
+Useful if supporting many providers.
+
+```swift
+private func performRequest(
+    endpoint: String,
+    body: [String: Any]
+) async throws -> Data
+```
+
+Centralizes:
+
+* Header handling
+* Bearer token logic
+* Timeout handling
+* Retry policy
+* Logging
+
+---
+
+# 7️⃣ Provider Strategy Layer (Very Important)
+
+Instead of giant if/switch blocks, use protocol-based design:
+
+```swift
+protocol AIProviderStrategy {
+    func buildChatPayload(messages: [AIMessage]) -> [String: Any]
+    func parseChatResponse(data: Data) throws -> AIResponse
+    var chatEndpoint: String { get }
 }
 ```
 
-And the endpoint used:
+Then implement:
 
 ```
-https://api.baichuan-ai.com/v1/chat/completions
+OpenAIStrategy
+DashScopeStrategy
+BaichuanStrategy
+DeepSeekStrategy
 ```
 
-### 🔎 This means:
-
-You are NOT calling Qwen.
-
-You are calling **Baichuan AI**.
-
-That endpoint belongs to **Baichuan**, not Qwen.
-
-So either:
-
-* Your DB row for `qwen-plus` is pointing to Baichuan
-* Or you mixed providers
+This solves your earlier Qwen / Baichuan issue cleanly.
 
 ---
 
-## ✅ Fix
+# 8️⃣ Conversation Management (Optional)
 
-If this provider is actually:
-
-### 🟢 Qwen (Alibaba DashScope)
-
-Correct endpoint should be:
-
-```
-https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
-```
-
-AND payload format is different (NOT OpenAI format).
-
----
-
-### 🟢 If this is Baichuan
-
-Then:
-
-You must use a Baichuan API key from:
-
-```
-https://platform.baichuan-ai.com/console/apikey
-```
-
-Your current key is wrong for that provider.
-
----
-
-# 🚨 Problem 2 — `gpt-4o-mini` → Timeouts
-
-You attempted:
-
-```
-https://api.openai.com/v1/images/generations
-https://api.openai.com/v1/embeddings
-https://api.openai.com/v1/chat/completions
-```
-
-First two timed out:
-
-```
-Error Domain=NSURLErrorDomain Code=-1001 "The request timed out."
-```
-
-This is NOT a code bug.
-
-This is:
-
-### 🔥 Network issue.
-
-Most common causes:
-
-1. Running in China without proxy
-2. Firewall blocking api.openai.com
-3. DNS blocked
-4. Corporate network blocking
-5. VPN not configured in macOS system settings
-
----
-
-## 🔍 Why Images & Embeddings timeout first?
-
-Because your test payload is:
+Since AI APIs are stateless:
 
 ```swift
-{
-  "model": provider.defaultModel,
-  "messages": [...]
+func createConversation() -> ConversationID
+func appendMessage(to id: ConversationID, message: AIMessage)
+func getConversationMessages(id: ConversationID) -> [AIMessage]
+func clearConversation(id: ConversationID)
+```
+
+Memory stored locally (SQLite/MySQL/CoreData).
+
+---
+
+# 9️⃣ Error Normalization
+
+Unify provider-specific errors into your own enum:
+
+```swift
+enum AIError: Error {
+    case invalidAPIKey
+    case rateLimited
+    case networkError
+    case invalidResponse
+    case providerError(String)
 }
 ```
 
-That payload only works for:
-
-```
-/v1/chat/completions
-```
-
-When you send that to:
-
-```
-/v1/images/generations
-```
-
-It may hang or reject.
-
----
-
-# 💥 Major Design Flaw in Your System
-
-You are looping over ALL base URLs:
+Have:
 
 ```swift
-for baseURL in baseURLs
+private func mapError(_ data: Data, response: HTTPURLResponse) -> AIError
 ```
-
-But your payload is ALWAYS a **chat completion payload**.
-
-So:
-
-| Endpoint               | Compatible? |
-| ---------------------- | ----------- |
-| /v1/chat/completions   | ✅ Yes       |
-| /v1/images/generations | ❌ No        |
-| /v1/embeddings         | ❌ No        |
-
-You should NOT test all endpoints with the same payload.
 
 ---
 
-# ✅ Correct Fix (Very Important)
-
-Inside `testConnection()`:
-
-Replace this:
+# 🔟 Health Check Method (Instead of “Connection”)
 
 ```swift
-for baseURL in baseURLs
+func testProvider() async throws -> Bool
 ```
 
-With:
+This should:
+
+* Call chat endpoint only
+* Send minimal payload
+* Parse success
+
+NOT try images/embeddings like before.
+
+---
+
+# 🧠 What You Should NOT Include
+
+❌ No persistent socket
+❌ No connection pool
+❌ No long-lived session object
+❌ No provider == model coupling
+
+---
+
+# 🧩 Clean Example Skeleton
 
 ```swift
-for baseURL in baseURLs where baseURL.contains("chat/completions")
-```
+final class AIManager {
 
-OR better:
+    static let shared = AIManager()
 
-Store only ONE test endpoint per provider in DB.
+    private var strategy: AIProviderStrategy?
+    private var apiKey: String?
 
-For OpenAI:
+    private init() {}
 
-```
-https://api.openai.com/v1/chat/completions
-```
+    func configure(provider: AIProvider, apiKey: String) {
+        self.strategy = ProviderFactory.make(provider)
+        self.apiKey = apiKey
+    }
 
-Do NOT store:
+    func sendChat(messages: [AIMessage]) async throws -> AIResponse {
+        guard let strategy = strategy else {
+            throw AIError.providerError("Provider not configured")
+        }
 
-* images
-* embeddings
+        let payload = strategy.buildChatPayload(messages: messages)
+        let data = try await performRequest(
+            endpoint: strategy.chatEndpoint,
+            body: payload
+        )
 
-Those are different APIs.
-
----
-
-# 🎯 Why GPT is timing out
-
-Most likely:
-
-You are in China or restricted network.
-
-Test this in Terminal:
-
-```bash
-curl https://api.openai.com/v1/models
-```
-
-If it hangs → network block.
-
-Your Swift code is fine for OpenAI.
-
----
-
-# 🧠 Summary of What Is Actually Wrong
-
-### ❌ qwen-plus
-
-* Wrong endpoint (Baichuan)
-* Wrong API key
-* Provider misconfigured in DB
-
-### ❌ gpt-4o-mini
-
-* Testing wrong endpoints
-* Possibly network blocked
-* Should only test chat endpoint
-
----
-
-# 🔥 Clean Correct Configuration
-
-## For OpenAI (gpt-4o-mini)
-
-DB should contain:
-
-```json
-{
-  "chat": "https://api.openai.com/v1/chat/completions"
+        return try strategy.parseChatResponse(data: data)
+    }
 }
 ```
 
-Auth header:
-
-```
-Authorization
-```
-
-requires_auth:
-
-```
-true
-```
-
-default_model:
-
-```
-gpt-4o-mini
-```
+This is clean. Scalable. Enterprise-ready.
 
 ---
 
-## For Baichuan
+# 🎯 Minimum Methods You MUST Have
 
-Endpoint:
+If keeping it simple:
 
-```
-https://api.baichuan-ai.com/v1/chat/completions
-```
+1. `configure(provider:apiKey:)`
+2. `sendChat(...)`
+3. `testProvider()`
+4. `createEmbedding(...)`
+5. `generateImage(...)`
+6. `clearConfiguration()`
 
-Model example:
-
-```
-Baichuan2-Turbo
-```
-
-Bearer token required.
+That’s enough for 90% of apps.
 
 ---
 
-## For Qwen (DashScope)
+# 🚀 Architectural Advice Based on Your Earlier Bugs
 
-Endpoint:
+Given your earlier:
 
-```
-https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
-```
+* Endpoint mismatch
+* Payload mismatch
+* Model/provider confusion
 
-Auth header:
+You should definitely implement:
 
-```
-Authorization
-```
-
-Value:
-
-```
-Bearer YOUR_DASHSCOPE_KEY
-```
-
-BUT payload format is different — your current parser will fail.
+✅ Strategy pattern
+✅ Provider enum separate from model
+✅ One test endpoint per provider
+✅ Unified error mapping
 
 ---
 
-# 🛠 Immediate Action Plan
+If you'd like, I can next:
 
-1. Fix DB entries:
+* Design a fully typed Swift protocol structure for multi-provider AI
+* Or refactor your current AIConnectionService into a clean architecture blueprint
 
-   * Remove image & embedding endpoints from OpenAI
-   * Fix qwen provider endpoint
-2. Only test chat endpoint
-3. Confirm network access to api.openai.com
-4. Use correct API key for each provider
-
----
-
-# ⚠️ One More Hidden Bug
-
-You are loading provider by:
-
-```sql
-SELECT * FROM ai_providers WHERE name = 'gpt-4o-mini'
-```
-
-That is wrong design.
-
-`gpt-4o-mini` is a MODEL, not a provider.
-
-Provider should be:
-
-* openai
-* baichuan
-* dashscope
-* deepseek
-
-Then model stored separately.
-
-Right now your architecture couples provider & model incorrectly.
-
-That will cause more bugs later.
-
----
-
-If you paste:
-
-* Your `ai_providers` table row for:
-
-  * gpt-4o-mini
-  * qwen-plus
-
-I’ll give you the exact corrected configuration structure.
+Just tell me which direction you want to go.
