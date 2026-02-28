@@ -5,7 +5,7 @@ class LoginWindow: BaseWindow {
     // MARK: - Properties
     private let windowWidth: CGFloat = 518
     private let windowHeight: CGFloat = 318
-    private weak var penDelegate: PenAIDelegate?
+    private weak var penDelegate: PenDelegate?
     
     // UI Elements
     private var emailField: NSTextField!
@@ -29,7 +29,7 @@ class LoginWindow: BaseWindow {
     public var forgotPasswordLinkPublic: FocusableButton! { return forgotPasswordLink }
     
     // MARK: - Initialization
-    init(menuBarIconFrame: NSRect? = nil, penDelegate: PenAIDelegate? = nil) {
+    init(menuBarIconFrame: NSRect? = nil, penDelegate: PenDelegate? = nil) {
         let windowSize = NSSize(width: windowWidth, height: windowHeight)
         print("LoginWindow: Opening with size: \(windowSize)")
         

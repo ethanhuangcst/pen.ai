@@ -2,14 +2,14 @@ import Cocoa
 
 class InitializationService {
     // MARK: - Properties
-    private weak var delegate: PenAIDelegate?
+    private weak var delegate: PenDelegate?
     private var isOnline: Bool = false
     private var internetFailure: Bool = false
     private var databaseFailure: Bool = false
     private var needsOnlineLogoutMode: Bool = false
     
     // MARK: - Initialization
-    init(delegate: PenAIDelegate) {
+    init(delegate: PenDelegate) {
         self.delegate = delegate
     }
     

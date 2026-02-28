@@ -69,51 +69,30 @@ class NewOrEditPrompt: BaseWindow {
         titleLabel.font = NSFont.boldSystemFont(ofSize: 18)
         contentView.addSubview(titleLabel)
         
-        // Prompt Name label
-        promptNameLabel.frame = NSRect(x: 40, y: windowSize.height - 120, width: 120, height: 24)
-        promptNameLabel.stringValue = localizedString(for: "prompt_name_label")
-        promptNameLabel.isBezeled = false
-        promptNameLabel.drawsBackground = false
-        promptNameLabel.isEditable = false
-        promptNameLabel.isSelectable = false
-        contentView.addSubview(promptNameLabel)
-        
-        // Prompt Name input field
-        promptNameField.frame = NSRect(x: 160, y: windowSize.height - 120, width: windowSize.width - 200, height: 24)
-        promptNameField.placeholderString = localizedString(for: "enter_prompt_name_placeholder")
+        // Prompt Name input field (1st row)
+        promptNameField.frame = NSRect(x: 40, y: windowSize.height - 102, width: windowSize.width - 80, height: 24)
         promptNameField.wantsLayer = true
         promptNameField.layer?.backgroundColor = NSColor.lightGray.withAlphaComponent(0.1).cgColor
         promptNameField.layer?.borderWidth = 1.0
         promptNameField.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.5).cgColor
         promptNameField.layer?.cornerRadius = 4.0
-        promptNameField.toolTip = localizedString(for: "enter_prompt_name_tooltip")
         contentView.addSubview(promptNameField)
         
-        // Prompt label
-        promptLabel.frame = NSRect(x: 40, y: windowSize.height - 180, width: 120, height: 24)
-        promptLabel.stringValue = localizedString(for: "prompt_label")
-        promptLabel.isBezeled = false
-        promptLabel.drawsBackground = false
-        promptLabel.isEditable = false
-        promptLabel.isSelectable = false
-        contentView.addSubview(promptLabel)
-        
         // Prompt text field with scroll view
-        let promptScrollView = NSScrollView(frame: NSRect(x: 160, y: 120, width: windowSize.width - 200, height: 240))
+        let promptScrollView = NSScrollView(frame: NSRect(x: 40, y: 44 + 20, width: 520, height: 338))
         promptScrollView.hasVerticalScroller = true
-        promptTextField.frame = NSRect(x: 0, y: 0, width: promptScrollView.frame.width - 20, height: 240)
+        promptTextField.frame = NSRect(x: 0, y: 0, width: promptScrollView.frame.width - 20, height: 338)
         promptTextField.font = NSFont.systemFont(ofSize: 14)
         promptTextField.wantsLayer = true
         promptTextField.layer?.backgroundColor = NSColor.lightGray.withAlphaComponent(0.1).cgColor
         promptTextField.layer?.borderWidth = 1.0
         promptTextField.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.5).cgColor
         promptTextField.layer?.cornerRadius = 4.0
-        promptTextField.toolTip = localizedString(for: "markdown_format_recommended_tooltip")
         promptScrollView.documentView = promptTextField
         contentView.addSubview(promptScrollView)
         
         // Save button
-        saveButton.frame = NSRect(x: windowSize.width - 120, y: 40, width: 100, height: 32)
+        saveButton.frame = NSRect(x: windowSize.width - 68 - 20 - 20, y: 6 + 20, width: 68, height: 32)
         saveButton.title = localizedString(for: "save_button")
         saveButton.bezelStyle = .rounded
         saveButton.target = self
@@ -121,18 +100,27 @@ class NewOrEditPrompt: BaseWindow {
         contentView.addSubview(saveButton)
         
         // Cancel button
-        cancelButton.frame = NSRect(x: windowSize.width - 240, y: 40, width: 100, height: 32)
+        cancelButton.frame = NSRect(x: windowSize.width - 68 - 20 - 68 - 20 - 20, y: 6 + 20, width: 68, height: 32)
         cancelButton.title = localizedString(for: "cancel_button")
         cancelButton.bezelStyle = .rounded
         cancelButton.target = self
         cancelButton.action = #selector(cancelButtonClicked)
         contentView.addSubview(cancelButton)
         
-        // Populate fields if editing an existing prompt
+        // Set up fields based on whether it's a new prompt or edit prompt
         if let prompt = prompt {
+            // Edit prompt: pre-fill with existing values
             promptNameField.stringValue = prompt.promptName
             promptTextField.string = prompt.promptText
+            // Display in Markdown format (preserving Markdown syntax)
+        } else {
+            // New prompt: set placeholder text
+            promptNameField.placeholderString = "Enter your prompt name"
+            // Set placeholder text for NSTextView (since it doesn't have placeholderString property)
+            promptTextField.string = "Enter the prompt - Mark down formatting highly recommended"
         }
+        
+        // Tooltips are not needed as we use placeholder text for new prompts
         
         // Set up tab order
         promptNameField.nextKeyView = promptTextField
@@ -216,7 +204,7 @@ class NewOrEditPrompt: BaseWindow {
         
         // Set window properties to ensure it stays in front
         self.level = .modalPanel // Highest window level, stays above all others
-        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         
         // Make the window modal (blocks interaction with other windows)
         NSApp.activate(ignoringOtherApps: true)
@@ -225,6 +213,9 @@ class NewOrEditPrompt: BaseWindow {
         // Ensure the window stays in front even if other windows are clicked
         self.makeKey()
         self.orderFrontRegardless()
+        
+        // Add observer for app activation to ensure window stays in front
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: NSApplication.didBecomeActiveNotification, object: nil)
         
         // Set first responder to the first text field
         if let contentView = self.contentView {
@@ -245,6 +236,12 @@ class NewOrEditPrompt: BaseWindow {
         NSApp.runModal(for: self)
     }
     
+    /// Ensures the window stays in front when the app becomes active
+    @objc private func appDidBecomeActive() {
+        self.makeKeyAndOrderFront(nil)
+        self.orderFrontRegardless()
+    }
+    
     override func closeWindow() {
         // Show popup message
         let message = isNewPrompt ? 
@@ -259,6 +256,9 @@ class NewOrEditPrompt: BaseWindow {
     private func actuallyCloseWindow() {
         // Reset window open status
         NewOrEditPrompt.isWindowOpen = false
+        
+        // Remove notification observer
+        NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)
         
         // Stop modal and close window
         NSApp.stopModal()

@@ -38,14 +38,14 @@ class BaseWindow: NSWindow {
     }
     
     /// Creates a standard window with all common UI behaviors
-    static func createStandardWindow(size: NSSize, title: String? = nil) -> BaseWindow {
+    static func createStandardWindow(size: NSSize, title: String? = nil, showLogo: Bool = true, showTitle: Bool = true) -> BaseWindow {
         let window = BaseWindow(size: size)
         
         // Create standard content view
         let contentView = window.createStandardContentView(size: size)
         
-        // Add title if provided
-        if let title = title {
+        // Add title if provided and showTitle is true
+        if let title = title, showTitle {
             let titleLabel = NSTextField(frame: NSRect(x: 70, y: size.height - 55, width: size.width - 90, height: 30))
             titleLabel.stringValue = title
             titleLabel.isBezeled = false
@@ -56,8 +56,10 @@ class BaseWindow: NSWindow {
             contentView.addSubview(titleLabel)
         }
         
-        // Add PenAI logo
-        window.addPenAILogo(to: contentView, windowHeight: size.height)
+        // Add PenAI logo if showLogo is true
+        if showLogo {
+            window.addPenAILogo(to: contentView, windowHeight: size.height)
+        }
         
         // Add standard close button
         window.addStandardCloseButton(to: contentView, windowWidth: size.width, windowHeight: size.height)
@@ -95,13 +97,26 @@ class BaseWindow: NSWindow {
         let contentView = NSView(frame: NSRect(origin: .zero, size: size))
         contentView.wantsLayer = true
         
-        // Set light mode background color
+        // Set content view to be transparent
+        contentView.layer?.backgroundColor = NSColor.clear.cgColor
+        
+        // Set custom background image
         if let layer = contentView.layer {
-            layer.backgroundColor = NSColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0).cgColor // Light background (white)
+            let backgroundImagePath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/pen_background_main.png"
+            if let backgroundImage = NSImage(contentsOfFile: backgroundImagePath) {
+                layer.contents = backgroundImage
+                layer.contentsGravity = .resize
+            } else {
+                // Fallback to clear background if image not found
+                layer.backgroundColor = NSColor.clear.cgColor
+                print("BaseWindow: Could not load background image from path: \(backgroundImagePath)")
+            }
         }
         
         contentView.layer?.cornerRadius = 12
         contentView.layer?.masksToBounds = true
+        
+        // Footer container will be added by Pen.swift for the main window only
         
         // Add shadow effect
         let shadow = NSShadow()
@@ -162,7 +177,7 @@ class BaseWindow: NSWindow {
     
     /// Adds a standard close button to the window
     func addStandardCloseButton(to contentView: NSView, windowWidth: CGFloat, windowHeight: CGFloat) {
-        let closeButton = FocusableButton(frame: NSRect(x: windowWidth - 30, y: windowHeight - 30, width: 20, height: 20))
+        let closeButton = NSButton(frame: NSRect(x: windowWidth - 30, y: windowHeight - 30, width: 20, height: 20))
         closeButton.title = ""
         closeButton.bezelStyle = .smallSquare
         closeButton.isBordered = false
@@ -171,6 +186,7 @@ class BaseWindow: NSWindow {
         closeButton.action = #selector(closeWindow)
         closeButton.isEnabled = true // Make close button enabled by default
         closeButton.state = .off // Ensure close button is not selected
+        closeButton.refusesFirstResponder = true // Prevent the button from becoming first responder
         
         // Add hover effect to close button
         closeButton.wantsLayer = true
@@ -196,6 +212,8 @@ class BaseWindow: NSWindow {
             contentView.addSubview(logoView)
         }
     }
+    
+    // Footer container is now added by Pen.swift for the main window only
     
     /// Closes the window
     @objc func closeWindow() {
@@ -511,7 +529,7 @@ class WindowManager {
     /// Positions a window relative to the Pen menu bar icon
     static func positionWindowRelativeToMenuBarIcon(_ window: NSWindow) {
         // Get the status item from the app delegate
-        guard let appDelegate = NSApplication.shared.delegate as? PenAIDelegate,
+        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate,
               let button = appDelegate.statusItem?.button,
               let buttonWindow = button.window else {
             // Fallback to default position if status item isn't available

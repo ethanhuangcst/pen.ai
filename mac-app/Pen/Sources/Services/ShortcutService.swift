@@ -59,7 +59,7 @@ class ShortcutService {
     
     func togglePenWindow() {
         // Get the application delegate
-        guard let appDelegate = NSApplication.shared.delegate as? PenAIDelegate else {
+        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate else {
             return
         }
         

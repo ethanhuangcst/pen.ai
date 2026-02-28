@@ -219,7 +219,7 @@ if arguments.count > 1 {
 let app = NSApplication.shared
 
 // Create and set the delegate
-let delegate = PenAIDelegate()
+let delegate = PenDelegate()
 app.delegate = delegate
 
 // Test bcrypt verification

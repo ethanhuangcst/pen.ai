@@ -338,7 +338,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
                         
                         if fileSizeMB > 1.0 {
                             // Show error message for large file using global popup message
-                            if let appDelegate = NSApplication.shared.delegate as? PenAIDelegate {
+                            if let appDelegate = NSApplication.shared.delegate as? PenDelegate {
                                 appDelegate.displayPopupMessage(LocalizationService.shared.localizedString(for: "file_too_large"))
                             }
                         } else {
@@ -360,7 +360,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
             profileImageView.image = image
         } else {
             // Show error message if image fails to load
-            if let appDelegate = NSApplication.shared.delegate as? PenAIDelegate {
+            if let appDelegate = NSApplication.shared.delegate as? PenDelegate {
                 appDelegate.displayPopupMessage("Failed to load image")
             }
         }
@@ -373,7 +373,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         if !passwordField.stringValue.isEmpty || !confirmField.stringValue.isEmpty {
             if passwordField.stringValue != confirmField.stringValue {
                 // Show password mismatch error
-                if let appDelegate = NSApplication.shared.delegate as? PenAIDelegate {
+                if let appDelegate = NSApplication.shared.delegate as? PenDelegate {
                     appDelegate.displayPopupMessage("Passwords don't match. Please try again.")
                 }
                 return
@@ -381,7 +381,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         }
         
         // Get app delegate and current user
-        guard let appDelegate = NSApplication.shared.delegate as? PenAIDelegate, let currentUser = appDelegate.currentUser else {
+        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate, let currentUser = appDelegate.currentUser else {
             print("AccountTabView: No current user found")
             return
         }
@@ -449,14 +449,14 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         print("AccountTabView: Getting application delegate")
         if let appDelegate = NSApplication.shared.delegate {
             print("AccountTabView: App delegate found: \(appDelegate)")
-            if let penDelegate = appDelegate as? PenAIDelegate {
-                print("AccountTabView: Cast to PenAIDelegate successful")
+            if let penDelegate = appDelegate as? PenDelegate {
+                print("AccountTabView: Cast to PenDelegate successful")
                 penDelegate.setAppMode(.onlineLogout)
                 print("AccountTabView: setAppMode called")
                 penDelegate.setLoginStatus(false)
                 print("AccountTabView: setLoginStatus called")
             } else {
-                print("AccountTabView: Failed to cast to PenAIDelegate")
+                print("AccountTabView: Failed to cast to PenDelegate")
                 print("AccountTabView: Delegate type: \(type(of: appDelegate))")
             }
         } else {

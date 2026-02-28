@@ -116,6 +116,24 @@
 /* UI Controls Test */
 "ui_controls_test" = "UI Controls Test";
 
+/* Main window */
+"pen_ai_title" = "Pen AI";
+"hello_world" = "Hello World!";
+
+/* AI Configurations */
+"no_ai_configuration" = "No AI Configuration set up yet.\nGo to Preference → AI Configuration to set up.";
+
+/* Menu items */
+"preferences" = "Preferences";
+"logout" = "Logout";
+"login" = "Login";
+"reload" = "Reload";
+"exit" = "Exit";
+
+/* Menu bar fallback titles */
+"pen_menu_title" = "Pen";
+"pen_menu_title_offline" = "Pen (Offline)";
+
 /* Prompts tab */
 "prompts_title" = "Prompts";
 "first_prompt_default" = "First prompt will be the default prompt";
