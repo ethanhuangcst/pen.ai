@@ -184,7 +184,6 @@ Scenario: PenAI handles login failure
 ```
 
 
-//ToDo 
 ## User Story 6
 
 As PenAI user, I want to establish all AI connections I have set up, and put them into a global pool so that I can easily access and use them in the app.
@@ -208,9 +207,9 @@ Scenario: Pen app loads all AI connection configurations for the user - no AI Co
   AND the app launched successfully as online-login mode
   AND completed loading the AI Connection configurations from the database
   When it returns an empty list of AI Configuration configurations for the user
-  Then wait until menu bar icon is loaded
+  Then wait until menu bar icon is fade out
   AND all other pop up messages are closed
-  AND provide a new pop up message: "You don't have any AI Configuration set up yet. Please go to Preference -> AI Configuration to set up your AI Configuration."
+  AND provide a new pop up message: "You don't have any AI Configuration set up yet. " + new line +Please go to Preference -> AI Configuration to set up your AI Configuration."
 
 
 Scenario: Pen app loads all AI connection configurations for the user - at least one AI Configuration

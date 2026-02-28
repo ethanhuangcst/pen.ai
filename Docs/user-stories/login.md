@@ -28,6 +28,7 @@ Scenario: User logs in with valid credentials
   And print in terminal "********************************* ONLINE-LOGIN MODE "*********************************"
   AND load the menu bar icon and it's behaviors as online mode
   AND create a global user object with the user data
+  AND establish all AI connections for this user
 
 
 Scenario: Login with remember me enabled

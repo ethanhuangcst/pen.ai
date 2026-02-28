@@ -15,6 +15,7 @@ Scenario: Load menu bar icon and it's behaviors as online-login mode when all in
   Then the Pen app should run as  online-login mode
   AND a menu bar icon (icon.png) appears
   And the icon is clickable
+  And wait until the menubar icon is fully loaded
   And display a tooltip message "Hello, {user_name}, I'm Pen, your AI writing assistent."
   And the tooltip message will fade out after 2 seconds
   And left click the icon opens the PenAI window
@@ -27,33 +28,36 @@ Scenario: Load menu bar icon and it's behaviors as online-logout mode when initi
   AND Initialization step 3 - load user data failed
   Then the Pen app should run as  online-logout mode
   AND a menu bar icon (icon.png) appears
+  And wait until the menubar icon is fully loaded
   And display a tooltip message "Hello, I'm Pen, your AI writing assistent. Please login to continue." 
   And the tooltip message will fade out after 2 seconds
   And the icon is clickable
   And left click the icon opens the Login window
-  And right click the icon displays exit
+  And right click the icon displays 2 options: Login and Exit
 
 Scenario: Load menu bar icon and it's behaviors as online-login mode when user manually login
   Given the Pen app is running
   When the user manually login successfully
   Then the Pen app should run as  online-login mode
   AND a menu bar icon (icon.png) appears
+  And wait until the menubar icon is fully loaded
   And display a tooltip message "Hello, {user_name}, I'm Pen, your AI writing assistent." 
   And the tooltip message will fade out after 2 seconds
   And the icon is clickable
   And left click the icon opens the PenAI window
-  And right click the icon displays a dropdown menu with preferences and exit
+  And right click the icon displays a dropdown menu with preferences, logout and exit
 
 Scenario: Load menu bar icon and it's behaviors as online-login mode when user manually logout
   Given the Pen app is running
   When the user manually logout successfully
   Then the Pen app should run as  online-logout mode
   AND a menu bar icon (icon.png) appears
+  And wait until the menubar icon is fully loaded
   And display a tooltip message "Hello, I'm Pen, your AI writing assistent. Please login to continue."
   And the tooltip message will fade out after 2 seconds
   And the icon is clickable
   And left click the icon opens the Login window
-  And right click the icon displays exit
+  And right click the icon displays 2 options: Login and Exit
 
 Scenario: Load menu bar icon and it's behaviors as offline mode when initialization steps 1 pass but step 2 fails
   Given the Pen app is launching in it's Initialization process
@@ -61,11 +65,13 @@ Scenario: Load menu bar icon and it's behaviors as offline mode when initializat
   AND Initialization step 2 - load dabatase connectivity pool failed
   Then the Pen app should run as  offline-db-failure mode
   AND a menu bar icon (icon_offline.png) appears
+  And wait until the menubar icon is fully loaded
+  And wait until the menubar icon is fully loaded
   And display a tooltip message "Oops, something went wrong with our service, please try again later..." 
   And the tooltip message will fade out after 2 seconds
   And the icon is clickable
   And left click the icon displays "Reload" to restart the 3-step initialization process
-  And right click the icon displays exit
+  And right click the icon displays reload and exit
 
 
 Scenario: Load menu bar icon and it's behaviors as offline mode when initialization steps 1 fails
@@ -73,8 +79,9 @@ Scenario: Load menu bar icon and it's behaviors as offline mode when initializat
   When Initialization step 1 - test internet connectivity successfully failed
   Then the Pen app should run as  offline-internet-failure mode
   AND a menu bar icon (icon_offline.png) appears
+  And wait until the menubar icon is fully loaded
   And display a tooltip message "You don't seem to have an internet connection, please check your network settings"
   And the tooltip message will fade out after 2 seconds
   And the left click the icon displays "Reload" to restart the 3-step initialization process
-  And right click the icon displays exit
+  And right click the icon displays reload and exit
 ```

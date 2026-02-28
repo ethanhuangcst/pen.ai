@@ -32,7 +32,7 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
         setupShortcutKey()
     }
     
-    private func performInitialization() {
+    @objc private func performInitialization() {
         let initializationService = InitializationService(delegate: self)
         initializationService.performInitialization()
     }
@@ -49,22 +49,29 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
             if failureType == "internet" {
                 self.internetFailure = internetFailure
                 print("PenAIDelegate: Setting 'Internet Failure' flag to \(internetFailure)")
-                
-                // Display internet failure message
-                if internetFailure {
-                    displayPopupMessage(LocalizationService.shared.localizedString(for: "internet_failure"))
-                }
             } else if failureType == "database" {
                 databaseFailure = true
                 print("PenAIDelegate: Setting 'Database Failure' flag to true")
-                
-                // Display database failure message
-                displayPopupMessage(LocalizationService.shared.localizedString(for: "database_failure"))
             }
         }
         
         // Only update status icon if statusItem is initialized
         updateStatusIcon(online: online)
+        
+        // Wait until menu bar icon is fully loaded before displaying popup messages
+        if !online {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                if let self = self {
+                    if failureType == "internet" && internetFailure {
+                        // Display internet failure message
+                        self.displayPopupMessage(LocalizationService.shared.localizedString(for: "internet_failure"))
+                    } else if failureType == "database" {
+                        // Display database failure message
+                        self.displayPopupMessage(LocalizationService.shared.localizedString(for: "database_failure"))
+                    }
+                }
+            }
+        }
     }
     
 
@@ -313,9 +320,17 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
                 
                 // Add menu items based on app mode
                 if isOnline && isLoggedIn {
-                    // Online-login mode: Show preferences and exit
+                    // Online-login mode: Show preferences, logout and exit
                     menu.addItem(NSMenuItem(title: "Preferences", action: #selector(openPreferences), keyEquivalent: "p"))
-                    menu.addItem(NSMenuItem(title: "Test Window", action: #selector(openTestWindow), keyEquivalent: "t"))
+                    menu.addItem(NSMenuItem(title: "Logout", action: #selector(logout), keyEquivalent: "l"))
+                    menu.addItem(NSMenuItem.separator())
+                } else if isOnline && !isLoggedIn {
+                    // Online-logout mode: Show login and exit
+                    menu.addItem(NSMenuItem(title: "Login", action: #selector(openLoginWindow), keyEquivalent: "l"))
+                    menu.addItem(NSMenuItem.separator())
+                } else {
+                    // Offline mode: Show reload and exit
+                    menu.addItem(NSMenuItem(title: "Reload", action: #selector(performInitialization), keyEquivalent: "r"))
                     menu.addItem(NSMenuItem.separator())
                 }
                 
@@ -328,6 +343,12 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+    }
+    
+    @objc private func logout() {
+        print("PenAIDelegate: User logged out")
+        setLoginStatus(false)
+        setAppMode(.onlineLogout)
     }
     
 
@@ -642,7 +663,7 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
         print("PenAIDelegate: Shortcut key functionality still works")
     }
     
-    func openLoginWindow() {
+    @objc func openLoginWindow() {
         print("PenAIDelegate: Opening login window")
         
         // Create or show login window
@@ -696,6 +717,53 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
     func createGlobalUserObject(user: User) {
         // Store user information and trigger login status update
         setLoginStatus(true, user: user)
+        
+        // Load and test AI configurations for the user
+        loadAndTestAIConfigurations(user: user)
+    }
+    
+    /// Loads and tests AI configurations for the user
+    private func loadAndTestAIConfigurations(user: User) {
+        Task {
+            do {
+                // Load all AI configurations for the user
+                let configurations = try await AIManager.shared.getConnections(for: user.id)
+                
+                print("PenAIDelegate: Loaded \(configurations.count) AI configurations for user \(user.name)")
+                
+                if configurations.isEmpty {
+                    // No AI configurations found
+                    print("PenAIDelegate: No AI configurations found for user \(user.name)")
+                    // Wait until previous popup messages fade out (3 seconds + 0.3 seconds fade out)
+                    try await Task.sleep(nanoseconds: 3_300_000_000) // 3.3 seconds
+                    // Show shorter popup message
+                    WindowManager.displayPopupMessage("No AI Configuration set up yet.\nGo to Preference → AI Configuration to set up.")
+                } else {
+                    // Test each AI configuration
+                    for (index, configuration) in configurations.enumerated() {
+                        print("\n********************************** Test AI Configuration for \(user.name) : Provider \(index + 1): \(configuration.apiProvider) *********************************")
+                        
+                        do {
+                            // Test the connection
+                            let success = try await AIManager.shared.testConnection(
+                                apiKey: configuration.apiKey,
+                                providerName: configuration.apiProvider
+                            )
+                            
+                            if success {
+                                print("PenAIDelegate: AI Configuration \(configuration.apiProvider) test successful")
+                            } else {
+                                print("PenAIDelegate: AI Configuration \(configuration.apiProvider) test failed")
+                            }
+                        } catch {
+                            print("PenAIDelegate: Error testing AI Configuration \(configuration.apiProvider): \(error)")
+                        }
+                    }
+                }
+            } catch {
+                print("PenAIDelegate: Error loading AI configurations: \(error)")
+            }
+        }
     }
     
     /// Sets the login status and updates the menu bar icon
@@ -711,12 +779,15 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
         // Update the menu bar icon based on login status
         updateStatusIcon(online: isOnline)
         
-        // Display appropriate popup message
-        if loggedIn {
-            let greeting = LocalizationService.shared.localizedString(for: "hello_user", withFormat: self.userName)
-            displayPopupMessage(greeting)
-        } else {
-            displayPopupMessage(LocalizationService.shared.localizedString(for: "hello_guest"))
+        // Wait until menu bar icon is fully loaded before displaying popup message
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            // Display appropriate popup message
+            if loggedIn {
+                let greeting = LocalizationService.shared.localizedString(for: "hello_user", withFormat: self?.userName ?? "")
+                self?.displayPopupMessage(greeting)
+            } else {
+                self?.displayPopupMessage(LocalizationService.shared.localizedString(for: "hello_guest"))
+            }
         }
     }
     

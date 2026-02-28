@@ -148,6 +148,9 @@ class InitializationService {
                     delegate?.setLoginStatus(true, user: user)
                     // Set online-login mode
                     delegate?.setOnlineMode(true)
+                    
+                    // Load and test AI configurations for the user
+                    loadAndTestAIConfigurations(user: user)
                 } else {
                     print(" ********************************** Auto Login Failed **********************************")
                     print(" ********************************** ONLINE-LOGOUT MODE **********************************")
@@ -164,6 +167,50 @@ class InitializationService {
             print("InitializationService: Setting online-logout mode")
             // End initialization process first, then load menu bar icon
             needsOnlineLogoutMode = true
+        }
+    }
+    
+    /// Loads and tests AI configurations for the user
+    private func loadAndTestAIConfigurations(user: User) {
+        Task {
+            do {
+                // Load all AI configurations for the user
+                let configurations = try await AIManager.shared.getConnections(for: user.id)
+                
+                print("InitializationService: Loaded \(configurations.count) AI configurations for user \(user.name)")
+                
+                if configurations.isEmpty {
+                    // No AI configurations found
+                    print("InitializationService: No AI configurations found for user \(user.name)")
+                    // Wait until previous popup messages fade out (3 seconds + 0.3 seconds fade out)
+                    try await Task.sleep(nanoseconds: 3_300_000_000) // 3.3 seconds
+                    // Show shorter popup message
+                    WindowManager.displayPopupMessage("No AI Configuration set up yet.\nGo to Preference → AI Configuration to set up.")
+                } else {
+                    // Test each AI configuration
+                    for (index, configuration) in configurations.enumerated() {
+                        print("\n********************************** Test AI Configuration for \(user.name) : Provider \(index + 1): \(configuration.apiProvider) **********************************")
+                        
+                        do {
+                            // Test the connection
+                            let success = try await AIManager.shared.testConnection(
+                                apiKey: configuration.apiKey,
+                                providerName: configuration.apiProvider
+                            )
+                            
+                            if success {
+                                print("InitializationService: AI Configuration \(configuration.apiProvider) test successful")
+                            } else {
+                                print("InitializationService: AI Configuration \(configuration.apiProvider) test failed")
+                            }
+                        } catch {
+                            print("InitializationService: Error testing AI Configuration \(configuration.apiProvider): \(error)")
+                        }
+                    }
+                }
+            } catch {
+                print("InitializationService: Error loading AI configurations: \(error)")
+            }
         }
     }
 }

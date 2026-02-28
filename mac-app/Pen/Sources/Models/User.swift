@@ -23,15 +23,7 @@ class User {
     
     /// Creates a User instance from database row
     static func fromDatabaseRow(_ row: [String: Any]) -> User? {
-        print("[User] fromDatabaseRow called with row: \(row)")
-        
         // Check each field
-        if let id = row["id"] as? Int {
-            print("[User] id: \(id)")
-        } else {
-            print("[User] Missing or invalid id: \(row["id"] ?? "nil")")
-        }
-        
         if let name = row["name"] as? String {
             print("[User] name: \(name)")
         } else {
@@ -44,16 +36,10 @@ class User {
             print("[User] Missing or invalid email: \(row["email"] ?? "nil")")
         }
         
-        if let password = row["password"] as? String {
-            print("[User] password: \(password)")
+        if let id = row["id"] as? Int {
+            print("[User] id: \(id)")
         } else {
-            print("[User] Password field not present in database row")
-        }
-        
-        if let createdAtStr = row["createdAt"] as? String {
-            print("[User] createdAtStr: \(createdAtStr)")
-        } else {
-            print("[User] Missing or invalid createdAt: \(row["createdAt"] ?? "nil")")
+            print("[User] Missing or invalid id: \(row["id"] ?? "nil")")
         }
         
         // Handle id as string or int
@@ -90,7 +76,6 @@ class User {
         let profileImage = row["profileImage"] as? String
         let systemFlag = row["system_flag"] as? String ?? "PEN"
         
-        print("[User] profileImage: \(profileImage != nil ? "[BASE64 ENCODED IMAGE]" : "nil")")
         print("[User] systemFlag: \(systemFlag)")
         
         // Get password if present (optional)
