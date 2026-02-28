@@ -446,6 +446,13 @@ class BaseWindow: NSWindow {
 }
 
 class WindowManager {
+    // MARK: - Static Properties
+    
+    /// Queue for popup messages to ensure they are displayed one after another
+    private static var messageQueue: [String] = []
+    /// Flag to indicate if a message is currently being displayed
+    private static var isDisplayingMessage: Bool = false
+    
     // MARK: - Static Methods
     
     /// Installs the main menu with Edit actions for system shortcuts
@@ -560,6 +567,29 @@ class WindowManager {
     
     /// Displays a global popup message following the specified design guidelines
     static func displayPopupMessage(_ message: String) {
+        // Add message to queue
+        messageQueue.append(message)
+        
+        // If no message is currently being displayed, process the queue
+        if !isDisplayingMessage {
+            processMessageQueue()
+        }
+    }
+    
+    /// Processes the message queue, displaying one message at a time
+    private static func processMessageQueue() {
+        // Check if there are messages in the queue
+        guard !messageQueue.isEmpty else {
+            isDisplayingMessage = false
+            return
+        }
+        
+        // Mark that we're displaying a message
+        isDisplayingMessage = true
+        
+        // Get the next message from the queue
+        let message = messageQueue.removeFirst()
+        
         // Ensure UI operations are on the main thread
         DispatchQueue.main.async {
             // Calculate message size
@@ -639,6 +669,11 @@ class WindowManager {
                     popupWindow.animator().alphaValue = 0.0
                 } completionHandler: {
                     popupWindow.orderOut(nil)
+                    
+                    // After the current message is done, process the next one
+                    DispatchQueue.main.async {
+                        processMessageQueue()
+                    }
                 }
             }
             

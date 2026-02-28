@@ -76,8 +76,8 @@
 "test_button" = "测试";
 "provider_column" = "提供商";
 "delete_column" = "删除";
-"test_column" = "测试";
-"first_connection_default" = "第一个连接将被用作默认连接";
+"test_column" = "保存";
+"first_connection_default" = "第一个连接将被用作默认连接。";
 "connections_saved_successfully" = "连接保存成功";
 "delete_ai_connection" = "删除 AI 连接";
 "delete_confirmation" = "确定要删除 %@ 连接吗？";

@@ -12,7 +12,6 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
     private let defaultLabel = NSTextField()
     private let configurationsTable = NSTableView()
     private let addButton = FocusableButton()
-    private let saveButton = FocusableButton()
     private let tableContainer = NSView()
     
     // Data properties
@@ -83,8 +82,18 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         guard let userId = user?.id else { return }
         
         do {
-            configurations = try await AIManager.shared.getConnections(for: userId)
-            print("Loaded \(configurations.count) AI configurations")
+            let databaseConfigurations = try await AIManager.shared.getConnections(for: userId)
+            print("Loaded \(databaseConfigurations.count) AI configurations from database")
+            
+            // Preserve unsaved configurations (id == 0)
+            let unsavedConfigurations = configurations.filter { $0.id == 0 }
+            
+            // Combine database configurations with unsaved configurations
+            var updatedConfigurations = databaseConfigurations
+            updatedConfigurations.append(contentsOf: unsavedConfigurations)
+            
+            configurations = updatedConfigurations
+            print("Total configurations: \(configurations.count) (\(databaseConfigurations.count) from database, \(unsavedConfigurations.count) unsaved)")
             
             // Reload table view on main thread
             DispatchQueue.main.async {
@@ -204,17 +213,6 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         addButton.target = self
         addButton.action = #selector(addNewConfiguration)
         addSubview(addButton)
-        
-        // Save button
-        saveButton.frame = NSRect(x: windowWidth - 108, y: 10, width: 88, height: 32)
-        saveButton.title = LocalizationService.shared.localizedString(for: "save_button")
-        saveButton.bezelStyle = .rounded
-        saveButton.layer?.borderWidth = 1.0
-        saveButton.layer?.borderColor = NSColor.systemBlue.cgColor
-        saveButton.layer?.cornerRadius = 6.0
-        saveButton.target = self
-        saveButton.action = #selector(saveConfigurations)
-        addSubview(saveButton)
     }
     
     // MARK: - Public Methods
@@ -241,7 +239,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         case "delete":
             return createDeleteButton(row: row)
         case "test":
-            return createTestButton(row: row)
+            return createTestButton(configuration: configuration, row: row)
         default:
             return nil
         }
@@ -300,15 +298,17 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         return button
     }
     
-    private func createTestButton(row: Int) -> NSButton {
+    private func createTestButton(configuration: AIManager.PublicAIConfiguration, row: Int) -> NSButton {
         let button = NSButton(frame: NSRect(x: 9, y: 2, width: 20, height: 20))
         button.bezelStyle = .circular
         button.setButtonType(.momentaryPushIn)
-        button.image = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: "Test")
+        button.image = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: "Save")
         button.target = self
         button.action = #selector(testConfiguration(_:))
         button.tag = row
         button.contentTintColor = NSColor.systemBlue
+        // Disable button if API key is empty
+        button.isEnabled = !configuration.apiKey.isEmpty
         return button
     }
     
@@ -342,6 +342,8 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                 DispatchQueue.main.async {
                     self.configurations.remove(at: row)
                     self.configurationsTable.reloadData()
+                    // Show popup message
+                    WindowManager.displayPopupMessage("AI Connection deleted successfully!")
                 }
                 
                 print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) deleted! $$$$$$$$$$$$$$$$$$$$")
@@ -361,11 +363,25 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
             print("Testing configuration: \(configuration.apiProvider)")
             
             // Test the configuration
-            testAIConfiguration(configuration: configuration)
+            testAIConfiguration(configuration: configuration, row: row)
         }
     }
     
-    private func testAIConfiguration(configuration: AIManager.PublicAIConfiguration) {
+    private func testAIConfiguration(configuration: AIManager.PublicAIConfiguration, row: Int) {
+        // Check for duplicate configurations
+        let duplicateRows = checkForDuplicates(configuration: configuration, currentRow: row)
+        if !duplicateRows.isEmpty {
+            // Highlight duplicate rows
+            highlightDuplicateRows(duplicateRows)
+            
+            // Show popup message
+            WindowManager.displayPopupMessage("Duplicated API Key or Provider, AI Connection configuration not saved.\nPlease check the API Key and Provider.")
+            return
+        }
+        
+        // Show testing message
+        WindowManager.displayPopupMessage("Testing \(configuration.apiProvider) before saving the configuration...")
+        
         // Make actual API call to test the configuration
         Task {
             do {
@@ -376,18 +392,110 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                 )
                 
                 // Test successful
-                print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) is established $$$$$$$$$$$$$$$$$$$$")
+                let isNewConnection = configuration.id == 0
+                
+                if isNewConnection, let userId = user?.id {
+                    // Create new connection
+                    try await AIManager.shared.createConnection(
+                        userId: userId,
+                        apiKey: configuration.apiKey,
+                        providerName: configuration.apiProvider
+                    )
+                    print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(configuration.apiProvider) is added $$$$$$$$$$$$$$$$$$$$")
+                    
+                    // Remove the unsaved configuration from local array
+                    if let index = configurations.firstIndex(where: { $0.id == 0 && $0.apiKey == configuration.apiKey && $0.apiProvider == configuration.apiProvider }) {
+                        configurations.remove(at: index)
+                    }
+                } else {
+                    // Update existing connection
+                    try await AIManager.shared.updateConnection(
+                        id: configuration.id,
+                        apiKey: configuration.apiKey,
+                        providerName: configuration.apiProvider
+                    )
+                    print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(configuration.apiProvider) is updated $$$$$$$$$$$$$$$$$$$$")
+                }
+                
+                // Reload configurations to get the updated list
+                await loadConfigurations()
                 
                 DispatchQueue.main.async {
-                    WindowManager.displayPopupMessage("AI Configuration \(configuration.apiProvider) is established successfully!")
+                    // Check if the row still exists
+                    if row < self.configurations.count {
+                        // Highlight the API key field in red for 2 seconds
+                        if let textField = self.configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
+                            textField.layer?.borderWidth = 1.0
+                            textField.layer?.borderColor = NSColor.systemRed.cgColor
+                            textField.layer?.cornerRadius = 4.0
+                            textField.toolTip = "AI Connection test passed"
+                            
+                            // Reset highlight after 2 seconds
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                textField.layer?.borderWidth = 0.0
+                                textField.toolTip = "API Key is required"
+                            }
+                        }
+                    }
+                    
+                    // Show popup message with user's name
+                    if let username = self.user?.name {
+                        if isNewConnection {
+                            let message = "AI Connection test passed!\nNew AI Connection \(configuration.apiProvider) created for \(username)"
+                            WindowManager.displayPopupMessage(message)
+                        } else {
+                            let message = "AI Connection test passed!\nAI Connection configuration \(configuration.apiProvider) updated for \(username)"
+                            WindowManager.displayPopupMessage(message)
+                        }
+                    } else {
+                        if isNewConnection {
+                            WindowManager.displayPopupMessage("AI Connection test passed!\nNew AI Connection \(configuration.apiProvider) created.")
+                        } else {
+                            WindowManager.displayPopupMessage("AI Connection test passed!\nAI Connection configuration updated.")
+                        }
+                    }
                 }
             } catch {
                 // Test failed
-                print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) is failed $$$$$$$$$$$$$$$$$$$$")
+                print(" $$$$$$$$$$$$$$$$$$$$ AI Connection test failed $$$$$$$$$$$$$$$$$$$$")
                 print("Error testing configuration: \(error)")
                 
                 DispatchQueue.main.async {
-                    WindowManager.displayPopupMessage("Failed to establish AI Configuration \(configuration.apiProvider)!")
+                    // Check if the row still exists
+                    if row < self.configurations.count {
+                        // Highlight the API key field in red for 2 seconds
+                        if let textField = self.configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
+                            textField.layer?.borderWidth = 1.0
+                            textField.layer?.borderColor = NSColor.systemRed.cgColor
+                            textField.layer?.cornerRadius = 4.0
+                            textField.toolTip = "AI Connection test failed"
+                            
+                            // Reset highlight after 2 seconds
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                textField.layer?.borderWidth = 0.0
+                                textField.toolTip = "API Key is required"
+                            }
+                        }
+                    }
+                    
+                    // Show popup message with user's name
+                    if let username = self.user?.name {
+                        let isNewConnection = configuration.id == 0
+                        if isNewConnection {
+                            let message = "AI Connection test failed!\nNo new AI Connection \(configuration.apiProvider) created for \(username).\nPlease check your configuration and try again."
+                            WindowManager.displayPopupMessage(message)
+                        } else {
+                            let message = "AI Connection test failed!\nAI Connection configuration \(configuration.apiProvider) not updated for \(username).\nPlease check your configuration and try again."
+                            WindowManager.displayPopupMessage(message)
+                        }
+                    } else {
+                        let isNewConnection = configuration.id == 0
+                        if isNewConnection {
+                            WindowManager.displayPopupMessage("AI Connection test failed!\nNo new AI Connection \(configuration.apiProvider) created.\nPlease check your configuration and try again.")
+                        } else {
+                            WindowManager.displayPopupMessage("AI Connection test failed!\nAPI configuration not updated.\nPlease check your configuration and try again.")
+                        }
+                    }
                 }
             }
         }
@@ -409,112 +517,42 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         configurations.append(newConfiguration)
         configurationsTable.reloadData()
     }
-    
-    @objc private func saveConfigurations() {
-        guard let userId = user?.id else { return }
-        
-        // Validate configurations
-        var validConfigurations: [AIManager.PublicAIConfiguration] = []
-        var hasInvalidConfigurations = false
-        var hasDuplicateConfigurations = false
-        var invalidRows: [Int] = []
+
+    private func checkForDuplicates(configuration: AIManager.PublicAIConfiguration, currentRow: Int) -> [Int] {
         var duplicateRows: [Int] = []
         
-        // Check for duplicates
-        var seenConfigurations: Set<String> = []
-        
-        for (index, configuration) in configurations.enumerated() {
-            if configuration.apiKey.isEmpty {
-                hasInvalidConfigurations = true
-                invalidRows.append(index)
-            } else {
-                // Check for duplicates based on provider and API key
-                let configurationKey = "\(configuration.apiProvider)-\(configuration.apiKey)"
-                if seenConfigurations.contains(configurationKey) {
-                    hasDuplicateConfigurations = true
-                    duplicateRows.append(index)
-                } else {
-                    seenConfigurations.insert(configurationKey)
-                    validConfigurations.append(configuration)
-                }
+        for (index, config) in configurations.enumerated() {
+            if index != currentRow && config.apiProvider == configuration.apiProvider && config.apiKey == configuration.apiKey {
+                duplicateRows.append(index)
             }
         }
         
-        // Highlight invalid and duplicate fields
-        highlightInvalidFields(invalidRows: invalidRows, duplicateRows: duplicateRows)
+        return duplicateRows
+    }
+
+    private func highlightDuplicateRows(_ rows: [Int]) {
+        for row in rows {
+            if let textField = configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
+                textField.layer?.borderWidth = 1.0
+                textField.layer?.borderColor = NSColor.systemRed.cgColor
+                textField.layer?.cornerRadius = 4.0
+                textField.toolTip = "Duplicated configuration"
+            }
+        }
         
-        Task {
-            var saveSuccess = true
-            var newlyCreatedConfigurations: [AIManager.PublicAIConfiguration] = []
-            
-            for configuration in validConfigurations {
-                do {
-                    // For new configurations (id == 0), create them
-                    if configuration.id == 0 {
-                        try await AIManager.shared.createConnection(
-                            userId: userId,
-                            apiKey: configuration.apiKey,
-                            providerName: configuration.apiProvider
-                        )
-                        print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) saved! $$$$$$$$$$$$$$$$$$$$")
-                        newlyCreatedConfigurations.append(configuration)
-                    } else {
-                        // TODO: Implement update functionality
-                        print("Updating configuration: \(configuration.id)")
-                    }
-                } catch {
-                    print(" $$$$$$$$$$$$$$$$$$$$ Failed to save AI Configuration \(configuration.apiProvider) !!!  $$$$$$$$$$$$$$$$$$$$")
-                    print("Error saving configuration: \(error)")
-                    saveSuccess = false
-                }
-            }
-            
-            // Only reload configurations if all configurations were saved successfully
-            if saveSuccess && !hasInvalidConfigurations && !hasDuplicateConfigurations {
-                await loadConfigurations()
-            } else if saveSuccess && (hasInvalidConfigurations || hasDuplicateConfigurations) {
-                // Combine duplicate and invalid rows, ensuring no duplicates
-                var rowsToRemove = Set<Int>()
-                rowsToRemove.formUnion(duplicateRows)
-                rowsToRemove.formUnion(invalidRows)
-                
-                DispatchQueue.main.async {
-                    self.configurationsTable.reloadData()
-                    
-                    // Remove invalid and duplicate configurations after 1 second
-                    if !rowsToRemove.isEmpty {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                            // Sort rows in reverse order to avoid index shifting issues
-                            let sortedRows = Array(rowsToRemove).sorted(by: >)
-                            for row in sortedRows {
-                                if row < self.configurations.count {
-                                    self.configurations.remove(at: row)
-                                }
-                            }
-                            self.configurationsTable.reloadData()
-                        }
-                    }
-                }
-            }
-            
-            // Show appropriate message
-            DispatchQueue.main.async {
-                if !saveSuccess {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_save_configurations"))
-                } else if hasInvalidConfigurations && hasDuplicateConfigurations {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_valid_no_duplicate_configurations_saved"))
-                } else if hasInvalidConfigurations {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_valid_api_key_configurations_saved"))
-                } else if hasDuplicateConfigurations {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "only_non_duplicate_configurations_saved"))
-                    print(" $$$$$$$$$$$$$$$$$$$$ AI Configurations saved! $$$$$$$$$$$$$$$$$$$$")
-                } else {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "configurations_saved_successfully"))
+        // Reset highlights after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            for row in rows {
+                if let textField = self.configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
+                    textField.layer?.borderWidth = 0.0
+                    textField.toolTip = "API Key is required"
                 }
             }
         }
     }
-    
+
+
+
     private func highlightInvalidFields(invalidRows: [Int], duplicateRows: [Int]) {
         // Loop through all rows and highlight fields
         for row in 0..<configurations.count {
@@ -692,6 +730,11 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
             if row < configurations.count {
                 // Reset border as soon as user starts typing
                 textField.layer?.borderWidth = 0.0
+                // Enable/disable Save button based on API key
+                let apiKey = textField.stringValue
+                if let saveButton = configurationsTable.view(atColumn: 3, row: row, makeIfNecessary: false) as? NSButton {
+                    saveButton.isEnabled = !apiKey.isEmpty
+                }
             }
         }
     }

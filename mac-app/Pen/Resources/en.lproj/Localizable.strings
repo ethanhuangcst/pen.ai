@@ -76,8 +76,8 @@
 "test_button" = "Test";
 "provider_column" = "Provider";
 "delete_column" = "Delete";
-"test_column" = "Test";
-"first_connection_default" = "The first connection will be used as default";
+"test_column" = "Save";
+"first_connection_default" = "The first connection will be used as default.";
 "connections_saved_successfully" = "Connections saved successfully";
 "delete_ai_connection" = "Delete AI Connection";
 "delete_confirmation" = "Are you sure you want to delete the %@ connection?";

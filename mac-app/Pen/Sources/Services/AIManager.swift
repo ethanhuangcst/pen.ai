@@ -783,6 +783,29 @@ public class AIManager {
         }
     }
     
+    // Update an existing connection
+    public func updateConnection(id: Int, apiKey: String, providerName: String) async throws -> Bool {
+        do {
+            // Get a connection from the pool
+            guard let connection = databasePool.getConnection() else {
+                throw AIError.configurationError("Failed to get database connection")
+            }
+            
+            defer {
+                // Return the connection to the pool
+                databasePool.returnConnection(connection)
+            }
+            
+            // Execute the query
+            let query = "UPDATE ai_connections SET apiKey = '\(apiKey)', apiProvider = '\(providerName)', updatedAt = NOW() WHERE id = \(id)"
+            try await connection.execute(query: query)
+            return true
+        } catch {
+            print("Error updating AI connection: \(error)")
+            throw error
+        }
+    }
+    
     // MARK: - Private Methods
     
     private func loadProviderByName(_ name: String) async throws -> AIModelProvider? {

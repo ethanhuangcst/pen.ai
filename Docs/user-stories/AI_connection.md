@@ -2,9 +2,10 @@
 AI Connection Management
 -----------------
 
+//DONE
 ## User Story ID: US-001
 As a Pen user, I want to list all my AI connections, so that I can manage them easily.
-
+//DONE
 ### Acceptance Criteria ID: US-001-001
 Scenario: List all AI connections
 Given: The app is running
@@ -16,106 +17,48 @@ AND displays them in a list
 - Column 1: Provider Name, dropdown menu, loaded from AI_MODEL_PROVIDER objects
 - Column 2: API Key (prefilled with existing key if any), text field, editable
 - Column 3: Delete button, to delete the connection from database and remove from the list
-- Column 4: Test button, to test the AI connection by calling the provider's API with a test prompt
+- Column 4: Save button, to test & save the AI connection to the database
+AND the Save button will be disabled unless the API key or provider is changed
 AND supports scrolling to view all connections if there are more than fit on the screen
 
-
-
+//DONE
 ## User Story ID: US-002
-As a Pen user, I want to create AI connections by using the AIConnectionService, so that I can use AI connection from multiple providers.
-
+As a Pen user, I want to add a new AI connection to the list, so that I can enter the provider and API key for the connection and save it to the database.
+//DONE
 ### Acceptance Criteria ID: US-002-001
-Scenario: Create local AI_CONNECTION and save to DB - success
+Scenario: Create a new AI connection row to the list
 Given: The app is running
 AND the user has logged in
-AND the AI_MODEL_PROVIDER objects are created
-AND have providers' information loaded from the database
-When: The user starts creating an AI_API_CONNECTION
-AND the user has selected a provider
-AND the user enters a valid API key
-AND the user clicks the save button to save the new AI_CONNECTION
-Then: The AI_CONNECTION service creates a new connection object
-AND witout doing a APIConnectivityTest
-AND saves the connection object information to the database successfully
-AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection " + provider + " saved! $$$$$$$$$$$$$$$$$$$$"
-AND the new connection appears in the user's list of AI connections
-AND display a popup message "AI Connections saved successfully!"
+AND the user opened Preferences window, AI Connection tab
+When: The user clicks the New button to create a new AI connection
+Then: A new row is added to the list with default provider "OpenAI" and empty API Key field
+AND the Save button is disabled until the user enters a API key or changes the provider
 
+//DONE
 ### Acceptance Criteria ID: US-002-002
-Scenario: Create local AI_CONNECTION and save to DB - API Key empty
+Scenario: Save button disabled when API key is empty
 Given: The app is running
 AND the user has logged in
-AND the AI_MODEL_PROVIDER objects are created
-AND have providers' information loaded from the database
-When: The user starts creating an AI_API_CONNECTION
-AND the user has selected a provider
-AND the user leaves API Key empty
-AND the user clicks the save button to save the new AI_CONNECTION
-Then: the AI Connections in the list with empty API Key field should highlight their API Key field in red, with tooltip "API Key is required" for 1 second
-AND after tooltip disappears, these connections should be deleted from the list
-AND these connections should not be saved to the database
-AND other connections with valid API Key should be saved to the database successfully
-AND witout doing a APIConnectivityTest
-AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection saved! $$$$$$$$$$$$$$$$$$$$"
-AND these connections should appear in the user's list of AI connections
-AND display a popup message "Only AI Connections with valid API Key are saved!"
+AND the user opened Preferences window, AI Connection tab
+AND there are at least one existing AI connection row in the list
+When: the API Key field of the new row is empty
+Then: the Save button is disabled
 
+//DONE
 ### Acceptance Criteria ID: US-002-003
-Scenario: Create local AI_CONNECTION and save to DB - Duplicated records
+Scenario: Save button enabled when API key is not empty
 Given: The app is running
 AND the user has logged in
-AND the AI_MODEL_PROVIDER objects are created
-AND have providers' information loaded from the database
-When: The user starts creating an AI_API_CONNECTION
-AND the user has selected a provider
-AND the user has entered a valid API key
-AND there are duplicated records in the list with the same provider and API key
-AND the user clicks the save button to save the new AI_CONNECTION
-Then: the duplicated AI Connections in the list should highlight their API Key field in red, with tooltip "Duplicated connection.." for 1 second
-AND after tooltip disappears, these connections should be deleted from the list
-AND these connections should not be saved to the database
-AND other connections with valid API Key should be saved to the database successfully
-AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connections saved! $$$$$$$$$$$$$$$$$$$$"
-AND these connections should appear in the user's list of AI connections
-AND display a popup message "Duplicated AI Connections are not saved!"
+AND the user opened Preferences window, AI Connection tab
+AND there are at least one existing AI connection row in the list
+When: the API Key field of the new row is not empty
+Then: the Save button is enabled    
 
-### Acceptance Criteria ID: US-002-004
-Scenario: Create local AI_CONNECTION and save to DB - failure
-Given: The app is running
-AND the user has logged in
-AND the AI_MODEL_PROVIDER objects are created
-AND have providers' information loaded from the database
-When: The user starts creating an AI_CONNECTION
-AND the user has selected a provider
-AND the user clicks the save button to save the new AI_CONNECTION
-AND the database connection fails
-Then: The AI_CONNECTION service creates a new connection object
-AND fails to save the connection object information to the database
-AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ Failed to save AI Connection " + provider + " !!!  $$$$$$$$$$$$$$$$$$$$"
-AND displays an Popup message "Failed to save AI Connections !!!"
-
-
+//DONE
 ## User Story ID: US-003
-As a Pen user, I want to update AI connections, so that I can change API keys or providers when needed.
-
-### Acceptance Criteria ID: US-003-001
-Scenario: Update AI connection - success
-Given: The app is running
-AND the user has logged in
-AND the user has at least one AI connection
-When: The user selects an AI connection to edit
-AND the user updates the API key
-OR the user updates the provider
-AND the user clicks the save button
-Then: The AI_CONNECTION service updates the connection in the database
-AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connections  updated! $$$$$$$$$$$$$$$$$$$$"
-AND displays a popup message "AI Connections updated successfully!"
-
-
-## User Story ID: US-004
 As a Pen user, I want to delete AI connections, so that I can remove unused or invalid connections.
-
-### Acceptance Criteria ID: US-004-001
+//DONE
+### Acceptance Criteria ID: US-003-001
 Scenario: Delete AI connection - success
 Given: The app is running
 AND the user has logged in
@@ -123,77 +66,98 @@ AND the user has at least one AI connection
 When: The user clicks the delete button next to the AI connection
 AND the user confirms the deletion from a popup dialog
 Then: The AI_CONNECTION will be deleted from the list and from the database
+AND print in terminal "$$$$$$$$$$$$$$$$$$$$ AI Configuration " + provider + " deleted! $$$$$$$$$$$$$$$$$$$$"
+
+
 
 
 ## User Story ID: US-004
-As a Pen user, I want to test AI connections, so that I can verify they work correctly before using them.
+As a Pen user, I want to test & save AI connections, so that I have working AI connections to use.
 
+//DONE
 ### Acceptance Criteria ID: US-004-001
-Scenario: Test AI connection - success
+Scenario: Test & Save AI connection from list row- duplicated information
 Given: The app is running
 AND the user has logged in
-AND the user has at least one AI connection
-When: The user selects an AI connection
-AND the user clicks the test button
-Then: The AI_CONNECTION service sends a test request to the provider
-AND receives a valid response
-AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection " + provider + " is established $$$$$$$$$$$$$$$$$$$$"
-AND displays a success message to the user
+AND the user has at least one AI connection displayed in the list, regardless if they are from the database or manually added
+AND the current row of the AI connection has the same provider and API key as other rows in the list
+When: The clicks the Save button next to the current row of the AI connection
+Then: The API Key field of all rows with the same provider and API key as the current row will be highlighted in red for 2 seconds
+AND displays a popup message "Duplicated API Key or Provider, AI Connection configuration not saved. " + new line + "Please check the API Key and Provider." 
 
+//DONE
 ### Acceptance Criteria ID: US-004-002
-Scenario: Test AI connection - failure
+Scenario: Test & Save AI connection from list row - not duplicated information
 Given: The app is running
 AND the user has logged in
-AND the user has at least one AI connection
-When: The user selects an AI connection
-AND the user clicks the test button
-AND the connection fails
-Then: The AI_CONNECTION service attempts to connect to the provider
-AND receives an error response
-AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection " + provider + " is failed $$$$$$$$$$$$$$$$$$$$"
-AND displays an error message to the user
+AND the user has at least one AI connection displayed in the list, regardless if they are from the database or manually added
+AND the current row of the AI connection does not have same provider and API key as other rows in the list
+When: The clicks the test button next to the AI connection
+Then: call AIManager.testConnection()
+AND Display a pop up message "Testing " + provider + " beforing saving the configuration..."
+AND return the result of the test
 
-
-
-
-
-
-## User Story ID: US-006
-As a Pen user, I want to use AI connections for different AI tasks, so that I can leverage different providers for different use cases.
-
-### Acceptance Criteria ID: US-006-001
-Scenario: Use AI connection for chat completion
+//WIP
+### Acceptance Criteria ID: US-004-003
+Scenario: Test AI connection - success with existing connection
 Given: The app is running
 AND the user has logged in
-AND the user has at least one AI connection
-When: The user selects an AI connection for chat
-AND the user sends a chat request
-Then: The AI_CONNECTION service uses the selected connection
-AND sends the request to the provider
-AND returns the response to the user
+AND the user has at least one AI connection displayed in the list, regardless if they are from the database or manually added
+AND the user clicks the test button next to an existing AI connection loaded from the database
+AND AIManager.testConnection() is called
+When: the test returns sucess
+Then: update the AI connection for this user in the database, with the current API key and provider
+AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection " + provider + " is updated $$$$$$$$$$$$$$$$$$$$"
+AND highlight the API key of this AI connection in the list in red for 2 seconds
+AND the other rows in the list should still be displayed
+AND wait until previous popup message is dismissed
+AND display a pop up message "AI Connection test passed!" + new line + "AI Connection configuration " + provider + " updated for " + user.username
 
-### Acceptance Criteria ID: US-006-002
-Scenario: Use AI connection for embedding generation
+//WIP
+### Acceptance Criteria ID: US-004-004
+Scenario: Test AI connection - failed with existing connection
 Given: The app is running
 AND the user has logged in
-AND the user has at least one AI connection that supports embeddings
-When: The user selects an AI connection for embeddings
-AND the user requests an embedding
-Then: The AI_CONNECTION service uses the selected connection
-AND sends the request to the provider
-AND returns the embedding to the user
+AND the user has at least one AI connection displayed in the list, regardless if they are from the database or manually added
+AND the user clicks the test button next to an existing AI connection loaded from the database
+AND AIManager.testConnection() is called
+When: the test returns failure
+Then: prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection test failed $$$$$$$$$$$$$$$$$$$$"
+AND highlight the API key of this AI connection in the list in red for 2 seconds
+AND the other rows in the list should still be displayed
+AND wait until previous popup message is dismissed
+AND display a pop up message "AI Connection test failed!" + new line + "AI Connection configuration " + provider + " not updated for " + user.username + ". " + new line + "Please check your configuration and try again."
 
-## User Story ID: US-007
-As a Pen user, I want to set a default AI connection, so that I don't have to select one every time.
-
-### Acceptance Criteria ID: US-007-001
-Scenario: Set default AI connection
+//WIP
+### Acceptance Criteria ID: US-004-004
+Scenario: Test AI connection - success with new connection
 Given: The app is running
 AND the user has logged in
-AND the user has multiple AI connections
-When: The user selects an AI connection
-AND the user sets it as default
-Then: The AI_CONNECTION service saves the default connection preference
-AND uses this connection by default for future requests
-AND displays a confirmation message to the user
+AND the user has at least one AI connection displayed in the list, regardless if they are from the database or manually added
+AND the user clicks the test button next to a new AI connection manually added
+AND AIManager.testConnection() is called
+When: the test returns sucess
+Then: create a new AI connection for this user in the database, with the current API key and provider
+AND prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection " + provider + " is added $$$$$$$$$$$$$$$$$$$$"
+AND highlight the API key of this AI connection in the list in red for 2 seconds
+AND the other rows in the list should still be displayed
+AND wait until previous popup message is dismissed
+AND display a pop up message "AI Connection test passed!" + new line + " "New AI Connection " + provider + " created for " + user.username
+
+//DONE
+### Acceptance Criteria ID: US-004-005
+Scenario: Test AI connection - fail with new connection
+Given: The app is running
+AND the user has logged in
+AND the user has at least one AI connection displayed in the list, regardless if they are from the database or manually added
+AND the user clicks the test button next to a new AI connection manually added
+AND AIManager.testConnection() is called
+When: the test returns failure
+Then: prints in terminal " $$$$$$$$$$$$$$$$$$$$ AI Connection test failed $$$$$$$$$$$$$$$$$$$$"
+AND highlight the API key of this AI connection in the list in red for 2 seconds
+AND the other rows in the list should still be displayed
+AND wait until previous popup message is dismissed
+AND display a pop up message "AI Connection test failed!" + new line + "No new AI Connection " + provider + " created for " + user.username + ". " + new line + "Please check your configuration and try again."
+
+
 
