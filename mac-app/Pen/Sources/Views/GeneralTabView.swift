@@ -69,7 +69,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     
     /// Adds a save button at the bottom right of the view
     private func addSaveButton() {
-        let saveButton = FocusableButton(frame: NSRect(x: 40, y: 15, width: 80, height: 32))
+        let saveButton = FocusableButton(frame: NSRect(x: 20, y: 15, width: 80, height: 32))
         saveButton.title = LocalizationService.shared.localizedString(for: "save_button")
         saveButton.bezelStyle = .rounded
         saveButton.target = self
