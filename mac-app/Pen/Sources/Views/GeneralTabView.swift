@@ -47,13 +47,13 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         setupShortcutKeySection(shortcutSection)
         addSubview(shortcutSection)
         
-        // History count section - moved 20px up
-        let historySection = createSectionView(x: 20, y: contentHeight - (sectionHeight * 2) - sectionSpacing - 70, width: contentWidth - 40, height: sectionHeight)
+        // History count section - fixed top edge and increased height by 10px
+        let historySection = createSectionView(x: 20, y: contentHeight - (sectionHeight * 2) - sectionSpacing - 32, width: contentWidth - 40, height: sectionHeight - 28)
         setupHistoryCountSection(historySection)
         addSubview(historySection)
         
-        // Language section - moved 35px up (20px + 15px)
-        let languageSection = createSectionView(x: 20, y: contentHeight - (sectionHeight * 3) - (sectionSpacing * 2) - 30, width: contentWidth - 40, height: sectionHeight)
+        // Language section - moved 18px down
+        let languageSection = createSectionView(x: 20, y: contentHeight - 342, width: contentWidth - 40, height: sectionHeight - 20)
         setupLanguageSection(languageSection)
         addSubview(languageSection)
         
@@ -137,7 +137,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         section.addSubview(titleLabel)
         
         // Instruction label
-        let instructionLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 65, width: 300, height: 24))
+        let instructionLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 57, width: 300, height: 24))
         instructionLabel.stringValue = LocalizationService.shared.localizedString(for: "record_shortcut_instruction")
         instructionLabel.isBezeled = false
         instructionLabel.drawsBackground = false
@@ -147,11 +147,11 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         section.addSubview(instructionLabel)
         
         // Shortcut key display field - moved to new row
-        shortcutKeyField = ClickableTextField(frame: NSRect(x: 20, y: sectionHeight - 133, width: 238, height: 69))
+        shortcutKeyField = ClickableTextField(frame: NSRect(x: 20, y: sectionHeight - 85, width: 238, height: 27))
         shortcutKeyField.stringValue = previousShortcut // Use the loaded shortcut
         shortcutKeyField.isEditable = false
         shortcutKeyField.isSelectable = true
-        shortcutKeyField.backgroundColor = NSColor.textBackgroundColor
+        shortcutKeyField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
         shortcutKeyField.layer?.cornerRadius = 4
         shortcutKeyField.layer?.borderWidth = 1
         shortcutKeyField.layer?.borderColor = NSColor.separatorColor.cgColor
@@ -256,7 +256,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         let sectionHeight = section.frame.height
         
         // Section title
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 30, width: 200, height: 20))
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 28, width: 200, height: 20))
         titleLabel.stringValue = LocalizationService.shared.localizedString(for: "language_title")
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
@@ -266,7 +266,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         section.addSubview(titleLabel)
         
         // Language label
-        let languageLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 60, width: 150, height: 20))
+        let languageLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 58, width: 150, height: 20))
         languageLabel.stringValue = LocalizationService.shared.localizedString(for: "select_language")
         languageLabel.isBezeled = false
         languageLabel.drawsBackground = false
@@ -275,7 +275,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         section.addSubview(languageLabel)
         
         // Language popup button
-        languagePopup = NSPopUpButton(frame: NSRect(x: 170, y: sectionHeight - 65, width: 200, height: 28))
+        languagePopup = NSPopUpButton(frame: NSRect(x: 170, y: sectionHeight - 63, width: 200, height: 28))
         languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "english_language"))
         languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "chinese_language"))
         languagePopup.selectItem(at: 0) // Default to English

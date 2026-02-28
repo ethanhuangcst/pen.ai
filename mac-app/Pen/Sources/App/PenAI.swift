@@ -426,14 +426,21 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
         print("PenAIDelegate: Current user: \(currentUser?.name ?? "nil")")
         print("PenAIDelegate: Current user profileImage: \(currentUser?.profileImage != nil ? "[BASE64 ENCODED IMAGE]" : "nil")")
         
-        // Always recreate preferences window to ensure it uses the current user
-        print("PenAIDelegate: Creating new PreferencesWindow with user: \(currentUser?.name ?? "nil")")
-        preferencesWindow = PreferencesWindow(user: currentUser)
-        
+        // Check if preferences window already exists
         if let window = preferencesWindow {
-            // Use the showAndFocus method to ensure keyboard input works
+            // If it exists, just show it
+            print("PenAIDelegate: Preferences window already exists, showing existing window")
             window.showAndFocus()
-            print("PenAIDelegate: Preferences window shown")
+        } else {
+            // If it doesn't exist, create a new one
+            print("PenAIDelegate: Creating new PreferencesWindow with user: \(currentUser?.name ?? "nil")")
+            preferencesWindow = PreferencesWindow(user: currentUser)
+            
+            if let window = preferencesWindow {
+                // Use the showAndFocus method to ensure keyboard input works
+                window.showAndFocus()
+                print("PenAIDelegate: Preferences window shown")
+            }
         }
     }
     
@@ -668,6 +675,7 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
         if loginWindow == nil {
             // Create login window with nil menuBarIconFrame (position will be calculated externally)
             // Pass self as the penDelegate
+            print("PenAIDelegate: Creating new LoginWindow")
             loginWindow = LoginWindow(menuBarIconFrame: nil, penDelegate: self)
         }
         
@@ -677,6 +685,7 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
             
             // Use the showAndFocus method to ensure keyboard input works
             window.showAndFocus()
+            print("PenAIDelegate: Login window shown")
         }
     }
     

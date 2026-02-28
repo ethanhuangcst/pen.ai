@@ -171,12 +171,14 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         passwordField = NSSecureTextField(frame: NSRect(x: 120, y: 80, width: 200, height: 24))
         passwordField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
+        passwordField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
         passwordSection.addSubview(passwordField)
         
         // Plain password field (initially hidden)
         plainPasswordField = NSTextField(frame: NSRect(x: 120, y: 80, width: 200, height: 24))
         plainPasswordField.placeholderString = LocalizationService.shared.localizedString(for: "new_password")
         plainPasswordField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
+        plainPasswordField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
         plainPasswordField.isHidden = true
         passwordSection.addSubview(plainPasswordField)
         
@@ -211,12 +213,14 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         confirmField = NSSecureTextField(frame: NSRect(x: 120, y: 40, width: 200, height: 24))
         confirmField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
+        confirmField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
         passwordSection.addSubview(confirmField)
         
         // Plain confirm password field (initially hidden)
         plainConfirmField = NSTextField(frame: NSRect(x: 120, y: 40, width: 200, height: 24))
         plainConfirmField.placeholderString = LocalizationService.shared.localizedString(for: "confirm_password")
         plainConfirmField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
+        plainConfirmField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
         plainConfirmField.isHidden = true
         passwordSection.addSubview(plainConfirmField)
         
