@@ -57,22 +57,15 @@ class AIModelProvider {
             else if let urlArray = try? JSONSerialization.jsonObject(with: data, options: []) as? [String] {
                 // Map array to dictionary with default keys and construct full endpoints
                 if !urlArray.isEmpty {
-                    // For each base URL, construct full endpoints
+                    // For each base URL, construct completion endpoints
                     for (index, baseURL) in urlArray.enumerated() {
                         // Remove any trailing slashes
                         let cleanBaseURL = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
                         
-                        // Construct full endpoints based on provider type
-                        switch index {
-                        case 0: // completion endpoint
-                            baseURLs["completion"] = "\(cleanBaseURL)/chat/completions"
-                        case 1: // embedding endpoint
-                            baseURLs["embedding"] = "\(cleanBaseURL)/embeddings"
-                        case 2: // image endpoint
-                            baseURLs["image"] = "\(cleanBaseURL)/images/generations"
-                        default:
-                            break
-                        }
+                        // Construct completion endpoint for each base URL
+                        // This allows us to try all URLs in order
+                        let completionKey = "completion_\(index)"
+                        baseURLs[completionKey] = "\(cleanBaseURL)/chat/completions"
                     }
                 }
             }

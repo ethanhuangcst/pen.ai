@@ -1,321 +1,341 @@
-I see your full `PenAIDelegate` implementation. Since you didn’t include a specific question, I’ll give you a **focused architectural + behavior review** based on what this code is currently doing, especially around:
+Good — now we finally have **real error signals** instead of guessing. Let’s break this down cleanly.
 
-* Menu bar positioning
-* Window lifecycle
-* Global shortcut behavior
-* Multi-space handling
-* Potential edge cases
-
-If you actually want a specific modification, tell me the goal and I’ll tailor it exactly.
+You are failing for **two completely different reasons**:
 
 ---
 
-# 🔎 1️⃣ Your Architecture Is Actually Well Structured
+# 🚨 Problem 1 — `qwen-plus` (Baichuan endpoint) → 401 Invalid API Key
 
-You’ve cleanly separated:
+Your log:
 
-* `InitializationService`
-* `ShortcutService`
-* `WindowManager`
-* `LoginWindow`
-* `PreferencesWindow`
-* `BaseWindow`
-
-That’s solid. The delegate is acting as a coordinator — good design.
-
----
-
-# ⚠️ 2️⃣ Important Issue: `NSScreen.main!` Is Not Reliable
-
-You use this in multiple places:
-
-```swift
-let screen = NSScreen.main!
-```
-
-⚠️ This can be wrong in multi-monitor setups.
-
-If the menu bar icon is on another display, your window may:
-
-* Appear on the wrong monitor
-* Appear partially off screen
-* Misalign vertically
-
----
-
-## ✅ Fix: Always Use Button’s Screen
-
-In `positionWindowRelativeToMenuBarIcon`, replace:
-
-```swift
-let screen = NSScreen.main!
-```
-
-With:
-
-```swift
-guard let screen = buttonWindow.screen else { return }
-```
-
-Then use:
-
-```swift
-let screenFrame = screen.frame
-let visibleFrame = screen.visibleFrame
-```
-
-This ensures correct behavior on multi-display systems.
-
----
-
-# ⚠️ 3️⃣ Your Mouse Position Conversion Is Incorrect (In Two Places)
-
-You wrote:
-
-```swift
-// NSEvent.mouseLocation returns coordinates from the top-left
-```
-
-❌ That is incorrect.
-
-`NSEvent.mouseLocation` returns coordinates in **global screen space with origin at bottom-left**.
-
-So this calculation:
-
-```swift
-let windowY = screenHeight - mouseLocation.y - mouseOffset
-```
-
-Is wrong.
-
----
-
-## ✅ Correct Way
-
-Replace:
-
-```swift
-let windowY = screenHeight - mouseLocation.y - mouseOffset
-```
-
-With:
-
-```swift
-let windowY = mouseLocation.y - mouseOffset
-```
-
-If you want the window to appear below the cursor:
-
-```swift
-let windowY = mouseLocation.y - window.frame.height - mouseOffset
-```
-
----
-
-# ⚠️ 4️⃣ Your Window Can Go Off-Screen
-
-Neither positioning method clamps the window inside visible bounds.
-
-If cursor is near:
-
-* Right edge
-* Bottom edge
-* Top edge
-
-The window can be partially invisible.
-
----
-
-## ✅ Production-Grade Safe Positioning
-
-Add boundary clamping:
-
-```swift
-func clampWindowToScreen(_ window: NSWindow, screen: NSScreen) {
-    let visible = screen.visibleFrame
-    var frame = window.frame
-    
-    if frame.maxX > visible.maxX {
-        frame.origin.x = visible.maxX - frame.width
-    }
-    
-    if frame.minX < visible.minX {
-        frame.origin.x = visible.minX
-    }
-    
-    if frame.minY < visible.minY {
-        frame.origin.y = visible.minY
-    }
-    
-    if frame.maxY > visible.maxY {
-        frame.origin.y = visible.maxY - frame.height
-    }
-    
-    window.setFrame(frame, display: false)
+```json
+{
+  "error": {
+    "code": "invalid_api_key",
+    "message": "Incorrect API key provided. You can find your API key at https://platform.baichuan-ai.com/console/apikey."
+  }
 }
 ```
 
-Call this after setting the position.
+And the endpoint used:
+
+```
+https://api.baichuan-ai.com/v1/chat/completions
+```
+
+### 🔎 This means:
+
+You are NOT calling Qwen.
+
+You are calling **Baichuan AI**.
+
+That endpoint belongs to **Baichuan**, not Qwen.
+
+So either:
+
+* Your DB row for `qwen-plus` is pointing to Baichuan
+* Or you mixed providers
 
 ---
 
-# ⚠️ 5️⃣ `.canJoinAllSpaces` Is Not Enough for Some Cases
+## ✅ Fix
 
-You set:
+If this provider is actually:
 
-```swift
-window?.collectionBehavior = .canJoinAllSpaces
+### 🟢 Qwen (Alibaba DashScope)
+
+Correct endpoint should be:
+
+```
+https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
 ```
 
-If you want true “Spotlight-style” behavior, you should use:
-
-```swift
-window?.collectionBehavior = [
-    .canJoinAllSpaces,
-    .fullScreenAuxiliary,
-    .transient
-]
-```
-
-This ensures:
-
-* Appears over fullscreen apps
-* Doesn’t create new space
-* Behaves like utility panel
+AND payload format is different (NOT OpenAI format).
 
 ---
 
-# ⚠️ 6️⃣ Shortcut Does Not Activate App Properly
+### 🟢 If this is Baichuan
 
-In `openPenAI()`:
+Then:
 
-You do:
+You must use a Baichuan API key from:
 
-```swift
-window.makeKeyAndOrderFront(nil)
+```
+https://platform.baichuan-ai.com/console/apikey
 ```
 
-But you don’t always activate app.
-
-Better:
-
-```swift
-NSApp.activate(ignoringOtherApps: true)
-window.makeKeyAndOrderFront(nil)
-```
-
-You already do this in `toggleMainWindow()` — good.
-
-Make it consistent everywhere.
+Your current key is wrong for that provider.
 
 ---
 
-# ⚠️ 7️⃣ Subtle Memory Leak Risk
+# 🚨 Problem 2 — `gpt-4o-mini` → Timeouts
 
-You keep strong references:
+You attempted:
 
-```swift
-private var loginWindow: LoginWindow?
-private var preferencesWindow: PreferencesWindow?
+```
+https://api.openai.com/v1/images/generations
+https://api.openai.com/v1/embeddings
+https://api.openai.com/v1/chat/completions
 ```
 
-If those windows also strongly reference `PenAIDelegate`,
-you create a retain cycle.
+First two timed out:
 
-Make sure inside those window classes:
-
-```swift
-weak var penDelegate: PenAIDelegate?
+```
+Error Domain=NSURLErrorDomain Code=-1001 "The request timed out."
 ```
 
-Not strong.
+This is NOT a code bug.
+
+This is:
+
+### 🔥 Network issue.
+
+Most common causes:
+
+1. Running in China without proxy
+2. Firewall blocking api.openai.com
+3. DNS blocked
+4. Corporate network blocking
+5. VPN not configured in macOS system settings
 
 ---
 
-# ⚠️ 8️⃣ Icon Loading From Current Directory Is Fragile
+## 🔍 Why Images & Embeddings timeout first?
 
-This:
-
-```swift
-let currentDirectory = fileManager.currentDirectoryPath
-```
-
-Will break when app is bundled.
-
-Instead use:
+Because your test payload is:
 
 ```swift
-Bundle.main.path(forResource: "icon", ofType: "png")
+{
+  "model": provider.defaultModel,
+  "messages": [...]
+}
 ```
 
-Much safer for production.
+That payload only works for:
+
+```
+/v1/chat/completions
+```
+
+When you send that to:
+
+```
+/v1/images/generations
+```
+
+It may hang or reject.
 
 ---
 
-# ⚠️ 9️⃣ Your Reload Window Should Be Non-Key
+# 💥 Major Design Flaw in Your System
 
-You currently do:
-
-```swift
-reloadWindow.makeKeyAndOrderFront(nil)
-```
-
-This steals focus.
-
-Instead:
+You are looping over ALL base URLs:
 
 ```swift
-reloadWindow.orderFrontRegardless()
+for baseURL in baseURLs
 ```
 
-So it doesn’t interrupt typing.
+But your payload is ALWAYS a **chat completion payload**.
+
+So:
+
+| Endpoint               | Compatible? |
+| ---------------------- | ----------- |
+| /v1/chat/completions   | ✅ Yes       |
+| /v1/images/generations | ❌ No        |
+| /v1/embeddings         | ❌ No        |
+
+You should NOT test all endpoints with the same payload.
 
 ---
 
-# 🧠 10️⃣ Your Window Behavior Design Is Very Good
+# ✅ Correct Fix (Very Important)
 
-You have:
+Inside `testConnection()`:
 
-* Menu-bar anchored window
-* Mouse anchored window (shortcut)
-* Floating level
-* All spaces support
-* Login mode switching
-* Offline mode handling
-
-This is close to Spotlight-style architecture.
-
-Very solid foundation.
-
----
-
-# 🚀 If You Want Next-Level Polishing
-
-You can upgrade this into a true “native macOS panel” feel by:
-
-* Using `NSPanel` instead of `NSWindow`
-* Setting:
+Replace this:
 
 ```swift
-panel.isFloatingPanel = true
-panel.becomesKeyOnlyIfNeeded = true
-panel.hidesOnDeactivate = true
+for baseURL in baseURLs
 ```
 
-Then your window auto-hides when user clicks elsewhere.
+With:
+
+```swift
+for baseURL in baseURLs where baseURL.contains("chat/completions")
+```
+
+OR better:
+
+Store only ONE test endpoint per provider in DB.
+
+For OpenAI:
+
+```
+https://api.openai.com/v1/chat/completions
+```
+
+Do NOT store:
+
+* images
+* embeddings
+
+Those are different APIs.
 
 ---
 
-# 🎯 So What Do You Want To Improve?
+# 🎯 Why GPT is timing out
 
-Tell me which direction:
+Most likely:
 
-1. Make window behave like Spotlight?
-2. Fix multi-monitor issues?
-3. Improve shortcut reliability?
-4. Improve animation?
-5. Convert to NSPanel?
-6. Refactor into cleaner architecture?
-7. Fix a specific bug?
+You are in China or restricted network.
 
-Tell me the target behavior and I’ll give you exact production-level code.
+Test this in Terminal:
+
+```bash
+curl https://api.openai.com/v1/models
+```
+
+If it hangs → network block.
+
+Your Swift code is fine for OpenAI.
+
+---
+
+# 🧠 Summary of What Is Actually Wrong
+
+### ❌ qwen-plus
+
+* Wrong endpoint (Baichuan)
+* Wrong API key
+* Provider misconfigured in DB
+
+### ❌ gpt-4o-mini
+
+* Testing wrong endpoints
+* Possibly network blocked
+* Should only test chat endpoint
+
+---
+
+# 🔥 Clean Correct Configuration
+
+## For OpenAI (gpt-4o-mini)
+
+DB should contain:
+
+```json
+{
+  "chat": "https://api.openai.com/v1/chat/completions"
+}
+```
+
+Auth header:
+
+```
+Authorization
+```
+
+requires_auth:
+
+```
+true
+```
+
+default_model:
+
+```
+gpt-4o-mini
+```
+
+---
+
+## For Baichuan
+
+Endpoint:
+
+```
+https://api.baichuan-ai.com/v1/chat/completions
+```
+
+Model example:
+
+```
+Baichuan2-Turbo
+```
+
+Bearer token required.
+
+---
+
+## For Qwen (DashScope)
+
+Endpoint:
+
+```
+https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
+```
+
+Auth header:
+
+```
+Authorization
+```
+
+Value:
+
+```
+Bearer YOUR_DASHSCOPE_KEY
+```
+
+BUT payload format is different — your current parser will fail.
+
+---
+
+# 🛠 Immediate Action Plan
+
+1. Fix DB entries:
+
+   * Remove image & embedding endpoints from OpenAI
+   * Fix qwen provider endpoint
+2. Only test chat endpoint
+3. Confirm network access to api.openai.com
+4. Use correct API key for each provider
+
+---
+
+# ⚠️ One More Hidden Bug
+
+You are loading provider by:
+
+```sql
+SELECT * FROM ai_providers WHERE name = 'gpt-4o-mini'
+```
+
+That is wrong design.
+
+`gpt-4o-mini` is a MODEL, not a provider.
+
+Provider should be:
+
+* openai
+* baichuan
+* dashscope
+* deepseek
+
+Then model stored separately.
+
+Right now your architecture couples provider & model incorrectly.
+
+That will cause more bugs later.
+
+---
+
+If you paste:
+
+* Your `ai_providers` table row for:
+
+  * gpt-4o-mini
+  * qwen-plus
+
+I’ll give you the exact corrected configuration structure.

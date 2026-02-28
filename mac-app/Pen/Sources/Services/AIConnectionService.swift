@@ -162,8 +162,6 @@ class AIConnectionService {
     /// - Returns: AIModelProvider if found, nil otherwise
     /// - Throws: Error if database operation fails
     func loadProviderByName(_ name: String) async throws -> AIModelProvider? {
-        let query = "SELECT * FROM ai_providers WHERE name = ?"
-        
         do {
             // Get a connection from the pool
             guard let connection = databasePool.getConnection() else {
@@ -175,16 +173,88 @@ class AIConnectionService {
                 databasePool.returnConnection(connection)
             }
             
-            // Execute the query with parameter
-            // Note: This is a simplified version - in a real implementation, we'd use parameterized queries
-            let parameterizedQuery = "SELECT * FROM ai_providers WHERE name = '\(name)'"
-            let results = try await connection.execute(query: parameterizedQuery)
-            
-            guard !results.isEmpty else {
+            // Try direct MySQLConnection access for JSON columns
+            if let mysqlConnection = connection as? MySQLConnection, let internalConnection = mysqlConnection.getConnection() {
+                print("[AIConnectionService] Using direct MySQL connection for JSON columns")
+                
+                // Execute query directly with JSON column cast to string
+                let query = "SELECT id, name, CAST(base_urls AS CHAR) as base_urls, default_model, requires_auth, auth_header, created_at, updated_at FROM ai_providers WHERE name = '\(name)'"
+                print("[AIConnectionService] Executing query: \(query)")
+                let rows = try await internalConnection.query(query).get()
+                
+                guard !rows.isEmpty else {
+                    return nil
+                }
+                
+                for row in rows {
+                    // Create a row dictionary manually
+                    var rowData: [String: Any] = [:]
+                    
+                    // Debug: Try to access base_urls directly
+                    print("[AIConnectionService] Debug: Trying to access base_urls column")
+                    if let baseURLsData = row.column("base_urls") {
+                        print("[AIConnectionService] Debug: base_urls column exists")
+                        print("[AIConnectionService] Debug: base_urls data type: \(type(of: baseURLsData))")
+                        
+                        // Try to get as string
+                        if let baseURLs = baseURLsData.string {
+                            rowData["base_urls"] = baseURLs
+                            print("[AIConnectionService] Debug: base_urls as string: \(baseURLs)")
+                        } else {
+                            print("[AIConnectionService] Debug: base_urls is not a string")
+                        }
+                    } else {
+                        print("[AIConnectionService] Debug: base_urls column not found in row")
+                    }
+                    
+                    // Access other columns
+                    if let idData = row.column("id"), let id = idData.string {
+                        rowData["id"] = id
+                    }
+                    if let nameData = row.column("name"), let name = nameData.string {
+                        rowData["name"] = name
+                        print("[AIConnectionService] Debug: Provider name: \(name)")
+                    }
+                    if let defaultModelData = row.column("default_model"), let defaultModel = defaultModelData.string {
+                        rowData["default_model"] = defaultModel
+                        print("[AIConnectionService] Debug: Default model: \(defaultModel)")
+                    }
+                    if let requiresAuthData = row.column("requires_auth"), let requiresAuth = requiresAuthData.int {
+                        rowData["requires_auth"] = requiresAuth
+                    }
+                    if let authHeaderData = row.column("auth_header"), let authHeader = authHeaderData.string {
+                        rowData["auth_header"] = authHeader
+                        print("[AIConnectionService] Debug: Auth header: \(authHeader)")
+                    } else {
+                        print("[AIConnectionService] Debug: Auth header not found, using default")
+                    }
+                    if let createdAtData = row.column("created_at"), let createdAt = createdAtData.string {
+                        rowData["created_at"] = createdAt
+                    }
+                    if let updatedAtData = row.column("updated_at"), let updatedAt = updatedAtData.string {
+                        rowData["updated_at"] = updatedAt
+                    }
+                    
+                    // Create provider from row data
+                    if let provider = AIModelProvider.fromDatabaseRow(rowData) {
+                        try provider.validate()
+                        return provider
+                    }
+                }
+                
                 return nil
+            } else {
+                // Fallback to regular method
+                print("[AIConnectionService] Falling back to regular execute method")
+                let parameterizedQuery = "SELECT * FROM ai_providers WHERE name = '\(name)'"
+                let results = try await connection.execute(query: parameterizedQuery)
+                
+                guard !results.isEmpty else {
+                    return nil
+                }
+                
+                return AIModelProvider.fromDatabaseRow(results[0])
             }
-            
-            return AIModelProvider.fromDatabaseRow(results[0])
         } catch {
             print("Error loading AI provider by name: \(error)")
             return nil
@@ -336,7 +406,7 @@ class AIConnectionService {
         }
     }
     
-    /// Tests an AI connection by making an actual API call
+    /// Tests an AI connection by making an actual API call with failover
     /// - Parameters:
     ///   - apiKey: API key for the provider
     ///   - providerName: AI provider name
@@ -349,53 +419,121 @@ class AIConnectionService {
                 throw NSError(domain: "AIConnectionService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Provider not found"])
             }
             
-            // Get the completion URL from base_urls
-            guard let baseURL = provider.baseURLs["completion"] else {
-                throw NSError(domain: "AIConnectionService", code: 3, userInfo: [NSLocalizedDescriptionKey: "No completion URL found for provider"])
+            // Get all base URLs from the provider
+            var baseURLs = Array(provider.baseURLs.values)
+            
+            // Filter to only test chat completion endpoints
+            baseURLs = baseURLs.filter { $0.contains("chat/completions") }
+            
+            if baseURLs.isEmpty {
+                throw NSError(domain: "AIConnectionService", code: 3, userInfo: [NSLocalizedDescriptionKey: "No chat completion endpoints found for provider"])
             }
             
-            // Create URL object
-            guard let url = URL(string: baseURL) else {
-                throw NSError(domain: "AIConnectionService", code: 4, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+            print("Testing connection to \(providerName) with \(baseURLs.count) chat completion endpoints")
+            
+            // Test each base URL in order
+            var totalAttempts = 0
+            var lastError: String = ""
+            
+            for baseURL in baseURLs {
+                totalAttempts += 1
+                
+                do {
+                    print("Attempt \(totalAttempts) for \(providerName) using URL: \(baseURL)")
+                    
+                    // Create URL object
+                    guard let url = URL(string: baseURL) else {
+                        print("Invalid URL: \(baseURL)")
+                        lastError = "Invalid URL: \(baseURL)"
+                        continue
+                    }
+                    
+                    // Create URLRequest
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "POST"
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.timeoutInterval = 30.0 // 30 seconds timeout
+                    
+                    // Add authorization header
+                    print("[AIConnectionService] Debug: Provider requires auth: \(provider.requiresAuth)")
+                    print("[AIConnectionService] Debug: Auth header: \(provider.authHeader)")
+                    print("[AIConnectionService] Debug: API key length: \(apiKey.count) characters")
+                    
+                    if provider.requiresAuth {
+                        // For providers like OpenAI that use Bearer token
+                        if provider.authHeader == "Authorization" {
+                            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: provider.authHeader)
+                            print("[AIConnectionService] Debug: Using Bearer token authentication")
+                        } else {
+                            // For providers like Anthropic that use direct API key
+                            request.setValue(apiKey, forHTTPHeaderField: provider.authHeader)
+                            print("[AIConnectionService] Debug: Using direct API key authentication")
+                        }
+                    }
+                    
+                    // Create test payload
+                    let testPayload: [String: Any] = [
+                        "model": provider.defaultModel,
+                        "messages": [
+                            ["role": "user", "content": "Hello, this is a test to verify API connectivity. Please respond with 'API test successful'."]
+                        ],
+                        "max_tokens": 20,
+                        "temperature": 0.7
+                    ]
+                    
+                    // Encode payload to JSON
+                    let jsonData = try JSONSerialization.data(withJSONObject: testPayload)
+                    request.httpBody = jsonData
+                    
+                    // Make API call
+                    let (data, response) = try await URLSession.shared.data(for: request)
+                    
+                    // Log raw response
+                    print("[AIConnectionService] Debug: Raw response data:")
+                    print(String(data: data, encoding: .utf8) ?? "No response body")
+                    
+                    // Check response status code
+                    guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                        let errorMessage = "API call failed with status code: \(statusCode)"
+                        print(errorMessage)
+                        lastError = errorMessage
+                        continue
+                    }
+                    
+                    // Parse response
+                    do {
+                        let responseData = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                        if let choices = responseData?["choices"] as? [[String: Any]],
+                           let firstChoice = choices.first,
+                           let message = firstChoice["message"] as? [String: Any],
+                           let content = message["content"] as? String {
+                            print("Successfully connected to \(providerName) using URL: \(baseURL)")
+                            print("Response: \(content)")
+                            return true
+                        } else {
+                            let errorMessage = "Invalid API response format"
+                            print(errorMessage)
+                            lastError = errorMessage
+                            continue
+                        }
+                    } catch {
+                        let errorMessage = "Failed to parse API response: \(error)"
+                        print(errorMessage)
+                        lastError = errorMessage
+                        continue
+                    }
+                } catch {
+                    let errorMessage = "Error connecting to \(baseURL): \(error)"
+                    print(errorMessage)
+                    lastError = errorMessage
+                    continue
+                }
             }
             
-            // Create URLRequest
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            // Add authorization header
-            if provider.requiresAuth {
-                request.setValue("Bearer \(apiKey)", forHTTPHeaderField: provider.authHeader)
-            }
-            
-            // Create test payload
-            let testPayload: [String: Any] = [
-                "model": provider.defaultModel,
-                "messages": [
-                    ["role": "user", "content": "Hello, test message"]
-                ],
-                "max_tokens": 10
-            ]
-            
-            // Encode payload to JSON
-            let jsonData = try JSONSerialization.data(withJSONObject: testPayload)
-            request.httpBody = jsonData
-            
-            // Make API call
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            // Check response status code
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                throw NSError(domain: "AIConnectionService", code: 5, userInfo: [NSLocalizedDescriptionKey: "API call failed"])
-            }
-            
-            // Parse response to ensure it's valid
-            guard let _ = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-                throw NSError(domain: "AIConnectionService", code: 6, userInfo: [NSLocalizedDescriptionKey: "Invalid API response"])
-            }
-            
-            return true
+            // All URLs failed
+            print("All \(totalAttempts) attempts to connect to \(providerName) failed")
+            throw NSError(domain: "AIConnectionService", code: 5, userInfo: [NSLocalizedDescriptionKey: "Failed to connect to \(providerName) using all configured URLs. Last error: \(lastError)"])
         } catch {
             print("Error testing AI connection: \(error)")
             throw error
