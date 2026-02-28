@@ -1,6 +1,6 @@
 const mysql = require('mysql2/promise');
 
-// Database configuration from the config file
+// Database configuration
 const config = {
   host: '101.132.156.250',
   port: 33320,
@@ -9,7 +9,7 @@ const config = {
   database: 'wingman_db'
 };
 
-async function queryDatabase() {
+async function queryPromptsTable() {
   let connection;
   
   try {
@@ -20,12 +20,16 @@ async function queryDatabase() {
     // Query the structure of the prompts table
     console.log('\n=== prompts table structure ===');
     const [rows] = await connection.execute('DESCRIBE prompts');
-    console.table(rows);
+    rows.forEach(row => {
+      console.log(`${row.Field} ${row.Type} ${row.Null} ${row.Key} ${row.Default} ${row.Extra}`);
+    });
     
-    // Query sample data from the prompts table
+    // Query the first few rows of data
     console.log('\n=== Sample data from prompts ===');
-    const [dataRows] = await connection.execute('SELECT * FROM prompts LIMIT 5');
-    console.table(dataRows);
+    const [dataRows] = await connection.execute('SELECT * FROM prompts LIMIT 3');
+    dataRows.forEach((row, index) => {
+      console.log(`Row ${index + 1}:`, row);
+    });
     
   } catch (error) {
     console.error('Error querying database:', error);
@@ -38,4 +42,4 @@ async function queryDatabase() {
 }
 
 // Run the query
-queryDatabase();
+queryPromptsTable();

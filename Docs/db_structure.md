@@ -44,16 +44,23 @@ This document describes the database structure for the Pen AI application. The d
 
 | Column | Type | Null | Key | Default | Extra |
 |--------|------|------|-----|---------|-------|
-| id | int | NO | PRI | NULL | auto_increment |
-| user_id | int | NO | | NULL | |
-| prompt_name | varchar(191) | NO | | NULL | |
+| id | varchar(255) | NO | PRI | NULL | |
+| user_id | int | NO | MUL | NULL | |
+| prompt_name | varchar(255) | NO | | NULL | |
 | prompt_text | text | NO | | NULL | |
-| created_datetime | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-| updated_datetime | datetime(3) | YES | | NULL | |
+| created_datetime | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updated_datetime | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
 | system_flag | varchar(20) | NO | | WINGMAN | |
 
 **Relationships:**
 - `user_id` references `users.id`
+
+**Sample Data:**
+| id | user_id | prompt_name | system_flag |
+|----|---------|-------------|-------------|
+| prompt-1771134633231 | 4 | Refine English | WINGMAN |
+| prompt-1771134652677 | 4 | 五种语言互翻 | WINGMAN |
+| prompt-1771134675475 | 4 | Timezone Converter | WINGMAN |
 
 ### chats
 

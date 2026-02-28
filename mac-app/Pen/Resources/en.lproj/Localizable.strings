@@ -115,3 +115,20 @@
 
 /* UI Controls Test */
 "ui_controls_test" = "UI Controls Test";
+
+/* Prompts tab */
+"prompts_title" = "Prompts";
+"first_prompt_default" = "First prompt will be the default prompt";
+"prompt_name_column" = "Name";
+"prompt_text_column" = "Prompt - hover over to view the full content";
+"edit_button" = "Edit";
+"delete_button" = "Delete";
+"delete_prompt_title" = "Delete Prompt";
+"delete_prompt_confirmation" = "Are you sure you want to delete this prompt?";
+"prompt_deleted_successfully" = "Prompt deleted successfully";
+"edit_prompt_title" = "Edit Prompt";
+"name_label" = "Name:";
+"prompt_label" = "Prompt:";
+"save_button" = "Save";
+"cancel_button" = "Cancel";
+"prompt_updated_successfully" = "Prompt updated successfully";

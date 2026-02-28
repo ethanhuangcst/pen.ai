@@ -115,3 +115,20 @@
 
 /* UI Controls Test */
 "ui_controls_test" = "UI 控件测试";
+
+/* Prompts tab */
+"prompts_title" = "提示词";
+"first_prompt_default" = "第一个提示词将被用作默认提示词";
+"prompt_name_column" = "名称";
+"prompt_text_column" = "提示词";
+"edit_button" = "编辑";
+"delete_button" = "删除";
+"delete_prompt_title" = "删除提示词";
+"delete_prompt_confirmation" = "确定要删除这个提示词吗？";
+"prompt_deleted_successfully" = "提示词删除成功";
+"edit_prompt_title" = "编辑提示词";
+"name_label" = "名称：";
+"prompt_label" = "提示词：";
+"save_button" = "保存";
+"cancel_button" = "取消";
+"prompt_updated_successfully" = "提示词更新成功";

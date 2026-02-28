@@ -245,6 +245,11 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         }
     }
     
+    // Disable row reordering
+    func tableView(_ tableView: NSTableView, canDragRowsWithIndexes rowIndexes: IndexSet, at point: NSPoint) -> Bool {
+        return false
+    }
+    
     private func createProviderPopup(for configuration: AIManager.PublicAIConfiguration, row: Int) -> NSPopUpButton {
         let popupButton = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 180, height: 24))
         
@@ -288,9 +293,12 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
     
     private func createDeleteButton(row: Int) -> NSButton {
         let button = NSButton(frame: NSRect(x: 9, y: 2, width: 20, height: 20))
-        button.bezelStyle = .circular
+        button.bezelStyle = .texturedRounded
         button.setButtonType(.momentaryPushIn)
-        button.image = NSImage(systemSymbolName: "trash", accessibilityDescription: LocalizationService.shared.localizedString(for: "delete_button_accessibility"))
+        button.isBordered = false
+        let image = NSImage(contentsOf: URL(fileURLWithPath: "/Users/ethanhuang/code/pen.ai/pen/mac-app/Pen/Resources/Assets/delete.svg"))
+        image?.size = NSSize(width: 18, height: 18)
+        button.image = image
         button.target = self
         button.action = #selector(deleteConfiguration(_:))
         button.tag = row
@@ -300,9 +308,12 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
     
     private func createTestButton(configuration: AIManager.PublicAIConfiguration, row: Int) -> NSButton {
         let button = NSButton(frame: NSRect(x: 9, y: 2, width: 20, height: 20))
-        button.bezelStyle = .circular
+        button.bezelStyle = .texturedRounded
         button.setButtonType(.momentaryPushIn)
-        button.image = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: LocalizationService.shared.localizedString(for: "save_button_accessibility"))
+        button.isBordered = false
+        let image = NSImage(contentsOf: URL(fileURLWithPath: "/Users/ethanhuang/code/pen.ai/pen/mac-app/Pen/Resources/Assets/save.svg"))
+        image?.size = NSSize(width: 18, height: 18)
+        button.image = image
         button.target = self
         button.action = #selector(testConfiguration(_:))
         button.tag = row

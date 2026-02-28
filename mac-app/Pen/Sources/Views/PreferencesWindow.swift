@@ -108,6 +108,10 @@ class PreferencesWindow: BaseWindow {
                 aiConfigurationTabView.setUserName(userName)
             }
             tabContentView.addSubview(aiConfigurationTabView)
+        } else if title == LocalizationService.shared.localizedString(for: "prompts") {
+            // Use the new PromptsTabView
+            let promptsTabView = PromptsTabView(frame: tabContentView.bounds, user: user)
+            tabContentView.addSubview(promptsTabView)
         }
         
         tabItem.view = tabContentView
