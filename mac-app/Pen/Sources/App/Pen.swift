@@ -12,6 +12,8 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private var window: BaseWindow?
     private var loginWindow: LoginWindow?
     private var preferencesWindow: PreferencesWindow?
+    private var newOrEditPromptWindow: NewOrEditPrompt?
+
     private let windowWidth: CGFloat = 378
     private let windowHeight: CGFloat = 388
     private let mouseOffset: CGFloat = 6
@@ -288,9 +290,16 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                     // Restart initialization process
                     performInitialization()
                 } else if isLoggedIn {
-                    // Online-login mode: Open PenAI window
-                    print("PenDelegate: Online-login mode - opening PenAI window")
-                    openWindow()
+                    // Online-login mode: Check if NewOrEditPrompt window is open
+                    if NewOrEditPrompt.isWindowOpen, let newOrEditWindow = NewOrEditPrompt.currentInstance {
+                        // If NewOrEditPrompt is open, bring it to front
+                        print("PenDelegate: NewOrEditPrompt window is open, bringing it to front")
+                        newOrEditWindow.bringToFront()
+                    } else {
+                        // Open PenAI window
+                        print("PenDelegate: Online-login mode - opening PenAI window")
+                        openWindow()
+                    }
                 } else {
                     // Online-logout mode: Open Login window
                     print("PenDelegate: Online-logout mode - opening Login window")

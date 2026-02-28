@@ -3,7 +3,8 @@ import Foundation
 
 class NewOrEditPrompt: BaseWindow {
     // MARK: - Static Properties
-    private static var isWindowOpen = false
+    public static var isWindowOpen = false
+    public static var currentInstance: NewOrEditPrompt? = nil
     
     // MARK: - Properties
     private let promptNameLabel = NSTextField()
@@ -198,6 +199,9 @@ class NewOrEditPrompt: BaseWindow {
         // Set window as open
         NewOrEditPrompt.isWindowOpen = true
         
+        // Set current instance
+        NewOrEditPrompt.currentInstance = self
+        
         // Set activation policy and install main menu for system shortcuts
         NSApp.setActivationPolicy(.regular)
         WindowManager.installMainMenu()
@@ -238,8 +242,19 @@ class NewOrEditPrompt: BaseWindow {
     
     /// Ensures the window stays in front when the app becomes active
     @objc private func appDidBecomeActive() {
+        // Force the window to the front and make it key
+        NSApp.activate(ignoringOtherApps: true)
         self.makeKeyAndOrderFront(nil)
         self.orderFrontRegardless()
+        self.makeKey()
+    }
+    
+    /// Brings the window to the front and makes it key
+    public func bringToFront() {
+        NSApp.activate(ignoringOtherApps: true)
+        self.makeKeyAndOrderFront(nil)
+        self.orderFrontRegardless()
+        self.makeKey()
     }
     
     override func closeWindow() {
@@ -256,6 +271,9 @@ class NewOrEditPrompt: BaseWindow {
     private func actuallyCloseWindow() {
         // Reset window open status
         NewOrEditPrompt.isWindowOpen = false
+        
+        // Clear current instance
+        NewOrEditPrompt.currentInstance = nil
         
         // Remove notification observer
         NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)

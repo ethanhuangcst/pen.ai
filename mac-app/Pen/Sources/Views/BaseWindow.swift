@@ -97,21 +97,8 @@ class BaseWindow: NSWindow {
         let contentView = NSView(frame: NSRect(origin: .zero, size: size))
         contentView.wantsLayer = true
         
-        // Set content view to be transparent
-        contentView.layer?.backgroundColor = NSColor.clear.cgColor
-        
-        // Set custom background image
-        if let layer = contentView.layer {
-            let backgroundImagePath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/pen_background_main.png"
-            if let backgroundImage = NSImage(contentsOfFile: backgroundImagePath) {
-                layer.contents = backgroundImage
-                layer.contentsGravity = .resize
-            } else {
-                // Fallback to clear background if image not found
-                layer.backgroundColor = NSColor.clear.cgColor
-                print("BaseWindow: Could not load background image from path: \(backgroundImagePath)")
-            }
-        }
+        // Set white background color
+        contentView.layer?.backgroundColor = NSColor.white.cgColor
         
         contentView.layer?.cornerRadius = 12
         contentView.layer?.masksToBounds = true

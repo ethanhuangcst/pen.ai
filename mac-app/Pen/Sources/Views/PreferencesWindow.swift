@@ -26,6 +26,9 @@ class PreferencesWindow: BaseWindow {
         
         // Position the window relative to the menu bar icon
         positionRelativeToMenuBarIcon()
+        
+        // Set window level to floating (below modalPanel)
+        self.level = .floating
     }
     
     // MARK: - Private Methods
