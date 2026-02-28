@@ -335,6 +335,23 @@ final class AIManager {
         return true
     }
     
+    // Test Call
+    func AITestCall(
+        prompt: String,
+        model: String? = nil,
+        temperature: Double = 0.7,
+        maxTokens: Int = 50
+    ) async throws -> AIResponse {
+        // Implementation for testing a complete AI call with custom parameters
+        let testMessage = AIMessage(role: "user", content: prompt)
+        return try await sendChat(
+            messages: [testMessage],
+            model: model,
+            temperature: temperature,
+            maxTokens: maxTokens
+        )
+    }
+    
     // Get current configuration
     func getCurrentConfiguration() -> AIConfiguration? {
         return aiConfiguration
@@ -471,6 +488,20 @@ AIManager.shared.switchProvider(providerName: "deepseek3.2")
 // Get current configuration
 if let currentConfig = AIManager.shared.getCurrentConfiguration() {
     print("Current provider: \(currentConfig.apiProvider)")
+}
+
+// Test Call example
+Task {
+    do {
+        let response = try await AIManager.shared.AITestCall(
+            prompt: "Write a short poem about technology",
+            temperature: 0.9,
+            maxTokens: 100
+        )
+        print("Test call response: \(response.content)")
+    } catch {
+        print("Error with test call: \(error)")
+    }
 }
 ```
 
