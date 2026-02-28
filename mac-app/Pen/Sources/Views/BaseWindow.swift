@@ -166,7 +166,7 @@ class BaseWindow: NSWindow {
         closeButton.title = ""
         closeButton.bezelStyle = .smallSquare
         closeButton.isBordered = false
-        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "Close")
+        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: LocalizationService.shared.localizedString(for: "close_button_accessibility"))
         closeButton.target = self
         closeButton.action = #selector(closeWindow)
         closeButton.isEnabled = true // Make close button enabled by default
@@ -338,7 +338,7 @@ class BaseWindow: NSWindow {
         let windowSize = NSSize(width: windowWidth, height: windowHeight)
         
         // Create standard window with common UI behaviors
-        let window = BaseWindow.createStandardWindow(size: windowSize, title: "UI Controls Test")
+        let window = BaseWindow.createStandardWindow(size: windowSize, title: LocalizationService.shared.localizedString(for: "ui_controls_test"))
         
         // Get the content view from the window
         guard let contentView = window.contentView else { return window }

@@ -281,7 +281,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         textField.tag = row
         
         // Add tooltip for API key field
-        textField.toolTip = "API Key is required"
+        textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
         
         return textField
     }
@@ -290,7 +290,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         let button = NSButton(frame: NSRect(x: 9, y: 2, width: 20, height: 20))
         button.bezelStyle = .circular
         button.setButtonType(.momentaryPushIn)
-        button.image = NSImage(systemSymbolName: "trash", accessibilityDescription: "Delete")
+        button.image = NSImage(systemSymbolName: "trash", accessibilityDescription: LocalizationService.shared.localizedString(for: "delete_button_accessibility"))
         button.target = self
         button.action = #selector(deleteConfiguration(_:))
         button.tag = row
@@ -302,7 +302,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         let button = NSButton(frame: NSRect(x: 9, y: 2, width: 20, height: 20))
         button.bezelStyle = .circular
         button.setButtonType(.momentaryPushIn)
-        button.image = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: "Save")
+        button.image = NSImage(systemSymbolName: "checkmark.circle", accessibilityDescription: LocalizationService.shared.localizedString(for: "save_button_accessibility"))
         button.target = self
         button.action = #selector(testConfiguration(_:))
         button.tag = row
@@ -343,14 +343,14 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                     self.configurations.remove(at: row)
                     self.configurationsTable.reloadData()
                     // Show popup message
-                    WindowManager.displayPopupMessage("AI Connection deleted successfully!")
+                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_deleted_successfully"))
                 }
                 
                 print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) deleted! $$$$$$$$$$$$$$$$$$$$")
             } catch {
                 print("Error deleting AI configuration: \(error)")
                 DispatchQueue.main.async {
-                    WindowManager.displayPopupMessage("Failed to delete AI Configuration!")
+                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_delete_ai_configuration"))
                 }
             }
         }
@@ -375,12 +375,12 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
             highlightDuplicateRows(duplicateRows)
             
             // Show popup message
-            WindowManager.displayPopupMessage("Duplicated API Key or Provider, AI Connection configuration not saved.\nPlease check the API Key and Provider.")
+            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "duplicated_api_key_or_provider"))
             return
         }
         
         // Show testing message
-        WindowManager.displayPopupMessage("Testing \(configuration.apiProvider) before saving the configuration...")
+        WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "testing_provider", withFormat: configuration.apiProvider))
         
         // Make actual API call to test the configuration
         Task {
@@ -428,12 +428,12 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                             textField.layer?.borderWidth = 1.0
                             textField.layer?.borderColor = NSColor.systemRed.cgColor
                             textField.layer?.cornerRadius = 4.0
-                            textField.toolTip = "AI Connection test passed"
+                            textField.toolTip = LocalizationService.shared.localizedString(for: "ai_connection_test_passed")
                             
                             // Reset highlight after 2 seconds
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 textField.layer?.borderWidth = 0.0
-                                textField.toolTip = "API Key is required"
+                                textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
                             }
                         }
                     }
@@ -441,17 +441,17 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                     // Show popup message with user's name
                     if let username = self.user?.name {
                         if isNewConnection {
-                            let message = "AI Connection test passed!\nNew AI Connection \(configuration.apiProvider) created for \(username)"
+                            let message = LocalizationService.shared.localizedString(for: "ai_connection_test_passed_new", withFormat: configuration.apiProvider, username)
                             WindowManager.displayPopupMessage(message)
                         } else {
-                            let message = "AI Connection test passed!\nAI Connection configuration \(configuration.apiProvider) updated for \(username)"
+                            let message = LocalizationService.shared.localizedString(for: "ai_connection_test_passed_updated", withFormat: configuration.apiProvider, username)
                             WindowManager.displayPopupMessage(message)
                         }
                     } else {
                         if isNewConnection {
-                            WindowManager.displayPopupMessage("AI Connection test passed!\nNew AI Connection \(configuration.apiProvider) created.")
+                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_passed_new_no_user", withFormat: configuration.apiProvider))
                         } else {
-                            WindowManager.displayPopupMessage("AI Connection test passed!\nAI Connection configuration updated.")
+                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_passed_updated_no_user"))
                         }
                     }
                 }
@@ -468,12 +468,12 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                             textField.layer?.borderWidth = 1.0
                             textField.layer?.borderColor = NSColor.systemRed.cgColor
                             textField.layer?.cornerRadius = 4.0
-                            textField.toolTip = "AI Connection test failed"
+                            textField.toolTip = LocalizationService.shared.localizedString(for: "ai_connection_test_failed")
                             
                             // Reset highlight after 2 seconds
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 textField.layer?.borderWidth = 0.0
-                                textField.toolTip = "API Key is required"
+                                textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
                             }
                         }
                     }
@@ -482,18 +482,18 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                     if let username = self.user?.name {
                         let isNewConnection = configuration.id == 0
                         if isNewConnection {
-                            let message = "AI Connection test failed!\nNo new AI Connection \(configuration.apiProvider) created for \(username).\nPlease check your configuration and try again."
+                            let message = LocalizationService.shared.localizedString(for: "ai_connection_test_failed_new", withFormat: configuration.apiProvider, username)
                             WindowManager.displayPopupMessage(message)
                         } else {
-                            let message = "AI Connection test failed!\nAI Connection configuration \(configuration.apiProvider) not updated for \(username).\nPlease check your configuration and try again."
+                            let message = LocalizationService.shared.localizedString(for: "ai_connection_test_failed_updated", withFormat: configuration.apiProvider, username)
                             WindowManager.displayPopupMessage(message)
                         }
                     } else {
                         let isNewConnection = configuration.id == 0
                         if isNewConnection {
-                            WindowManager.displayPopupMessage("AI Connection test failed!\nNo new AI Connection \(configuration.apiProvider) created.\nPlease check your configuration and try again.")
+                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_failed_new_no_user", withFormat: configuration.apiProvider))
                         } else {
-                            WindowManager.displayPopupMessage("AI Connection test failed!\nAPI configuration not updated.\nPlease check your configuration and try again.")
+                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_failed_updated_no_user"))
                         }
                     }
                 }
@@ -536,7 +536,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                 textField.layer?.borderWidth = 1.0
                 textField.layer?.borderColor = NSColor.systemRed.cgColor
                 textField.layer?.cornerRadius = 4.0
-                textField.toolTip = "Duplicated configuration"
+                textField.toolTip = LocalizationService.shared.localizedString(for: "duplicated_configuration")
             }
         }
         
@@ -545,7 +545,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
             for row in rows {
                 if let textField = self.configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
                     textField.layer?.borderWidth = 0.0
-                    textField.toolTip = "API Key is required"
+                    textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
                 }
             }
         }
@@ -564,17 +564,17 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                     textField.layer?.borderWidth = 1.0
                     textField.layer?.borderColor = NSColor.systemRed.cgColor
                     textField.layer?.cornerRadius = 4.0
-                    textField.toolTip = "API Key is required"
+                    textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
                 } else if duplicateRows.contains(row) {
                     // Highlight duplicate configurations in red
                     textField.layer?.borderWidth = 1.0
                     textField.layer?.borderColor = NSColor.systemRed.cgColor
                     textField.layer?.cornerRadius = 4.0
-                    textField.toolTip = "Duplicated configuration.."
+                    textField.toolTip = LocalizationService.shared.localizedString(for: "duplicated_configuration")
                 } else {
                     // Reset border for valid fields
                     textField.layer?.borderWidth = 0.0
-                    textField.toolTip = "API Key is required"
+                    textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
                 }
             }
         }

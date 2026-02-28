@@ -87,3 +87,31 @@
 "only_valid_no_duplicate_connections_saved" = "Only AI Connections with valid API Key and no duplicates are saved!";
 "failed_to_save_connections" = "Failed to save AI Connections !!!";
 "are_you_sure" = "Are you sure?";
+
+/* Tooltips */
+"api_key_required" = "API Key is required";
+"ai_connection_test_passed" = "AI Connection test passed";
+"ai_connection_test_failed" = "AI Connection test failed";
+"duplicated_configuration" = "Duplicated configuration";
+
+/* Popup messages */
+"ai_connection_deleted_successfully" = "AI Connection deleted successfully!";
+"failed_to_delete_ai_configuration" = "Failed to delete AI Configuration!";
+"duplicated_api_key_or_provider" = "Duplicated API Key or Provider, AI Connection configuration not saved.\nPlease check the API Key and Provider.";
+"testing_provider" = "Testing %@ before saving the configuration...";
+"ai_connection_test_passed_new" = "AI Connection test passed!\nNew AI Connection %@ created for %@";
+"ai_connection_test_passed_updated" = "AI Connection test passed!\nAI Connection configuration %@ updated for %@";
+"ai_connection_test_passed_new_no_user" = "AI Connection test passed!\nNew AI Connection %@ created.";
+"ai_connection_test_passed_updated_no_user" = "AI Connection test passed!\nAI Connection configuration updated.";
+"ai_connection_test_failed_new" = "AI Connection test failed!\nNo new AI Connection %@ created for %@.\nPlease check your configuration and try again.";
+"ai_connection_test_failed_updated" = "AI Connection test failed!\nAI Connection configuration %@ not updated for %@.\nPlease check your configuration and try again.";
+"ai_connection_test_failed_new_no_user" = "AI Connection test failed!\nNo new AI Connection %@ created.\nPlease check your configuration and try again.";
+"ai_connection_test_failed_updated_no_user" = "AI Connection test failed!\nAPI configuration not updated.\nPlease check your configuration and try again.";
+
+/* Accessibility descriptions */
+"delete_button_accessibility" = "Delete";
+"save_button_accessibility" = "Save";
+"close_button_accessibility" = "Close";
+
+/* UI Controls Test */
+"ui_controls_test" = "UI Controls Test";

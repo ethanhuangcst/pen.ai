@@ -87,3 +87,31 @@
 "only_valid_no_duplicate_connections_saved" = "只保存具有有效 API 密钥且非重复的 AI 连接！";
 "failed_to_save_connections" = "保存 AI 连接失败！";
 "are_you_sure" = "确定吗？";
+
+/* Tooltips */
+"api_key_required" = "需要 API 密钥";
+"ai_connection_test_passed" = "AI 连接测试通过";
+"ai_connection_test_failed" = "AI 连接测试失败";
+"duplicated_configuration" = "重复的配置";
+
+/* Popup messages */
+"ai_connection_deleted_successfully" = "AI 连接删除成功！";
+"failed_to_delete_ai_configuration" = "删除 AI 配置失败！";
+"duplicated_api_key_or_provider" = "API 密钥或提供商重复，AI 连接配置未保存。\n请检查 API 密钥和提供商。";
+"testing_provider" = "正在测试 %@，准备保存配置...";
+"ai_connection_test_passed_new" = "AI 连接测试通过！\n为 %@ 创建了新的 AI 连接 %@";
+"ai_connection_test_passed_updated" = "AI 连接测试通过！\n为 %@ 更新了 AI 连接配置 %@";
+"ai_connection_test_passed_new_no_user" = "AI 连接测试通过！\n创建了新的 AI 连接 %@。";
+"ai_connection_test_passed_updated_no_user" = "AI 连接测试通过！\nAI 连接配置已更新。";
+"ai_connection_test_failed_new" = "AI 连接测试失败！\n未为 %@ 创建新的 AI 连接 %@。\n请检查您的配置并重试。";
+"ai_connection_test_failed_updated" = "AI 连接测试失败！\n未为 %@ 更新 AI 连接配置 %@。\n请检查您的配置并重试。";
+"ai_connection_test_failed_new_no_user" = "AI 连接测试失败！\n未创建新的 AI 连接 %@。\n请检查您的配置并重试。";
+"ai_connection_test_failed_updated_no_user" = "AI 连接测试失败！\nAPI 配置未更新。\n请检查您的配置并重试。";
+
+/* Accessibility descriptions */
+"delete_button_accessibility" = "删除";
+"save_button_accessibility" = "保存";
+"close_button_accessibility" = "关闭";
+
+/* UI Controls Test */
+"ui_controls_test" = "UI 控件测试";
