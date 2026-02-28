@@ -118,11 +118,8 @@ if arguments.count > 1 {
                     exit(1)
                 }
                 
-                // Create AIConnectionService
-                let aiService = AIConnectionService(databasePool: pool)
-                
-                // Load providers
-                let providers = try await aiService.loadAllProviders()
+                // Load providers using AIManager
+                let providers = try await AIManager.shared.loadAllProviders()
                 
                 print("\nSuccessfully loaded \(providers.count) AI providers:")
                 print("=====================================")

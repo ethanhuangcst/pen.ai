@@ -192,73 +192,37 @@ As PenAI user, I want to establish all AI connections I have set up, and put the
 ### Acceptance Criteria
 
 ```gherkin
-Scenario: Pen app loads all AI Configurations for the user - happy path
+Scenario: Pen app loads all AI Configurations for the user
   Given Pen app is running
-  WHEN the app has completed step 3 initialization
+  WHEN the app has completed the initialization
   AND the user has completed the login process
   AND the app launched successfully as online-login mode
-  Then it should use the existing AIConnectionService to load all AI Connection configurations for the user
-  AND use them to establish all AI connections for the user in the next step
-  AND print them one by one in terminal
-  AND in this format: "********************************** AI Configuration for " + username + " :  Provider " + number + ":  connectionName + " **********************************"
+  Then it should use AIManager to load all AI Configuration configurations for the user
+  AND return all AI Configuration configurations for the user
+  AND continue with the next step
 
-Scenario: Pen app loads all AI connection configurations for the user - edge case - no AI connections
+Scenario: Pen app loads all AI connection configurations for the user - no AI Configuration
   Given Pen app is running
-  AND the app has completed step 3 initialization
+  AND the app has completed the initialization
   AND the user has completed the login process
   AND the app launched successfully as online-login mode
   AND completed loading the AI Connection configurations from the database
-  When it returns an empty list of AI Connection configurations for the user
-  Then it should not establish any AI connections for the user
-  AND print in terminal: "********************************** No AI Connection Configurations Found for " + username + " **********************************"
+  When it returns an empty list of AI Configuration configurations for the user
+  Then wait until menu bar icon is loaded
+  AND all other pop up messages are closed
+  AND provide a new pop up message: "You don't have any AI Configuration set up yet. Please go to Preference -> AI Configuration to set up your AI Configuration."
 
-Scenario: Pen app loads all AI connection configurations for the user - failed case
+
+Scenario: Pen app loads all AI connection configurations for the user - at least one AI Configuration
   Given Pen app is running
-  AND the app has completed step 3 initialization
+  AND the app has completed the initialization
   AND the user has completed the login process
   AND the app launched successfully as online-login mode
-  When it failed to load the AI Configuration configurations from the database
-  Then it should not establish any AI connections for the user
-  AND print in terminal: "********************************** Failed to Load AI Configuration Configurations for " + username + " **********************************"
-
-Scenario: Test actual AI connections for the user
-  Given Pen app is running
-  AND the app has completed initialization
-  AND the user has completed the login process
-  AND the app launched successfully as online-login mode
-  AND completed loading the AI Configuration that the user has set up
-  When the result is not null - the user has set up at least one AI Configuration
-  AND the AI configurations are already set as global objects
-  Then repeat this process for each AI Configuration:
+  AND completed loading the AI Connection configurations from the database
+  When it returns at least one AI Configuration configuration for the user
+  repeat this process for each AI Configuration:
   - create a AIManager object for this AI Configuration, set as a global object
-  - try to establish an actual AI connection for the user using the AIConnectivityService by making a test call
-  - `print the test result in terminal: "********************************** Test AI Configuration " + number + ":  testResult + " **********************************"
+  - call AIManager.testConnection() to test the connection
+  - print in this format: "********************************** Test AI Configuration for " + username + " :  Provider " + number + ":  connectionName + " **********************************"
 
-Scenario: Manage global AI Model Providers object - no providers
-  Given Pen app is running
-  AND the app has completed step 3 initialization
-  AND completed loading the AI Model Providers from the database
-  When the result is null
-  AND print in terminal: "********************************** No AI Model Providers Found **********************************"
-  AND continue loading the AI connections for the user
-
-Scenario: Manage global AI Model Providers object - load failure
-  Given Pen app is running
-  AND the app has completed step 3 initialization
-  AND completed loading the AI Model Providers from the database
-  When the result is not null
-  AND the result is a list of AI Model Providers
-  Then create a global AI Model Providers object for each AI Model Provider to store the AI Model Providers
-  AND print them all one by one in terminal: "********************************** Load AI Model Provider " + number + ":  providerName + " **********************************"
-  AND continue loading the AI connections for the user
-
-Scenario: Pen app handles AI Model Provider loading failure
-  Given the Pen app is running
-  AND the app has completed step 3 initialization
-  AND launched successfully
-  AND started loading the AI Model Providers from the database
-  When loading the AI Model Providers from the database fails
-  Then the app marks the unavailable providers as offline
-  And the app continues with available providers
-  And the user is notified of which providers are unavailable (print in terminal: "********************************** AI Model Provider Loading Failed: " + failedProviders + " **********************************")
 ```
