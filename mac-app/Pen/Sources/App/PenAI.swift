@@ -426,11 +426,9 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
         print("PenAIDelegate: Current user: \(currentUser?.name ?? "nil")")
         print("PenAIDelegate: Current user profileImage: \(currentUser?.profileImage != nil ? "[BASE64 ENCODED IMAGE]" : "nil")")
         
-        // Create or show preferences window
-        if preferencesWindow == nil {
-            print("PenAIDelegate: Creating new PreferencesWindow with user: \(currentUser?.name ?? "nil")")
-            preferencesWindow = PreferencesWindow(user: currentUser)
-        }
+        // Always recreate preferences window to ensure it uses the current user
+        print("PenAIDelegate: Creating new PreferencesWindow with user: \(currentUser?.name ?? "nil")")
+        preferencesWindow = PreferencesWindow(user: currentUser)
         
         if let window = preferencesWindow {
             // Use the showAndFocus method to ensure keyboard input works
@@ -774,6 +772,10 @@ class PenAIDelegate: NSObject, NSApplicationDelegate {
             self.currentUser = user
         } else if !userName.isEmpty {
             self.userName = userName
+        } else if !loggedIn {
+            // Clear user information when logging out
+            self.userName = ""
+            self.currentUser = nil
         }
         
         // Update the menu bar icon based on login status

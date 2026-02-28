@@ -8,6 +8,8 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     private let defaultLabel = NSTextField()
     private let userLabel = NSTextField()
     private let addButton = FocusableButton()
+    private let emptyStateView = NSView()
+    private let emptyStateLabel = NSTextField()
     private var prompts: [Prompt] = []
     private var user: User?
     private weak var parentWindow: NSWindow?
@@ -45,8 +47,43 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         setupTableView()
         setupActionButtons()
         
-        // Load mock data
-        loadMockData()
+        // Load prompts from database
+        loadPromptsFromDatabase()
+    }
+    
+    private func loadPromptsFromDatabase() {
+        guard let userId = user?.id else {
+            print("[PromptsTabView] No user ID available")
+            return
+        }
+        
+        Task {
+            do {
+                let loadedPrompts = try await PromptsService.shared.getPromptsByUserId(userId: userId)
+                DispatchQueue.main.async {
+                    self.prompts = loadedPrompts
+                    self.tableView.reloadData()
+                    self.updateEmptyStateView()
+                }
+            } catch {
+                print("[PromptsTabView] Failed to load prompts: \(error)")
+                WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_load_prompts"))
+                // Show empty state view on error
+                DispatchQueue.main.async {
+                    self.updateEmptyStateView()
+                }
+            }
+        }
+    }
+    
+    private func updateEmptyStateView() {
+        if prompts.isEmpty {
+            emptyStateView.isHidden = false
+            scrollView.isHidden = true
+        } else {
+            emptyStateView.isHidden = true
+            scrollView.isHidden = false
+        }
     }
     
     private func setupActionButtons() {
@@ -126,23 +163,23 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         
         let promptColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("prompt"))
         promptColumn.title = LocalizationService.shared.localizedString(for: "prompt_text_column")
-        promptColumn.width = 288
-        promptColumn.minWidth = 288
-        promptColumn.maxWidth = 288
+        promptColumn.width = 298
+        promptColumn.minWidth = 298
+        promptColumn.maxWidth = 298
         tableView.addTableColumn(promptColumn)
         
         let editColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("edit"))
         editColumn.title = LocalizationService.shared.localizedString(for: "edit_button")
-        editColumn.width = 38
-        editColumn.minWidth = 38
-        editColumn.maxWidth = 38
+        editColumn.width = 33
+        editColumn.minWidth = 33
+        editColumn.maxWidth = 33
         tableView.addTableColumn(editColumn)
         
         let deleteColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("delete"))
         deleteColumn.title = LocalizationService.shared.localizedString(for: "delete_button")
-        deleteColumn.width = 38
-        deleteColumn.minWidth = 38
-        deleteColumn.maxWidth = 38
+        deleteColumn.width = 33
+        deleteColumn.minWidth = 33
+        deleteColumn.maxWidth = 33
         tableView.addTableColumn(deleteColumn)
         
         // Add visible border inside the table
@@ -152,6 +189,33 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         
         // Add table view to scroll view
         scrollView.documentView = tableView
+        
+        // Setup empty state view
+        setupEmptyStateView(tableContainer: tableContainer)
+    }
+    
+    private func setupEmptyStateView(tableContainer: NSView) {
+        // Create empty state view
+        emptyStateView.frame = tableContainer.bounds
+        emptyStateView.wantsLayer = true
+        emptyStateView.layer?.backgroundColor = NSColor.white.cgColor
+        
+        // Add empty state label
+        emptyStateLabel.frame = NSRect(x: 0, y: emptyStateView.frame.height / 2 - 15, width: emptyStateView.frame.width, height: 30)
+        emptyStateLabel.stringValue = LocalizationService.shared.localizedString(for: "no_prompts_saved_yet")
+        emptyStateLabel.isBezeled = false
+        emptyStateLabel.drawsBackground = false
+        emptyStateLabel.isEditable = false
+        emptyStateLabel.isSelectable = false
+        emptyStateLabel.font = NSFont.systemFont(ofSize: 16)
+        emptyStateLabel.alignment = .center
+        emptyStateView.addSubview(emptyStateLabel)
+        
+        // Add empty state view to table container
+        tableContainer.addSubview(emptyStateView)
+        
+        // Initially hide empty state view
+        emptyStateView.isHidden = true
     }
     
     // MARK: - Mock Data
@@ -178,7 +242,7 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         )
         
         // Add more mock prompts if needed
-        prompts = [prompt2, prompt1] // Newest first
+        prompts = [prompt1, prompt2] // Oldest first
         
         // Reload table view
         tableView.reloadData()
@@ -327,10 +391,33 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
             // Open edit window using the new NewOrEditPrompt class
             let editWindow = NewOrEditPrompt(prompt: prompt, originatingWindow: parentWindow)
             editWindow.onSave = { updatedPrompt in
-                // Update the prompt in the array
-                self.prompts[row] = updatedPrompt
-                self.tableView.reloadData()
-                WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_updated_successfully"))
+                Task {
+                    do {
+                        // Update prompt in database
+                        let updatedPromptFromDB = try await PromptsService.shared.updatePrompt(
+                            id: updatedPrompt.id,
+                            promptName: updatedPrompt.promptName,
+                            promptText: updatedPrompt.promptText
+                        )
+                        
+                        DispatchQueue.main.async {
+                            if let updatedPromptFromDB = updatedPromptFromDB {
+                                // Update the prompt in the array
+                                self.prompts[row] = updatedPromptFromDB
+                                self.tableView.reloadData()
+                                self.updateEmptyStateView()
+                                WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_updated_successfully"))
+                            } else {
+                                WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_update_prompt"))
+                            }
+                        }
+                    } catch {
+                        print("[PromptsTabView] Failed to update prompt: \(error)")
+                        DispatchQueue.main.async {
+                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_update_prompt"))
+                        }
+                    }
+                }
             }
             editWindow.showAndFocus()
         }
@@ -471,10 +558,25 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
             dialogWindow.orderOut(nil)
             promptsForDelete = []
             
-            // Delete the prompt
-            prompts.remove(at: row)
-            tableView.reloadData()
-            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_deleted_successfully"))
+            Task {
+                do {
+                    // Delete prompt from database
+                    try await PromptsService.shared.deletePrompt(id: prompt.id)
+                    
+                    DispatchQueue.main.async {
+                        // Delete the prompt from the array
+                        self.prompts.remove(at: row)
+                        self.tableView.reloadData()
+                        self.updateEmptyStateView()
+                        WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_deleted_successfully"))
+                    }
+                } catch {
+                    print("[PromptsTabView] Failed to delete prompt: \(error)")
+                    DispatchQueue.main.async {
+                        WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_delete_prompt"))
+                    }
+                }
+            }
         }
     }
     
@@ -482,10 +584,34 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         // Open NewOrEditPrompt window with empty fields
         let newPromptWindow = NewOrEditPrompt(prompt: nil, originatingWindow: parentWindow)
         newPromptWindow.onSave = { newPrompt in
-            // Add the new prompt to the array
-            self.prompts.insert(newPrompt, at: 0) // Add to the beginning (newest first)
-            self.tableView.reloadData()
-            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_created_successfully"))
+            guard let userId = self.user?.id else {
+                print("[PromptsTabView] No user ID available")
+                return
+            }
+            
+            Task {
+                do {
+                    // Create prompt in database
+                    let createdPrompt = try await PromptsService.shared.createPrompt(
+                        userId: userId,
+                        promptName: newPrompt.promptName,
+                        promptText: newPrompt.promptText
+                    )
+                    
+                    DispatchQueue.main.async {
+                        // Add the new prompt to the array
+                        self.prompts.append(createdPrompt) // Add to the end (newest last)
+                        self.tableView.reloadData()
+                        self.updateEmptyStateView()
+                        WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_created_successfully"))
+                    }
+                } catch {
+                    print("[PromptsTabView] Failed to create prompt: \(error)")
+                    DispatchQueue.main.async {
+                        WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_create_prompt"))
+                    }
+                }
+            }
         }
         newPromptWindow.showAndFocus()
     }

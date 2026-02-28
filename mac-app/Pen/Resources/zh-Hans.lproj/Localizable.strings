@@ -141,3 +141,8 @@
 "prompt_created_successfully" = "提示词创建成功";
 "create_new_prompt_canceled" = "新建提示词已取消，所有更改已丢弃";
 "edit_prompt_canceled" = "编辑提示词已取消，所有更改已丢弃";
+"failed_to_load_prompts" = "加载提示词失败";
+"failed_to_create_prompt" = "创建提示词失败";
+"failed_to_update_prompt" = "更新提示词失败";
+"failed_to_delete_prompt" = "删除提示词失败";
+"no_prompts_saved_yet" = "暂无保存的提示词";

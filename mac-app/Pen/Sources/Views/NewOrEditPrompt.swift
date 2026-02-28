@@ -171,12 +171,12 @@ class NewOrEditPrompt: BaseWindow {
             // Create new prompt
             let newPrompt = Prompt(
                 id: "prompt-\(UUID().uuidString)",
-                userId: 1, // Replace with actual user ID
+                userId: 0, // Will be set by the caller
                 promptName: promptName,
                 promptText: promptText,
                 createdDatetime: Date(),
                 updatedDatetime: nil,
-                systemFlag: "USER"
+                systemFlag: "PEN"
             )
             onSave?(newPrompt)
         }

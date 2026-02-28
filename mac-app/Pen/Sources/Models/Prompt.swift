@@ -24,57 +24,51 @@ class Prompt {
     /// Creates a Prompt instance from database row
     static func fromDatabaseRow(_ row: [String: Any]) -> Prompt? {
         // Extract id
-        guard let id = row["id"] as? String else {
+        let id: String
+        if let idInt = row["id"] as? Int {
+            id = String(idInt)
+        } else if let idStr = row["id"] as? String {
+            id = idStr
+        } else {
             print("[Prompt] Missing or invalid id: \(row["id"] ?? "nil")")
             return nil
         }
         
-        // Handle userId as string or int
+        // Handle userId (from user relation)
         let userId: Int
         if let userIdInt = row["user_id"] as? Int {
             userId = userIdInt
         } else if let userIdString = row["user_id"] as? String, let userIdInt = Int(userIdString) {
             userId = userIdInt
         } else {
-            print("[Prompt] Missing or invalid user_id: \(row["user_id"] ?? "nil")")
-            return nil
+            // Default to 0 for null users (default prompts)
+            userId = 0
         }
         
         guard let promptName = row["prompt_name"] as? String, 
               let promptText = row["prompt_text"] as? String else {
-            print("[Prompt] Failed to extract required fields")
+            print("[Prompt] Failed to extract required fields: prompt_name=\(row["prompt_name"] ?? "nil"), prompt_text=\(row["prompt_text"] ?? "nil")")
             return nil
         }
         
         // Parse created_datetime
         var createdDatetime = Date()
-        if let createdDatetimeStr = row["created_datetime"] as? String {
+        if let createdAtStr = row["created_datetime"] as? String {
             let dateFormatter = ISO8601DateFormatter()
             dateFormatter.formatOptions = [.withFullDate, .withTime]
-            if let parsedDate = dateFormatter.date(from: createdDatetimeStr) {
+            if let parsedDate = dateFormatter.date(from: createdAtStr) {
                 createdDatetime = parsedDate
             } else {
-                print("[Prompt] Failed to parse created_datetime: \(createdDatetimeStr), using current date")
+                print("[Prompt] Failed to parse created_datetime: \(createdAtStr), using current date")
             }
         } else {
             print("[Prompt] created_datetime not found, using current date")
         }
         
-        // Parse updated_datetime (optional)
-        var updatedDatetime: Date? = nil
-        if let updatedDatetimeStr = row["updated_datetime"] as? String {
-            let dateFormatter = ISO8601DateFormatter()
-            dateFormatter.formatOptions = [.withFullDate, .withTime]
-            if let parsedDate = dateFormatter.date(from: updatedDatetimeStr) {
-                updatedDatetime = parsedDate
-            } else {
-                print("[Prompt] Failed to parse updated_datetime: \(updatedDatetimeStr)")
-            }
-        }
-        
+        // Get system flag from database
         let systemFlag = row["system_flag"] as? String ?? "PEN"
         
-        return Prompt(id: id, userId: userId, promptName: promptName, promptText: promptText, createdDatetime: createdDatetime, updatedDatetime: updatedDatetime, systemFlag: systemFlag)
+        return Prompt(id: id, userId: userId, promptName: promptName, promptText: promptText, createdDatetime: createdDatetime, updatedDatetime: nil, systemFlag: systemFlag)
     }
     
     /// Creates a new Prompt instance with default PEN system flag

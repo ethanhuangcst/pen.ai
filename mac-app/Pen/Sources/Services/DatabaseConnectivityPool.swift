@@ -95,6 +95,13 @@ class MySQLConnection: DatabaseConnection {
                 
                 // Debug: Print all column names
                 print("[MySQLConnection] Debug: Row columns:")
+                // Try to print actual column names by checking common possibilities
+                let commonColumns = ["id", "user_id", "prompt_name", "prompt_text", "created_datetime", "updated_datetime", "system_flag", "name", "email", "password", "profileImage", "createdAt", "updatedAt", "apiKey", "apiProvider"]
+                for columnName in commonColumns {
+                    if let _ = row.column(columnName) {
+                        print("[MySQLConnection] Debug: Column found: \(columnName)")
+                    }
+                }
                 
                 // Process all columns dynamically
                 // First, try common columns
@@ -170,10 +177,12 @@ class MySQLConnection: DatabaseConnection {
                     rowData["updated_at"] = updatedAt
                 }
                 
-                // Add AI connection specific columns
+                // Add common columns for all tables
                 if let userIdData = row.column("user_id"), let userId = userIdData.int {
                     rowData["user_id"] = userId
                 }
+                
+                // Add AI connection specific columns
                 if let apiKeyData = row.column("apiKey"), let apiKey = apiKeyData.string {
                     rowData["apiKey"] = apiKey
                 }
@@ -185,6 +194,23 @@ class MySQLConnection: DatabaseConnection {
                 }
                 if let updatedAtData = row.column("updatedAt"), let updatedAt = updatedAtData.string {
                     rowData["updatedAt"] = updatedAt
+                }
+                
+                // Add prompt specific columns
+                if let promptNameData = row.column("prompt_name"), let promptName = promptNameData.string {
+                    rowData["prompt_name"] = promptName
+                }
+                if let promptTextData = row.column("prompt_text"), let promptText = promptTextData.string {
+                    rowData["prompt_text"] = promptText
+                }
+                if let createdDatetimeData = row.column("created_datetime"), let createdDatetime = createdDatetimeData.string {
+                    rowData["created_datetime"] = createdDatetime
+                }
+                if let updatedDatetimeData = row.column("updated_datetime"), let updatedDatetime = updatedDatetimeData.string {
+                    rowData["updated_datetime"] = updatedDatetime
+                }
+                if let systemFlagData = row.column("system_flag"), let systemFlag = systemFlagData.string {
+                    rowData["system_flag"] = systemFlag
                 }
                 
                 // Try to get all other columns (for JSON columns like base_urls)

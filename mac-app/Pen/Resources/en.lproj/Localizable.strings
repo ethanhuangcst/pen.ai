@@ -141,3 +141,8 @@
 "prompt_created_successfully" = "Prompt created successfully";
 "create_new_prompt_canceled" = "Create new prompt canceled, all changes discarded";
 "edit_prompt_canceled" = "Edit prompt canceled, all changes discarded";
+"failed_to_load_prompts" = "Failed to load prompts";
+"failed_to_create_prompt" = "Failed to create prompt";
+"failed_to_update_prompt" = "Failed to update prompt";
+"failed_to_delete_prompt" = "Failed to delete prompt";
+"no_prompts_saved_yet" = "No prompts saved yet";

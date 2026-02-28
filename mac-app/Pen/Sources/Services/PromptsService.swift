@@ -13,8 +13,8 @@ class PromptsService {
         let newPrompt = Prompt.createNewPrompt(userId: userId, promptName: promptName, promptText: promptText)
         
         let query = """
-        INSERT INTO wingman_db.prompts (id, user_id, prompt_name, prompt_text, created_datetime, system_flag)
-        VALUES (?, ?, ?, ?, NOW(), ?)
+        INSERT INTO wingman_db.prompts (id, user_id, prompt_name, prompt_text, system_flag)
+        VALUES (?, ?, ?, ?, ?)
         """
         
         let params: [MySQLData] = [
@@ -46,7 +46,7 @@ class PromptsService {
     func updatePrompt(id: String, promptName: String, promptText: String) async throws -> Prompt? {
         let query = """
         UPDATE wingman_db.prompts
-        SET prompt_name = ?, prompt_text = ?, updated_datetime = NOW()
+        SET prompt_name = ?, prompt_text = ?
         WHERE id = ?
         """
         
@@ -123,7 +123,7 @@ class PromptsService {
     
     /// Gets all prompts for a user
     func getPromptsByUserId(userId: Int) async throws -> [Prompt] {
-        let query = "SELECT * FROM wingman_db.prompts WHERE user_id = ? ORDER BY created_datetime DESC"
+        let query = "SELECT * FROM wingman_db.prompts WHERE user_id = ? ORDER BY created_datetime ASC"
         
         do {
             guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
