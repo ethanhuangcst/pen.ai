@@ -182,3 +182,9 @@
 "failed_to_update_prompt" = "Failed to update prompt";
 "failed_to_delete_prompt" = "Failed to delete prompt";
 "no_prompts_saved_yet" = "No prompts saved yet";
+
+/* Clipboard messages */
+"clipboard_empty_message" = "Clipboard is empty. Copy your text and click paste button, or use hot key to process.";
+"clipboard_non_text_message" = "The text content in your clipboard will be automatically retrieved here";
+"clipboard_access_error" = "Unable to access clipboard. Please try again.";
+"text_copied_to_clipboard" = "Text copied to clipboard";

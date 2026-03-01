@@ -506,6 +506,14 @@ public class AIManager {
         currentConfiguration = nil
     }
     
+    // Reset the entire AIManager instance
+    public func reset() {
+        strategies = [:]
+        cachedProviders = nil
+        currentConfiguration = nil
+        _isInitialized = false
+    }
+    
     // Validate configuration
     public func validateConfiguration() -> Bool {
         return currentConfiguration != nil

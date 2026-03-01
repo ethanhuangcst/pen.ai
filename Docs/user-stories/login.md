@@ -186,8 +186,11 @@ Scenario: User logs out successfully
   And the menubar icon remains available
   And user information is cleaned up, including AI configurations and prompts
   And the local global user object is removed
+  And the global AIManager object is removed
   And other system resources are cleaned up
   And the app is set to online-logout mode
+  And the "UserLoggedIn" flag is set to false
+
   And a popup message appears: "User logged out. Please log in again to use Pen."
   And the message follows i18n guidelines
 

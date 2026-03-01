@@ -364,9 +364,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         closeOtherWindows()
         
         // 2. Clean up user information, including AI configurations and prompts
-        // Clear AI configuration
-        AIManager.shared.clearConfiguration()
-        print("PenDelegate: Cleared AI configuration")
+        // Reset AIManager to remove global instance and all configurations
+        AIManager.shared.reset()
+        print("PenDelegate: Reset AIManager instance")
         
         // 3. Remove the local global user object and clean up other system resources
         setLoginStatus(false)
@@ -703,12 +703,17 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         
         if let window = window {
             if window.isVisible {
-                print("PenDelegate: Window is already open, repositioning to mouse cursor")
+                print("PenDelegate: Window is already open, reloading at new mouse cursor position")
                 
-                // Position window relative to mouse cursor
+                // Reposition window relative to mouse cursor
                 positionWindowRelativeToMouseCursor(window)
                 
-                print("PenDelegate: Window repositioned, app remains running with menubar icon available")
+                // Reload Pen window content
+                Task {
+                    await penWindowService.initiatePen()
+                }
+                
+                print("PenDelegate: Window reloaded and repositioned, app remains running with menubar icon available")
                 window.makeKeyAndOrderFront(nil)
             } else {
                 // Close other windows before opening Pen window
@@ -736,8 +741,18 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         
         if let window = window {
             if window.isVisible {
-                print("PenDelegate: Hiding window")
-                window.orderOut(nil)
+                print("PenDelegate: Window is already open, reloading at new mouse cursor position")
+                
+                // Reposition window relative to mouse cursor
+                positionWindowRelativeToMouseCursor(window)
+                
+                // Reload Pen window content
+                Task {
+                    await penWindowService.initiatePen()
+                }
+                
+                print("PenDelegate: Window reloaded and repositioned, app remains running with menubar icon available")
+                window.makeKeyAndOrderFront(nil)
             } else {
                 // Close other windows before opening Pen window
                 closeOtherWindows()

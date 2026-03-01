@@ -76,12 +76,11 @@ The Pen window should only open when the app is in online login mode, and it sho
   When I press the configured shortcut key
   Then the Pen window opens
 
-**Scenario: Repositioning window via shortcut key**
+**Scenario: Reload Pen window via shortcut key**
   Given the app is in online login mode
   And the Pen window is already open
   When I press the configured shortcut key
-  Then the Pen window is repositioned relative to the current mouse cursor
-  And a new window is not opened
+  Then reload the Pen window at the new position relative to the current mouse cursor
 
 ### User Story 5: Window Positioning for Shortcut Access
 **As a user**, I want the Pen window to open at a position relative to my current mouse cursor when accessed via shortcut key,

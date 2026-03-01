@@ -103,7 +103,7 @@ Scenario: Handle no AI providers configured
   And it should display a message in the prompts drop-down box: "No prompts available"
   And it should provide a button to open AI configuration settings
 
-# User Story 4: Automatically process clipboard content
+# User Story 4: Automatically load clipboard text type content to pen_original_text_text text field
 As a Pen user
 I want Pen app to automatically identify text from system clipboard and paste it into the original text field
 So that I can easily use Pen to process the text without manual input
@@ -114,6 +114,7 @@ Scenario: Paste valid text from clipboard on window launch
   When Pen window launches
   Then it should automatically read the most recent text from system clipboard
   And it should paste the text into pen_original_text_text text field
+  And trim the text to fit the size with the ellipsis "..." displayed at the last line
   And it should display the text as-is without modification
 
 Scenario: Handle non-text clipboard content
@@ -121,14 +122,15 @@ Scenario: Handle non-text clipboard content
   And system clipboard contains non-text content (e.g., image, file)
   When Pen window launches
   Then it should not paste anything into pen_original_text_text text field
-  And it should display the default placeholder text: "Original text will appear here"
+  And it should display the default placeholder text: "The text content in your clipboard will be automatically retrieved here"
+  And it should follow i18n 
 
 Scenario: Handle empty clipboard
   Given Pen is running
   And system clipboard is empty
   When Pen window launches
   Then it should display the message: "Clipboard is empty. Copy your text and click paste button, or use hot key [shortcut_key] to process."
-  And it should enable the manual paste button
+  And it should follow i18n 
 
 Scenario: Handle clipboard read failure
   Given Pen is running
@@ -137,6 +139,17 @@ Scenario: Handle clipboard read failure
   Then it should display the message: "Unable to access clipboard. Please try again."
   And it should enable the manual paste button
   And it should log the error for troubleshooting
+
+# User Story 5: Manually load clipboard text type content to pen_original_text_text text field
+As a Pen user
+I want to manually load text from system clipboard and paste it into the original text field
+So that I can easily use Pen to process the text without manual input
+
+Scenario: user clicks pen_manual_paste_button
+  Given Pen is running
+  AND pen window is opened
+  When user clicks button pen_manual_paste_button
+  Then Pen should identify text content from clipboard, consistent with the scenarios described in User Story Automatically load clipboard text type content to pen_original_text_text text field
 
 
 Feature: Pen window UI default display

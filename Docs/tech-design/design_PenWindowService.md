@@ -294,8 +294,8 @@ sequenceDiagram
 |--------|-------------|------------|--------------|
 | `initializeUIComponents()` | Initializes all UI components | None | `Void` |
 | `updateUIComponents()` | Updates UI components with current data | None | `Void` |
-| `updateOriginalText(_:)` | Updates original text field | `String` | `Void` |
-| `updateEnhancedText(_:)` | Updates enhanced text field | `String` | `Void` |
+| `updateOriginalText(_:)` | Updates original text field with text and tooltip for hover-over functionality | `String` | `Void` |
+| `updateEnhancedText(_:)` | Updates enhanced text field with text and tooltip for hover-over functionality | `String` | `Void` |
 | `updatePromptDropdown(_:)` | Updates prompt dropdown with new data | `[Prompt]` | `Void` |
 | `updateProviderDropdown(_:)` | Updates provider dropdown with new data | `[AIProvider]` | `Void` |
 
@@ -434,6 +434,8 @@ The `initiatePen()` method is the core initialization method that implements all
 
 - **BaseWindow**: Custom window class managed by PenWindowService
 - **NSTextField**: Text fields for original and enhanced text
+  - **pen_original_text_text**: Displays original text from clipboard with hover-over tooltip for full text
+  - **pen_enhanced_text_text**: Displays enhanced text with hover-over tooltip for full text
 - **NSPopUpButton**: Dropdowns for prompts and providers
 - **NSButton**: Paste and enhance buttons
 

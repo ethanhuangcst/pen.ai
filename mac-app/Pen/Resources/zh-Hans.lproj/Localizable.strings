@@ -152,3 +152,9 @@
 "pen_footer_instruction" = "热键： %@ ";
 "paste_from_clipboard" = "从剪贴板粘贴，或按 %@";
 "paste_from_clipboard_simple" = "从剪贴板粘贴";
+
+/* Clipboard messages */
+"clipboard_empty_message" = "剪贴板为空。复制文本并点击粘贴按钮，或使用热键进行处理。";
+"clipboard_non_text_message" = "您剪贴板中的文本内容将自动显示在这里";
+"clipboard_access_error" = "无法访问剪贴板。请重试。";
+"text_copied_to_clipboard" = "文本已复制到剪贴板";

@@ -74,6 +74,11 @@ class PenWindowService {
         
         // 3. Load AI Configurations
         await loadAIConfigurations()
+        
+        // 4. Load Clipboard Content
+        await MainActor.run {
+            loadClipboardContent()
+        }
     }
     
     // MARK: - User Information Loading
@@ -134,19 +139,41 @@ class PenWindowService {
             AIManager.shared.initialize()
         }
         
-        // Load AI providers
+        // Load AI configurations for the current user
         do {
-            let providers = try await AIManager.shared.getProviders()
+            guard let user = userService.currentUser else {
+                // No user logged in
+                await handleNoAIProviders()
+                return
+            }
             
-            if providers.isEmpty {
-                // No AI providers configured
+            // Get user's AI configurations
+            let configurations = try await AIManager.shared.getConnections(for: user.id)
+            
+            if configurations.isEmpty {
+                // No AI configurations for this user
                 await handleNoAIProviders()
             } else {
-                // Populate AI providers dropdown
-                await populateProvidersDropdown(providers: providers)
+                // Get all available providers
+                let allProviders = try await AIManager.shared.getProviders()
                 
-                // Load prompts
-                await loadPrompts()
+                // Filter providers to only those the user has configured
+                let userProviders = allProviders.filter { provider in
+                    return configurations.contains { config in
+                        config.apiProvider == provider.name
+                    }
+                }
+                
+                if userProviders.isEmpty {
+                    // No matching providers found
+                    await handleNoAIProviders()
+                } else {
+                    // Populate AI providers dropdown with user's configured providers
+                    await populateProvidersDropdown(providers: userProviders)
+                    
+                    // Load prompts
+                    await loadPrompts()
+                }
             }
         } catch {
             // Handle AI configuration load failure
@@ -347,7 +374,7 @@ class PenWindowService {
         originalTextField.font = NSFont.systemFont(ofSize: 12)
         originalTextField.textColor = NSColor.labelColor
         originalTextField.alignment = .left
-        originalTextField.identifier = NSUserInterfaceItemIdentifier("Pen_original_text_text")
+        originalTextField.identifier = NSUserInterfaceItemIdentifier("pen_original_text_text")
         
         // Add visible border
         originalTextField.wantsLayer = true
@@ -545,12 +572,225 @@ class PenWindowService {
         contentView.addSubview(settingsButton)
     }
     
+    // MARK: - Clipboard Methods
+    
+    func readClipboardText() -> String? {
+        let pasteboard = NSPasteboard.general
+        return pasteboard.string(forType: .string)
+    }
+    
+    func isClipboardTextType() -> Bool {
+        let pasteboard = NSPasteboard.general
+        return pasteboard.string(forType: .string) != nil
+    }
+    
+
+    
+    func loadClipboardContent() -> String? {
+        do {
+            if isClipboardTextType() {
+                if let clipboardText = readClipboardText() {
+                    if !clipboardText.isEmpty {
+                        // Scenario: Paste valid text from clipboard on window launch
+                        updateOriginalText(clipboardText)
+                        return clipboardText
+                    } else {
+                        // Scenario: Handle empty clipboard
+                        displayEmptyClipboardMessage()
+                        return nil
+                    }
+                } else {
+                    // Scenario: Handle clipboard read failure
+                    displayClipboardErrorMessage()
+                    return nil
+                }
+            } else {
+                // Scenario: Handle non-text clipboard content
+                displayNonTextClipboardMessage()
+                return nil
+            }
+        } catch {
+            // Scenario: Handle clipboard read failure
+            print("[PenWindowService] Error reading clipboard: \(error)")
+            displayClipboardErrorMessage()
+            return nil
+        }
+    }
+    
+    // MARK: - UI Update Methods
+    
+    private func updateOriginalText(_ text: String) {
+        guard let contentView = window?.contentView else { return }
+        
+        for subview in contentView.subviews {
+            if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
+                for subview in container.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
+                        let maxVisibleLines = 5
+                        
+                        let lines = getVisibleLineCount(for: text, in: textField)
+                        
+                        if lines <= maxVisibleLines {
+                            // Text fits, display as-is
+                            textField.stringValue = text
+                        } else {
+                            // Text is too long, trim to 5 lines and replace last 3 characters with "..."
+                            let trimmedText = trimTextToFitLines(text, in: textField, maxLines: 5)
+                            textField.stringValue = trimmedText
+                        }
+                        
+                        // Set tooltip to show full text on hover
+                        textField.toolTip = text
+                        break
+                    }
+                }
+                break
+            }
+        }
+    }
+    
+    private func getVisibleLineCount(for text: String, in textField: NSTextField) -> Int {
+        let font = textField.font ?? NSFont.systemFont(ofSize: 12)
+        let width = textField.frame.width - 10 // Account for padding
+        let height = textField.frame.height
+        
+        // Replace newlines with spaces to treat them as normal characters
+        let textWithoutNewlines = text.replacingOccurrences(of: "\n", with: " ")
+        
+        let textStorage = NSTextStorage(string: textWithoutNewlines, attributes: [.font: font])
+        let layoutManager = NSLayoutManager()
+        textStorage.addLayoutManager(layoutManager)
+        let textContainer = NSTextContainer(size: CGSize(width: width, height: height))
+        textContainer.lineFragmentPadding = 0.0
+        layoutManager.addTextContainer(textContainer)
+        
+        var lineCount = 0
+        var glyphIndex = 0
+        let textLength = textStorage.length
+        
+        while glyphIndex < textLength {
+            var lineRange = NSRange()
+            layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: &lineRange)
+            lineCount += 1
+            glyphIndex = NSMaxRange(lineRange)
+        }
+        
+        return lineCount
+    }
+    
+    private func trimTextToFitLines(_ text: String, in textField: NSTextField, maxLines: Int) -> String {
+        let font = textField.font ?? NSFont.systemFont(ofSize: 12)
+        let width = textField.frame.width - 10 // Account for padding
+        let height = textField.frame.height
+        
+        // Replace newlines with spaces to treat them as normal characters
+        let textWithoutNewlines = text.replacingOccurrences(of: "\n", with: " ")
+        
+        let textStorage = NSTextStorage(string: textWithoutNewlines, attributes: [.font: font])
+        let layoutManager = NSLayoutManager()
+        textStorage.addLayoutManager(layoutManager)
+        let textContainer = NSTextContainer(size: CGSize(width: width, height: height))
+        textContainer.lineFragmentPadding = 0.0
+        layoutManager.addTextContainer(textContainer)
+        
+        // Calculate the range that fits within the text field
+        let range = layoutManager.glyphRange(forBoundingRect: CGRect(x: 0, y: 0, width: width, height: height), in: textContainer)
+        let characterRange = layoutManager.characterRange(forGlyphRange: range, actualGlyphRange: nil)
+        
+        // Get the trimmed text from the original text (preserving newlines)
+        var trimmedText = (text as NSString).substring(to: characterRange.upperBound)
+        
+        // Replace last 3 characters with "..."
+        if trimmedText.count >= 3 {
+            trimmedText = String(trimmedText.prefix(trimmedText.count - 3)) + "..."
+        } else {
+            // If text is too short, just return it
+            return trimmedText
+        }
+        
+        return trimmedText
+    }
+    
+    private func displayEmptyClipboardMessage() {
+        guard let contentView = window?.contentView else { return }
+        
+        for subview in contentView.subviews {
+            if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
+                for subview in container.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
+                        let message = LocalizationService.shared.localizedString(for: "clipboard_empty_message")
+                        textField.stringValue = message
+                        textField.toolTip = message
+                        break
+                    }
+                }
+                break
+            }
+        }
+    }
+    
+    private func displayClipboardErrorMessage() {
+        guard let contentView = window?.contentView else { return }
+        
+        for subview in contentView.subviews {
+            if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
+                for subview in container.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
+                        let message = LocalizationService.shared.localizedString(for: "clipboard_access_error")
+                        textField.stringValue = message
+                        textField.toolTip = message
+                        break
+                    }
+                }
+                break
+            }
+        }
+    }
+    
+    private func displayNonTextClipboardMessage() {
+        guard let contentView = window?.contentView else { return }
+        
+        for subview in contentView.subviews {
+            if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
+                for subview in container.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
+                        let message = LocalizationService.shared.localizedString(for: "clipboard_non_text_message")
+                        textField.stringValue = message
+                        textField.toolTip = message
+                        break
+                    }
+                }
+                break
+            }
+        }
+    }
+    
+    func updateEnhancedText(_ text: String) {
+        guard let contentView = window?.contentView else { return }
+        
+        for subview in contentView.subviews {
+            if let container = subview as? NSView, container.identifier?.rawValue == "pen_enhanced_text" {
+                for subview in container.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
+                        textField.stringValue = text
+                        // Set tooltip to show full text on hover
+                        textField.toolTip = text
+                        break
+                    }
+                }
+                break
+            }
+        }
+    }
+    
     // MARK: - Event Handling Methods
     
     @objc private func handlePasteButton() {
         print("[PenWindowService] Paste button clicked")
-        // Implementation will be added in User Story 3
+        loadClipboardContent()
     }
+    
+
     
     @objc private func openAISettings() {
         print("[PenWindowService] Opening AI configuration settings")
