@@ -13,7 +13,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private var loginWindow: LoginWindow?
     private var preferencesWindow: PreferencesWindow?
     private var newOrEditPromptWindow: NewOrEditPrompt?
-    private let penWindowService = PenWindowService.shared
+    private var penWindowService: PenWindowService?
+    private var shortcutService: ShortcutService?
+    private var windowManager: WindowManager = WindowManager.shared
 
     private let windowWidth: CGFloat = 378
     private let windowHeight: CGFloat = 388
@@ -164,8 +166,11 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private func createMainWindow() {
         print("SimpleAppDelegate: Creating main window")
         
+        // Create PenWindowService instance
+        penWindowService = PenWindowService()
+        
         // Create window using PenWindowService
-        window = penWindowService.createWindow()
+        window = penWindowService?.createWindow()
         
         // Don't show window automatically on app launch
         
@@ -310,7 +315,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                     performInitialization()
                 } else if isLoggedIn {
                     // Online-login mode: Check if NewOrEditPrompt window is open
-                    if NewOrEditPrompt.isWindowOpen, let newOrEditWindow = NewOrEditPrompt.currentInstance {
+                    if windowManager.isWindowOpen(withIdentifier: "NewOrEditPrompt"), let newOrEditWindow = windowManager.getWindow(withIdentifier: "NewOrEditPrompt") as? NewOrEditPrompt {
                         // If NewOrEditPrompt is open, bring it to front
                         print("PenDelegate: NewOrEditPrompt window is open, bringing it to front")
                         newOrEditWindow.bringToFront()
@@ -363,18 +368,22 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         // 1. Close all app windows
         closeOtherWindows()
         
-        // 2. Clean up user information, including AI configurations and prompts
-        // Reset AIManager to remove global instance and all configurations
-        AIManager.shared.reset()
+        // 2. Reset window references
+        preferencesWindow = nil
+        newOrEditPromptWindow = nil
+        
+        // 3. Clean up user information, including AI configurations and prompts
+        // Reset AIManager to remove all configurations
+        UserService.shared.aiManager?.reset()
         print("PenDelegate: Reset AIManager instance")
         
-        // 3. Remove the local global user object and clean up other system resources
+        // 4. Remove the local global user object and clean up other system resources
         setLoginStatus(false)
         
-        // 4. Set Pen as online-logout mode without showing the hello_guest popup
+        // 5. Set Pen as online-logout mode without showing the hello_guest popup
         setAppMode(.onlineLogout, showPopup: false)
         
-        // 5. Display i18n logout message
+        // 6. Display i18n logout message
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.displayPopupMessage("User logged out. Please log in again to use Pen.")
         }
@@ -509,7 +518,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 
                 // Initialize Pen window using PenWindowService
                 Task {
-                    await penWindowService.initiatePen()
+                    await penWindowService?.initiatePen()
                 }
                 
                 window.showAndFocus()
@@ -563,12 +572,14 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         // Convert shortcut string to key code and modifiers
         if let (keyCode, modifiers) = shortcutStringToKeyCodeAndModifiers(shortcut: savedShortcut) {
             // Register the shortcut using ShortcutService
-            ShortcutService.shared.registerShortcut(keyCode: keyCode, modifiers: modifiers)
+            shortcutService = ShortcutService()
+            shortcutService?.registerShortcut(keyCode: keyCode, modifiers: modifiers)
             print("SimpleAppDelegate: Shortcut registered using ShortcutService")
         } else {
             print("SimpleAppDelegate: Failed to parse shortcut: \(savedShortcut), using default")
             // Register default shortcut
-            ShortcutService.shared.registerShortcut(keyCode: 35, modifiers: UInt32(cmdKey | optionKey))
+            shortcutService = ShortcutService()
+            shortcutService?.registerShortcut(keyCode: 35, modifiers: UInt32(cmdKey | optionKey))
         }
         
         // Dependencies analysis
@@ -710,7 +721,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 
                 // Reload Pen window content
                 Task {
-                    await penWindowService.initiatePen()
+                    await penWindowService?.initiatePen()
                 }
                 
                 print("PenDelegate: Window reloaded and repositioned, app remains running with menubar icon available")
@@ -726,7 +737,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 
                 // Initialize Pen window using PenWindowService
                 Task {
-                    await penWindowService.initiatePen()
+                    await penWindowService?.initiatePen()
                 }
                 
                 print("PenDelegate: Opening PenAI window at new position, app is ready for interaction")
@@ -748,7 +759,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 
                 // Reload Pen window content
                 Task {
-                    await penWindowService.initiatePen()
+                    await penWindowService?.initiatePen()
                 }
                 
                 print("PenDelegate: Window reloaded and repositioned, app remains running with menubar icon available")
@@ -762,7 +773,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 
                 // Initialize Pen window using PenWindowService
                 Task {
-                    await penWindowService.initiatePen()
+                    await penWindowService?.initiatePen()
                 }
                 
                 window.showAndFocus()
@@ -844,10 +855,14 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     /// Loads and tests AI configurations for the user
     private func loadAndTestAIConfigurations(user: User) {
         print("PenDelegate: loadAndTestAIConfigurations called for user \(user.name) with email \(user.email)")
-        Task {
+        Task.detached {
             do {
                 // Load all AI configurations for the user
-                let configurations = try await AIManager.shared.getConnections(for: user.id)
+                guard let aiManager = UserService.shared.aiManager else {
+                    print("PenDelegate: AIManager not initialized")
+                    return
+                }
+                let configurations = try await aiManager.getConnections(for: user.id)
                 
                 print("PenDelegate: Loaded \(configurations.count) AI configurations for user \(user.name)")
                 
@@ -857,7 +872,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                     // Wait until previous popup messages fade out (3 seconds + 0.3 seconds fade out)
                     try await Task.sleep(nanoseconds: 3_300_000_000) // 3.3 seconds
                     // Show shorter popup message
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "no_ai_configuration"))
+                    WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "no_ai_configuration"))
                 } else {
                     // Test each AI configuration
                     for (index, configuration) in configurations.enumerated() {
@@ -865,7 +880,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                         
                         do {
                             // Test the connection
-                            let success = try await AIManager.shared.testConnection(
+                            let success = try await aiManager.testConnection(
                                 apiKey: configuration.apiKey,
                                 providerName: configuration.apiProvider
                             )
@@ -954,7 +969,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     
     /// Displays a global popup message following the specified design guidelines
     func displayPopupMessage(_ message: String) {
-        WindowManager.displayPopupMessage(message)
+        windowManager.displayPopupMessage(message)
     }
     
     /// Displays a reload option when in offline mode

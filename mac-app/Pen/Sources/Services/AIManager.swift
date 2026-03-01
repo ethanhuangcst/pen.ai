@@ -1,9 +1,8 @@
 import Foundation
 
 public class AIManager {
-    // Singleton instance
-    public static let shared = AIManager()
     
+
     // MARK: - Private Nested Types
     
     private struct AIConfiguration {
@@ -277,7 +276,7 @@ public class AIManager {
     
     // MARK: - Initialization
     
-    private init() {
+    public init() {
         self.databasePool = DatabaseConnectivityPool.shared
     }
     

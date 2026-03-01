@@ -2,9 +2,8 @@ import Foundation
 import MySQLKit
 
 class PromptsService {
-    static let shared = PromptsService()
     
-    private init() {}
+    init() {}
     
     // MARK: - Core Operations
     

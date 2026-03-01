@@ -6,6 +6,13 @@ class UserService {
     private var _currentUser: User?
     private var _isLoggedIn: Bool = false
     private var _isOnline: Bool = true
+    private var _aiManager: AIManager?
+    
+    var aiManager: AIManager? {
+        get {
+            return _aiManager
+        }
+    }
     
     private init() {
         // Initialize with default values
@@ -38,12 +45,17 @@ class UserService {
         _currentUser = user
         _isLoggedIn = true
         _isOnline = true
+        // Create new AIManager instance for this user session
+        _aiManager = AIManager()
+        _aiManager?.initialize()
     }
     
     func logout() {
         _currentUser = nil
         _isLoggedIn = false
         _isOnline = true
+        // Clear AIManager instance
+        _aiManager = nil
     }
     
     func setOnlineStatus(_ online: Bool) {

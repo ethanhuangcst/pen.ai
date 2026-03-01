@@ -297,7 +297,8 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         }
         
         // Request permissions first
-        let hasPermission = ShortcutService.shared.checkPermissions()
+        let shortcutService = ShortcutService()
+        let hasPermission = shortcutService.checkPermissions()
         
         if !hasPermission {
             statusLabel.stringValue = LocalizationService.shared.localizedString(for: "accessibility_permission_required")
@@ -554,7 +555,8 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         }
         
         // Register the shortcut
-        ShortcutService.shared.registerShortcut(keyCode: UInt32(keyCode), modifiers: carbonModifiers)
+        let shortcutService = ShortcutService()
+        shortcutService.registerShortcut(keyCode: UInt32(keyCode), modifiers: carbonModifiers)
     }
 
     @objc private func historyCountSelected(_ sender: FocusableButton) {

@@ -22,6 +22,9 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
     
     // Services
     private let databasePool: DatabaseConnectivityPool
+    private var aiManager: AIManager? {
+        return UserService.shared.aiManager
+    }
     
     // MARK: - Initialization
     init(frame: CGRect, user: User?, databasePool: DatabaseConnectivityPool, parentWindow: NSWindow? = nil) {
@@ -70,8 +73,13 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
     }
     
     private func loadProviders() async {
+        guard let aiManager = aiManager else {
+            print("AIManager not initialized")
+            return
+        }
+        
         do {
-            providers = try await AIManager.shared.loadAllProviders()
+            providers = try await aiManager.loadAllProviders()
             print("Loaded \(providers.count) AI providers")
         } catch {
             print("Error loading AI providers: \(error)")
@@ -79,10 +87,10 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
     }
     
     private func loadConfigurations() async {
-        guard let userId = user?.id else { return }
+        guard let userId = user?.id, let aiManager = aiManager else { return }
         
         do {
-            let databaseConfigurations = try await AIManager.shared.getConnections(for: userId)
+            let databaseConfigurations = try await aiManager.getConnections(for: userId)
             print("Loaded \(databaseConfigurations.count) AI configurations from database")
             
             // Preserve unsaved configurations (id == 0)
@@ -344,9 +352,9 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
     private func deleteAIConfiguration(configuration: AIManager.PublicAIConfiguration, row: Int) {
         Task {
             do {
-                if configuration.id != 0 {
+                if configuration.id != 0, let aiManager = aiManager {
                     // Delete from database
-                    try await AIManager.shared.deleteConnection(configuration.id)
+                    try await aiManager.deleteConnection(configuration.id)
                 }
                 
                 // Remove from local array
@@ -354,14 +362,14 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                     self.configurations.remove(at: row)
                     self.configurationsTable.reloadData()
                     // Show popup message
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_deleted_successfully"))
+                    WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_deleted_successfully"))
                 }
                 
                 print(" $$$$$$$$$$$$$$$$$$$$ AI Configuration \(configuration.apiProvider) deleted! $$$$$$$$$$$$$$$$$$$$")
             } catch {
                 print("Error deleting AI configuration: \(error)")
                 DispatchQueue.main.async {
-                    WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_delete_ai_configuration"))
+                    WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_delete_ai_configuration"))
                 }
             }
         }
@@ -386,126 +394,135 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
             highlightDuplicateRows(duplicateRows)
             
             // Show popup message
-            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "duplicated_api_key_or_provider"))
+            WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "duplicated_api_key_or_provider"))
             return
         }
         
         // Show testing message
-        WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "testing_provider", withFormat: configuration.apiProvider))
+        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "testing_provider", withFormat: configuration.apiProvider))
         
         // Make actual API call to test the configuration
         Task {
-            do {
-                // Test the configuration using AIManager
-                try await AIManager.shared.testConnection(
+            await testAIConfigurationAsync(configuration, row: row)
+        }
+    }
+    
+    private func testAIConfigurationAsync(_ configuration: AIManager.PublicAIConfiguration, row: Int) async {
+        do {
+            guard let aiManager = UserService.shared.aiManager else {
+                print("AIManager not initialized")
+                return
+            }
+            
+            // Test the configuration using AIManager
+            try await aiManager.testConnection(
+                apiKey: configuration.apiKey,
+                providerName: configuration.apiProvider
+            )
+            
+            // Test successful
+            let isNewConnection = configuration.id == 0
+            
+            if isNewConnection, let userId = user?.id {
+                // Create new connection
+                try await aiManager.createConnection(
+                    userId: userId,
                     apiKey: configuration.apiKey,
                     providerName: configuration.apiProvider
                 )
+                print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(configuration.apiProvider) is added $$$$$$$$$$$$$$$$$$$$")
                 
-                // Test successful
-                let isNewConnection = configuration.id == 0
+                // Remove the unsaved configuration from local array
+                if let index = configurations.firstIndex(where: { $0.id == 0 && $0.apiKey == configuration.apiKey && $0.apiProvider == configuration.apiProvider }) {
+                    configurations.remove(at: index)
+                }
+            } else {
+                // Update existing connection
+                try await aiManager.updateConnection(
+                    id: configuration.id,
+                    apiKey: configuration.apiKey,
+                    providerName: configuration.apiProvider
+                )
+                print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(configuration.apiProvider) is updated $$$$$$$$$$$$$$$$$$$$")
+            }
+            
+            // Reload configurations to get the updated list
+            await self.loadConfigurations()
+            
+            DispatchQueue.main.async {
+                // Check if the row still exists
+                if row < self.configurations.count {
+                    // Highlight the API key field in red for 2 seconds
+                    if let textField = self.configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
+                        textField.layer?.borderWidth = 1.0
+                        textField.layer?.borderColor = NSColor.systemRed.cgColor
+                        textField.layer?.cornerRadius = 4.0
+                        textField.toolTip = LocalizationService.shared.localizedString(for: "ai_connection_test_passed")
+                        
+                        // Reset highlight after 2 seconds
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            textField.layer?.borderWidth = 0.0
+                            textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
+                        }
+                    }
+                }
                 
-                if isNewConnection, let userId = user?.id {
-                    // Create new connection
-                    try await AIManager.shared.createConnection(
-                        userId: userId,
-                        apiKey: configuration.apiKey,
-                        providerName: configuration.apiProvider
-                    )
-                    print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(configuration.apiProvider) is added $$$$$$$$$$$$$$$$$$$$")
-                    
-                    // Remove the unsaved configuration from local array
-                    if let index = configurations.firstIndex(where: { $0.id == 0 && $0.apiKey == configuration.apiKey && $0.apiProvider == configuration.apiProvider }) {
-                        configurations.remove(at: index)
+                // Show popup message with user's name
+                if let username = self.user?.name {
+                    if isNewConnection {
+                        let message = LocalizationService.shared.localizedString(for: "ai_connection_test_passed_new", withFormat: configuration.apiProvider, username)
+                        WindowManager.shared.displayPopupMessage(message)
+                    } else {
+                        let message = LocalizationService.shared.localizedString(for: "ai_connection_test_passed_updated", withFormat: configuration.apiProvider, username)
+                        WindowManager.shared.displayPopupMessage(message)
                     }
                 } else {
-                    // Update existing connection
-                    try await AIManager.shared.updateConnection(
-                        id: configuration.id,
-                        apiKey: configuration.apiKey,
-                        providerName: configuration.apiProvider
-                    )
-                    print(" $$$$$$$$$$$$$$$$$$$$ AI Connection \(configuration.apiProvider) is updated $$$$$$$$$$$$$$$$$$$$")
-                }
-                
-                // Reload configurations to get the updated list
-                await loadConfigurations()
-                
-                DispatchQueue.main.async {
-                    // Check if the row still exists
-                    if row < self.configurations.count {
-                        // Highlight the API key field in red for 2 seconds
-                        if let textField = self.configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
-                            textField.layer?.borderWidth = 1.0
-                            textField.layer?.borderColor = NSColor.systemRed.cgColor
-                            textField.layer?.cornerRadius = 4.0
-                            textField.toolTip = LocalizationService.shared.localizedString(for: "ai_connection_test_passed")
-                            
-                            // Reset highlight after 2 seconds
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                textField.layer?.borderWidth = 0.0
-                                textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
-                            }
-                        }
-                    }
-                    
-                    // Show popup message with user's name
-                    if let username = self.user?.name {
-                        if isNewConnection {
-                            let message = LocalizationService.shared.localizedString(for: "ai_connection_test_passed_new", withFormat: configuration.apiProvider, username)
-                            WindowManager.displayPopupMessage(message)
-                        } else {
-                            let message = LocalizationService.shared.localizedString(for: "ai_connection_test_passed_updated", withFormat: configuration.apiProvider, username)
-                            WindowManager.displayPopupMessage(message)
-                        }
+                    if isNewConnection {
+                        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_passed_new_no_user", withFormat: configuration.apiProvider))
                     } else {
-                        if isNewConnection {
-                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_passed_new_no_user", withFormat: configuration.apiProvider))
-                        } else {
-                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_passed_updated_no_user"))
+                        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_passed_updated_no_user"))
+                    }
+                }
+            }
+        } catch {
+            // Test failed
+            print(" $$$$$$$$$$$$$$$$$$$$ AI Connection test failed $$$$$$$$$$$$$$$$$$$$")
+            print("Error testing configuration: \(error)")
+            
+            DispatchQueue.main.async {
+                // Check if the row still exists
+                if row < self.configurations.count {
+                    // Highlight the API key field in red for 2 seconds
+                    if let textField = self.configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
+                        textField.layer?.borderWidth = 1.0
+                        textField.layer?.borderColor = NSColor.systemRed.cgColor
+                        textField.layer?.cornerRadius = 4.0
+                        textField.toolTip = LocalizationService.shared.localizedString(for: "ai_connection_test_failed")
+                        
+                        // Reset highlight after 2 seconds
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            textField.layer?.borderWidth = 0.0
+                            textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
                         }
                     }
                 }
-            } catch {
-                // Test failed
-                print(" $$$$$$$$$$$$$$$$$$$$ AI Connection test failed $$$$$$$$$$$$$$$$$$$$")
-                print("Error testing configuration: \(error)")
                 
-                DispatchQueue.main.async {
-                    // Check if the row still exists
-                    if row < self.configurations.count {
-                        // Highlight the API key field in red for 2 seconds
-                        if let textField = self.configurationsTable.view(atColumn: 1, row: row, makeIfNecessary: false) as? NSTextField {
-                            textField.layer?.borderWidth = 1.0
-                            textField.layer?.borderColor = NSColor.systemRed.cgColor
-                            textField.layer?.cornerRadius = 4.0
-                            textField.toolTip = LocalizationService.shared.localizedString(for: "ai_connection_test_failed")
-                            
-                            // Reset highlight after 2 seconds
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                                textField.layer?.borderWidth = 0.0
-                                textField.toolTip = LocalizationService.shared.localizedString(for: "api_key_required")
-                            }
-                        }
-                    }
-                    
-                    // Show popup message with user's name
-                    if let username = self.user?.name {
-                        let isNewConnection = configuration.id == 0
-                        if isNewConnection {
-                            let message = LocalizationService.shared.localizedString(for: "ai_connection_test_failed_new", withFormat: configuration.apiProvider, username)
-                            WindowManager.displayPopupMessage(message)
-                        } else {
-                            let message = LocalizationService.shared.localizedString(for: "ai_connection_test_failed_updated", withFormat: configuration.apiProvider, username)
-                            WindowManager.displayPopupMessage(message)
-                        }
+                // Show popup message with user's name
+                if let username = self.user?.name {
+                    let isNewConnection = configuration.id == 0
+                    if isNewConnection {
+                        let message = LocalizationService.shared.localizedString(for: "ai_connection_test_failed_new", withFormat: configuration.apiProvider, username)
+                        WindowManager.shared.displayPopupMessage(message)
                     } else {
-                        let isNewConnection = configuration.id == 0
-                        if isNewConnection {
-                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_failed_new_no_user", withFormat: configuration.apiProvider))
-                        } else {
-                            WindowManager.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_failed_updated_no_user"))
-                        }
+                        let message = LocalizationService.shared.localizedString(for: "ai_connection_test_failed_updated", withFormat: configuration.apiProvider, username)
+                        WindowManager.shared.displayPopupMessage(message)
+                    }
+                } else {
+                    let isNewConnection = configuration.id == 0
+                    if isNewConnection {
+                        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_failed_new_no_user", withFormat: configuration.apiProvider))
+                    } else {
+                        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_failed_updated_no_user"))
                     }
                 }
             }

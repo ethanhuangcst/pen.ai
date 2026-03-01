@@ -119,7 +119,8 @@ if arguments.count > 1 {
                 }
                 
                 // Load providers using AIManager
-                let providers = try await AIManager.shared.loadAllProviders()
+                let aiManager = AIManager()
+                let providers = try await aiManager.loadAllProviders()
                 
                 print("\nSuccessfully loaded \(providers.count) AI providers:")
                 print("=====================================")

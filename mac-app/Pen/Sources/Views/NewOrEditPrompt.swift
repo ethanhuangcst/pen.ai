@@ -2,9 +2,6 @@ import Cocoa
 import Foundation
 
 class NewOrEditPrompt: BaseWindow {
-    // MARK: - Static Properties
-    public static var isWindowOpen = false
-    public static var currentInstance: NewOrEditPrompt? = nil
     
     // MARK: - Properties
     private let promptNameLabel = NSTextField()
@@ -194,20 +191,8 @@ class NewOrEditPrompt: BaseWindow {
     
     // MARK: - Overrides
     override func showAndFocus() {
-        // Check if a window is already open
-        if NewOrEditPrompt.isWindowOpen {
-            return // Prevent multiple instances
-        }
-        
-        // Set window as open
-        NewOrEditPrompt.isWindowOpen = true
-        
-        // Set current instance
-        NewOrEditPrompt.currentInstance = self
-        
-        // Set activation policy and install main menu for system shortcuts
+        // Set activation policy for system shortcuts
         NSApp.setActivationPolicy(.regular)
-        WindowManager.installMainMenu()
         
         // Set window properties to ensure it stays in front
         self.level = .modalPanel // Highest window level, stays above all others
@@ -265,24 +250,17 @@ class NewOrEditPrompt: BaseWindow {
         let message = isNewPrompt ? 
             LocalizationService.shared.localizedString(for: "create_new_prompt_canceled") : 
             LocalizationService.shared.localizedString(for: "edit_prompt_canceled")
-        WindowManager.displayPopupMessage(message)
+        WindowManager.shared.displayPopupMessage(message)
         
         // Close the window
         actuallyCloseWindow()
     }
     
     private func actuallyCloseWindow() {
-        // Reset window open status
-        NewOrEditPrompt.isWindowOpen = false
-        
-        // Clear current instance
-        NewOrEditPrompt.currentInstance = nil
-        
         // Remove notification observer
         NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)
         
-        // Stop modal and close window
-        NSApp.stopModal()
+        // Close the window
         orderOut(nil)
     }
     

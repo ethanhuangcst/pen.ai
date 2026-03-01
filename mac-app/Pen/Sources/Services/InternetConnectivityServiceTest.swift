@@ -1,9 +1,8 @@
 import Foundation
 
 class InternetConnectivityServiceTest {
-    // MARK: - Singleton
-    static let shared = InternetConnectivityServiceTest()
-    private init() {}
+    // MARK: - Initialization
+    init() {}
     
     // MARK: - Properties
     private let cacheDuration: TimeInterval = 10 // Cache results for 10 seconds

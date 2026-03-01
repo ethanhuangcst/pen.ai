@@ -5,15 +5,13 @@ import Cocoa
 typealias AIProvider = AIManager.AIProvider
 
 class PenWindowService {
-    static let shared = PenWindowService()
-    
     private var window: BaseWindow?
     private var userService: UserService
     private var promptsService: PromptsService
     
-    private init() {
+    init() {
         self.userService = UserService.shared
-        self.promptsService = PromptsService.shared
+        self.promptsService = PromptsService()
     }
     
     // MARK: - Window Lifecycle Methods
@@ -107,20 +105,20 @@ class PenWindowService {
                 } else {
                     print("[PenWindowService] userService.currentUser is nil even though isLoggedIn is true")
                     showDefaultUI()
-                    WindowManager.displayPopupMessage("Pen cannot load your login information.\nPlease log in and try again.")
+                    WindowManager.shared.displayPopupMessage("Pen cannot load your login information.\nPlease log in and try again.")
                     return
                 }
             } catch {
                 // Handle user information load failure
                 print("[PenWindowService] Failed to load user information: \(error)")
                 showDefaultUI()
-                WindowManager.displayPopupMessage("Pen cannot load your login information.\nPlease log in and try again.")
+                WindowManager.shared.displayPopupMessage("Pen cannot load your login information.\nPlease log in and try again.")
                 return
             }
         } else if isOnline && !isLoggedIn {
             // User is not logged in
             showDefaultUI()
-            WindowManager.displayPopupMessage("Pen cannot serve when you are not logged in.\nPlease log in and try again.")
+            WindowManager.shared.displayPopupMessage("Pen cannot serve when you are not logged in.\nPlease log in and try again.")
             return
         }
     }
@@ -130,13 +128,19 @@ class PenWindowService {
     private func loadAIConfigurations() async {
         guard let window = window else { return }
         
-        // Check if global AIManager instance exists
-        if AIManager.shared.isInitialized {
-            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager found in global object, AI configuration and Prompts loaded successfully. #################@@@@@@@@@@@@@@@")
+        // Check if AIManager instance exists
+        guard let aiManager = userService.aiManager else {
+            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager NOT found, AI configuration and Prompts not loaded. #################@@@@@@@@@@@@@@@")
+            await handleNoAIProviders()
+            return
+        }
+        
+        if aiManager.isInitialized {
+            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager found, AI configuration and Prompts loaded successfully. #################@@@@@@@@@@@@@@@")
         } else {
-            // Create new AIManager instance
-            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager NOT found in global object and a new one created. AI configuration and Prompts loaded successfully. #################@@@@@@@@@@@@@@@")
-            AIManager.shared.initialize()
+            // Initialize AIManager instance
+            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager NOT initialized, initializing now. #################@@@@@@@@@@@@@@@")
+            aiManager.initialize()
         }
         
         // Load AI configurations for the current user
@@ -148,14 +152,14 @@ class PenWindowService {
             }
             
             // Get user's AI configurations
-            let configurations = try await AIManager.shared.getConnections(for: user.id)
+            let configurations = try await aiManager.getConnections(for: user.id)
             
             if configurations.isEmpty {
                 // No AI configurations for this user
                 await handleNoAIProviders()
             } else {
                 // Get all available providers
-                let allProviders = try await AIManager.shared.getProviders()
+                let allProviders = try await aiManager.getProviders()
                 
                 // Filter providers to only those the user has configured
                 let userProviders = allProviders.filter { provider in
@@ -515,8 +519,13 @@ class PenWindowService {
                 }
             }
             
-            // Add button to open AI configuration settings
-            addOpenSettingsButton(to: contentView)
+            // Remove any existing settings button if present
+            for subview in contentView.subviews {
+                if let button = subview as? NSButton, button.identifier?.rawValue == "pen_open_settings_button" {
+                    button.removeFromSuperview()
+                    break
+                }
+            }
         }
     }
     
@@ -525,7 +534,7 @@ class PenWindowService {
             guard let contentView = window?.contentView else { return }
             
             // Display popup message
-            WindowManager.displayPopupMessage("You don't have any available AI connections yet, go to Preference - AI Connections to set up a new connection.")
+            WindowManager.shared.displayPopupMessage("You don't have any available AI connections yet, go to Preference - AI Connections to set up a new connection.")
             
             // Update enhanced text field
             for subview in contentView.subviews {
@@ -555,22 +564,17 @@ class PenWindowService {
                 }
             }
             
-            // Add button to open AI configuration settings
-            addOpenSettingsButton(to: contentView)
+            // Remove any existing settings button if present
+            for subview in contentView.subviews {
+                if let button = subview as? NSButton, button.identifier?.rawValue == "pen_open_settings_button" {
+                    button.removeFromSuperview()
+                    break
+                }
+            }
         }
     }
     
-    private func addOpenSettingsButton(to contentView: NSView) {
-        // Create a button to open AI configuration settings
-        let settingsButton = NSButton(frame: NSRect(x: 20, y: 316, width: 338, height: 30))
-        settingsButton.title = "Open AI Configuration Settings"
-        settingsButton.bezelStyle = .rounded
-        settingsButton.target = self
-        settingsButton.action = #selector(openAISettings)
-        settingsButton.identifier = NSUserInterfaceItemIdentifier("pen_open_settings_button")
-        
-        contentView.addSubview(settingsButton)
-    }
+
     
     // MARK: - Clipboard Methods
     
@@ -792,12 +796,5 @@ class PenWindowService {
     
 
     
-    @objc private func openAISettings() {
-        print("[PenWindowService] Opening AI configuration settings")
-        // Open preferences window with AI configuration tab
-        if let window = window {
-            let preferencesWindow = PreferencesWindow(user: userService.currentUser)
-            preferencesWindow.showAndFocus()
-        }
-    }
+
 }

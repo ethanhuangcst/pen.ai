@@ -240,9 +240,8 @@ class BaseWindow: NSWindow {
     // MARK: - Public Methods
     /// Makes the window visible, brings it to front, and sets focus to the first input field
     func showAndFocus() {
-        // Set activation policy and install main menu for system shortcuts
+        // Set activation policy for system shortcuts
         NSApp.setActivationPolicy(.regular)
-        WindowManager.installMainMenu()
         
         NSApp.activate(ignoringOtherApps: true)
         self.makeKeyAndOrderFront(nil)
@@ -290,12 +289,182 @@ class BaseWindow: NSWindow {
     
     /// Positions the window relative to the menu bar icon
     func positionRelativeToMenuBarIcon() {
-        WindowManager.positionWindowRelativeToMenuBarIcon(self)
+        // Get the status item from the app delegate
+        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate,
+              let button = appDelegate.statusItem?.button,
+              let buttonWindow = button.window else {
+            // Fallback to default position if status item isn't available
+            setDefaultWindowPosition()
+            return
+        }
+        
+        let screen = NSScreen.main!
+        let screenHeight = screen.frame.height
+        let menuBarHeight = screen.frame.height - screen.visibleFrame.height
+        let spacing: CGFloat = 6
+        let windowSize = self.frame.size
+        
+        // Get the button's frame in screen coordinates
+        let buttonFrame = button.convert(button.bounds, to: nil)
+        let buttonScreenFrame = buttonWindow.convertToScreen(buttonFrame)
+        
+        // Check if button screen frame is valid (not negative or zero-sized)
+        if buttonScreenFrame.minY < 0 || buttonScreenFrame.width == 0 || buttonScreenFrame.height == 0 {
+            // Use fallback position if button frame is invalid
+            setDefaultWindowPosition()
+            return
+        }
+        
+        // Calculate position relative to menu bar icon
+        // X position: Pen icon X + 6px
+        let x = buttonScreenFrame.minX + spacing
+        // Y position: top of screen - menu bar height - spacing - window height
+        let y = screenHeight - menuBarHeight - spacing - windowSize.height
+        
+        // Set window position
+        self.setFrameOrigin(NSPoint(x: x, y: y))
+        
+        // Ensure window is on the same screen as the menu bar icon
+        if buttonWindow.screen != nil {
+            self.setFrame(self.frame, display: false, animate: false)
+        }
+    }
+    
+    /// Sets a default window position when menu bar icon is not available
+    private func setDefaultWindowPosition() {
+        let screen = NSScreen.main!
+        let screenWidth = screen.frame.width
+        let screenHeight = screen.frame.height
+        let menuBarHeight = screen.frame.height - screen.visibleFrame.height
+        
+        let windowSize = self.frame.size
+        let windowX = screenWidth - (screenWidth / 4) - windowSize.width
+        let windowY = screenHeight - menuBarHeight - 6 - windowSize.height
+        
+        self.setFrameOrigin(NSPoint(x: windowX, y: windowY))
     }
     
     /// Displays a popup message with the global design style
     func displayPopupMessage(_ message: String) {
-        WindowManager.displayPopupMessage(message)
+        // Calculate message size
+        let sizeLabel = NSTextField()
+        sizeLabel.stringValue = message
+        sizeLabel.font = NSFont.systemFont(ofSize: 14)
+        sizeLabel.sizeToFit()
+        
+        // Calculate window size (minimum 240x40, auto adjusts to content)
+        let minWidth: CGFloat = 240
+        let minHeight: CGFloat = 40
+        let contentWidth = max(minWidth, sizeLabel.frame.width + 32) // 16px padding on each side
+        let contentHeight = max(minHeight, sizeLabel.frame.height + 16) // 8px padding on each side
+        
+        // Create a window for the popup
+        let popupWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: contentWidth, height: contentHeight), 
+                                  styleMask: [.borderless], 
+                                  backing: .buffered, 
+                                  defer: false)
+        popupWindow.isOpaque = false
+        popupWindow.backgroundColor = .clear
+        popupWindow.level = .floating
+        
+        // Position popup relative to menu bar icon
+        // Get the status item from the app delegate
+        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate,
+              let button = appDelegate.statusItem?.button,
+              let buttonWindow = button.window else {
+            // Fallback to center position if status item isn't available
+            popupWindow.center()
+            return
+        }
+        
+        let screen = NSScreen.main!
+        let screenHeight = screen.frame.height
+        let menuBarHeight = screen.frame.height - screen.visibleFrame.height
+        let spacing: CGFloat = 6
+        let windowSize = popupWindow.frame.size
+        
+        // Get the button's frame in screen coordinates
+        let buttonFrame = button.convert(button.bounds, to: nil)
+        let buttonScreenFrame = buttonWindow.convertToScreen(buttonFrame)
+        
+        // Check if button screen frame is valid (not negative or zero-sized)
+        if buttonScreenFrame.minY < 0 || buttonScreenFrame.width == 0 || buttonScreenFrame.height == 0 {
+            // Use center position if button frame is invalid
+            popupWindow.center()
+            return
+        }
+        
+        // Calculate position relative to menu bar icon
+        // X position: Pen icon X + 6px
+        let x = buttonScreenFrame.minX + spacing
+        // Y position: top of screen - menu bar height - spacing - window height
+        let y = screenHeight - menuBarHeight - spacing - windowSize.height
+        
+        // Set window position
+        popupWindow.setFrameOrigin(NSPoint(x: x, y: y))
+        
+        // Ensure window is on the same screen as the menu bar icon
+        if buttonWindow.screen != nil {
+            popupWindow.setFrame(popupWindow.frame, display: false, animate: false)
+        }
+        
+        // Create a container view with rounded corners and semi-transparent background
+        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: contentWidth, height: contentHeight))
+        containerView.wantsLayer = true
+        containerView.layer?.cornerRadius = 12
+        // Use a different color from main window with 75% opacity
+        containerView.layer?.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.75).cgColor
+        
+        // Add shadow effect
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.shadowOffset = NSSize(width: 0, height: -2)
+        shadow.shadowBlurRadius = 6
+        containerView.shadow = shadow
+        
+        // Create a text field for the message
+        let messageLabel = NSTextField(frame: NSRect(x: 16, y: 8, width: contentWidth - 32, height: contentHeight - 16))
+        messageLabel.stringValue = message
+        messageLabel.isBezeled = false
+        messageLabel.drawsBackground = false
+        messageLabel.isEditable = false
+        messageLabel.isSelectable = false
+        messageLabel.textColor = .white
+        messageLabel.font = NSFont.systemFont(ofSize: 14)
+        messageLabel.alignment = .center
+        messageLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        
+        // Add the label to the container
+        containerView.addSubview(messageLabel)
+        
+        // Set the container as the window's content view
+        popupWindow.contentView = containerView
+        
+        // Set initial alpha to 0 for fade-in effect
+        popupWindow.alphaValue = 0.0
+        
+        // Show the popup
+        popupWindow.makeKeyAndOrderFront(nil)
+        
+        // Fade in animation
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.3
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            popupWindow.animator().alphaValue = 1.0
+        }
+        
+        // Hide the popup after 3 seconds with fade-out effect
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.3
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                popupWindow.animator().alphaValue = 0.0
+            } completionHandler: {
+                popupWindow.orderOut(nil)
+            }
+        }
+        
+        print("BaseWindow: Displayed popup message: \(message)")
     }
     
     /// Finds the first active (enabled) button in the view hierarchy
@@ -450,239 +619,4 @@ class BaseWindow: NSWindow {
     }
 }
 
-class WindowManager {
-    // MARK: - Static Properties
-    
-    /// Queue for popup messages to ensure they are displayed one after another
-    private static var messageQueue: [String] = []
-    /// Flag to indicate if a message is currently being displayed
-    private static var isDisplayingMessage: Bool = false
-    
-    // MARK: - Static Methods
-    
-    /// Installs the main menu with Edit actions for system shortcuts
-    static func installMainMenu() {
-        let mainMenu = NSMenu()
 
-        // App menu
-        let appMenuItem = NSMenuItem()
-        let appMenu = NSMenu()
-
-        appMenu.addItem(
-            withTitle: "Quit",
-            action: #selector(NSApplication.terminate(_:)),
-            keyEquivalent: "q"
-        )
-
-        appMenuItem.submenu = appMenu
-        mainMenu.addItem(appMenuItem)
-
-        // Edit menu
-        let editMenuItem = NSMenuItem()
-        let editMenu = NSMenu(title: "Edit")
-
-        editMenu.addItem(withTitle: "Undo",
-                         action: Selector(("undo:")),
-                         keyEquivalent: "z")
-
-        editMenu.addItem(withTitle: "Redo",
-                         action: Selector(("redo:")),
-                         keyEquivalent: "Z")
-
-        editMenu.addItem(.separator())
-
-        editMenu.addItem(withTitle: "Cut",
-                         action: #selector(NSText.cut(_:)),
-                         keyEquivalent: "x")
-
-        editMenu.addItem(withTitle: "Copy",
-                         action: #selector(NSText.copy(_:)),
-                         keyEquivalent: "c")
-
-        editMenu.addItem(withTitle: "Paste",
-                         action: #selector(NSText.paste(_:)),
-                         keyEquivalent: "v")
-
-        editMenu.addItem(withTitle: "Select All",
-                         action: #selector(NSText.selectAll(_:)),
-                         keyEquivalent: "a")
-
-        editMenuItem.submenu = editMenu
-        mainMenu.addItem(editMenuItem)
-
-        NSApp.mainMenu = mainMenu
-    }
-    
-    /// Positions a window relative to the Pen menu bar icon
-    static func positionWindowRelativeToMenuBarIcon(_ window: NSWindow) {
-        // Get the status item from the app delegate
-        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate,
-              let button = appDelegate.statusItem?.button,
-              let buttonWindow = button.window else {
-            // Fallback to default position if status item isn't available
-            setDefaultWindowPosition(window)
-            return
-        }
-        
-        let screen = NSScreen.main!
-        let screenHeight = screen.frame.height
-        let menuBarHeight = screen.frame.height - screen.visibleFrame.height
-        let spacing: CGFloat = 6
-        let windowSize = window.frame.size
-        
-        // Get the button's frame in screen coordinates
-        let buttonFrame = button.convert(button.bounds, to: nil)
-        let buttonScreenFrame = buttonWindow.convertToScreen(buttonFrame)
-        
-        // Check if button screen frame is valid (not negative or zero-sized)
-        if buttonScreenFrame.minY < 0 || buttonScreenFrame.width == 0 || buttonScreenFrame.height == 0 {
-            // Use fallback position if button frame is invalid
-            setDefaultWindowPosition(window)
-            return
-        }
-        
-        // Calculate position relative to menu bar icon
-        // X position: Pen icon X + 6px
-        let x = buttonScreenFrame.minX + spacing
-        // Y position: top of screen - menu bar height - spacing - window height
-        let y = screenHeight - menuBarHeight - spacing - windowSize.height
-        
-        // Set window position
-        window.setFrameOrigin(NSPoint(x: x, y: y))
-        
-        // Ensure window is on the same screen as the menu bar icon
-        if buttonWindow.screen != nil {
-            window.setFrame(window.frame, display: false, animate: false)
-        }
-    }
-    
-    /// Sets a default window position when menu bar icon is not available
-    private static func setDefaultWindowPosition(_ window: NSWindow) {
-        let screen = NSScreen.main!
-        let screenWidth = screen.frame.width
-        let screenHeight = screen.frame.height
-        let menuBarHeight = screen.frame.height - screen.visibleFrame.height
-        
-        let windowSize = window.frame.size
-        let windowX = screenWidth - (screenWidth / 4) - windowSize.width
-        let windowY = screenHeight - menuBarHeight - 6 - windowSize.height
-        
-        window.setFrameOrigin(NSPoint(x: windowX, y: windowY))
-    }
-    
-    /// Displays a global popup message following the specified design guidelines
-    static func displayPopupMessage(_ message: String) {
-        // Add message to queue
-        messageQueue.append(message)
-        
-        // If no message is currently being displayed, process the queue
-        if !isDisplayingMessage {
-            processMessageQueue()
-        }
-    }
-    
-    /// Processes the message queue, displaying one message at a time
-    private static func processMessageQueue() {
-        // Check if there are messages in the queue
-        guard !messageQueue.isEmpty else {
-            isDisplayingMessage = false
-            return
-        }
-        
-        // Mark that we're displaying a message
-        isDisplayingMessage = true
-        
-        // Get the next message from the queue
-        let message = messageQueue.removeFirst()
-        
-        // Ensure UI operations are on the main thread
-        DispatchQueue.main.async {
-            // Calculate message size
-            let sizeLabel = NSTextField()
-            sizeLabel.stringValue = message
-            sizeLabel.font = NSFont.systemFont(ofSize: 14)
-            sizeLabel.sizeToFit()
-            
-            // Calculate window size (minimum 240x40, auto adjusts to content)
-            let minWidth: CGFloat = 240
-            let minHeight: CGFloat = 40
-            let contentWidth = max(minWidth, sizeLabel.frame.width + 32) // 16px padding on each side
-            let contentHeight = max(minHeight, sizeLabel.frame.height + 16) // 8px padding on each side
-            
-            // Create a window for the popup
-            let popupWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: contentWidth, height: contentHeight), 
-                                      styleMask: [.borderless], 
-                                      backing: .buffered, 
-                                      defer: false)
-            popupWindow.isOpaque = false
-            popupWindow.backgroundColor = .clear
-            popupWindow.level = .floating
-            
-            // Position popup relative to menu bar icon
-            positionWindowRelativeToMenuBarIcon(popupWindow)
-            
-            // Create a container view with rounded corners and semi-transparent background
-            let containerView = NSView(frame: NSRect(x: 0, y: 0, width: contentWidth, height: contentHeight))
-            containerView.wantsLayer = true
-            containerView.layer?.cornerRadius = 12
-            // Use a different color from main window with 75% opacity
-            containerView.layer?.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.75).cgColor
-            
-            // Add shadow effect
-            let shadow = NSShadow()
-            shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
-            shadow.shadowOffset = NSSize(width: 0, height: -2)
-            shadow.shadowBlurRadius = 6
-            containerView.shadow = shadow
-            
-            // Create a text field for the message
-            let messageLabel = NSTextField(frame: NSRect(x: 16, y: 8, width: contentWidth - 32, height: contentHeight - 16))
-            messageLabel.stringValue = message
-            messageLabel.isBezeled = false
-            messageLabel.drawsBackground = false
-            messageLabel.isEditable = false
-            messageLabel.isSelectable = false
-            messageLabel.textColor = .white
-            messageLabel.font = NSFont.systemFont(ofSize: 14)
-            messageLabel.alignment = .center
-            messageLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-            
-            // Add the label to the container
-            containerView.addSubview(messageLabel)
-            
-            // Set the container as the window's content view
-            popupWindow.contentView = containerView
-            
-            // Set initial alpha to 0 for fade-in effect
-            popupWindow.alphaValue = 0.0
-            
-            // Show the popup
-            popupWindow.makeKeyAndOrderFront(nil)
-            
-            // Fade in animation
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.3
-                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                popupWindow.animator().alphaValue = 1.0
-            }
-            
-            // Hide the popup after 3 seconds with fade-out effect
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = 0.3
-                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                    popupWindow.animator().alphaValue = 0.0
-                } completionHandler: {
-                    popupWindow.orderOut(nil)
-                    
-                    // After the current message is done, process the next one
-                    DispatchQueue.main.async {
-                        processMessageQueue()
-                    }
-                }
-            }
-            
-            print("WindowManager: Displayed popup message: \(message)")
-        }
-    }
-}

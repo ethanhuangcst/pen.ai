@@ -54,7 +54,7 @@ class InitializationService {
         print("InitializationService: Testing internet connectivity...")
         
         // Use the actual InternetConnectivityServiceTest
-        let connectivityService = InternetConnectivityServiceTest.shared
+        let connectivityService = InternetConnectivityServiceTest()
         let isInternetAvailable = connectivityService.isInternetAvailable()
         
         if isInternetAvailable {
@@ -175,7 +175,11 @@ class InitializationService {
         Task {
             do {
                 // Load all AI configurations for the user
-                let configurations = try await AIManager.shared.getConnections(for: user.id)
+                guard let aiManager = UserService.shared.aiManager else {
+                    print("InitializationService: AIManager not initialized")
+                    return
+                }
+                let configurations = try await aiManager.getConnections(for: user.id)
                 
                 print("InitializationService: Loaded \(configurations.count) AI configurations for user \(user.name)")
                 
@@ -185,7 +189,7 @@ class InitializationService {
                     // Wait until previous popup messages fade out (3 seconds + 0.3 seconds fade out)
                     try await Task.sleep(nanoseconds: 3_300_000_000) // 3.3 seconds
                     // Show shorter popup message
-                    WindowManager.displayPopupMessage("No AI Configuration set up yet.\nGo to Preference → AI Configuration to set up.")
+                    WindowManager.shared.displayPopupMessage("No AI Configuration set up yet.\nGo to Preference → AI Configuration to set up.")
                 } else {
                     // Test each AI configuration
                     for (index, configuration) in configurations.enumerated() {
@@ -193,7 +197,7 @@ class InitializationService {
                         
                         do {
                             // Test the connection
-                            let success = try await AIManager.shared.testConnection(
+                            let success = try await aiManager.testConnection(
                                 apiKey: configuration.apiKey,
                                 providerName: configuration.apiProvider
                             )

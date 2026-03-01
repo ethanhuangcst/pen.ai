@@ -3,12 +3,10 @@ import Carbon
 import Cocoa
 
 class ShortcutService {
-    static let shared = ShortcutService()
-    
     private var hotKeyRef: EventHotKeyRef?
     private var hotKeyID: EventHotKeyID
     
-    private init() {
+    init() {
         // Initialize hotKeyID with proper four-character code
         let signature = OSType(0x50454E00) // "PEN" as four-character code
         hotKeyID = EventHotKeyID(signature: signature, id: UInt32(1))
