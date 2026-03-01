@@ -50,17 +50,24 @@ flowchart TD
    - Load AI configurations from AIManager
    - Handle clipboard operations
 
-5. **Event Handling**
+5. **Clipboard Operations**
+   - Read most recent text from Mac clipboard
+   - Detect if clipboard content is text type
+   - Load text type content from clipboard
+   - Copy content to Mac clipboard
+
+6. **Event Handling**
    - Handle user interactions
    - Respond to system events
    - Manage keyboard shortcuts
 
-6. **Localization**
+7. **Localization**
    - Apply localized strings to UI components
    - Handle language changes
 
-7. **Error Handling**
+8. **Error Handling**
    - Handle window-related errors
+   - Handle clipboard-related errors
    - Display appropriate error messages
 
 ## 4. Key Components
@@ -97,8 +104,14 @@ class PenWindowService {
     func loadAIConfigurations()
     func loadClipboardContent()
     
+    // Clipboard methods
+    func readClipboardText() -> String?
+    func isClipboardTextType() -> Bool
+    func copyToClipboard(_ text: String)
+    
     // Event handling methods
     func handlePasteButtonClick()
+    func handleCopyButtonClick()
     func handlePromptSelection()
     func handleProviderSelection()
     
@@ -299,11 +312,65 @@ sequenceDiagram
 | Method | Description | Parameters | Return Value |
 |--------|-------------|------------|--------------|
 | `handlePasteButtonClick()` | Handles paste button click event | None | `Void` |
+| `handleCopyButtonClick()` | Handles copy button click event | None | `Void` |
 | `handlePromptSelection(_:)` | Handles prompt selection change | `String` (prompt ID) | `Void` |
 | `handleProviderSelection(_:)` | Handles provider selection change | `String` (provider ID) | `Void` |
 | `handleEnhanceButtonClick()` | Handles enhance button click event | None | `Void` |
 
-### 6.6 Initialization Method
+### 6.6 Clipboard Methods
+
+| Method | Description | Parameters | Return Value |
+|--------|-------------|------------|--------------|
+| `readClipboardText()` | Reads plain text from system clipboard | None | `String?` |
+| `isClipboardTextType()` | Detects if clipboard content is text type | None | `Bool` |
+| `copyToClipboard(_:)` | Copies text to system clipboard | `String` (text to copy) | `Void` |
+| `loadClipboardContent()` | Loads clipboard content and updates UI | None | `String?` |
+
+#### Clipboard Methods Implementation Details
+
+```swift
+// Reads plain text from system clipboard
+func readClipboardText() -> String? {
+    let pasteboard = NSPasteboard.general
+    return pasteboard.string(forType: .string)
+}
+
+// Detects if clipboard content is text type
+func isClipboardTextType() -> Bool {
+    let pasteboard = NSPasteboard.general
+    return pasteboard.string(forType: .string) != nil
+}
+
+// Copies text to system clipboard
+func copyToClipboard(_ text: String) {
+    let pasteboard = NSPasteboard.general
+    pasteboard.clearContents()
+    pasteboard.setString(text, forType: .string)
+}
+
+// Loads clipboard content and updates UI
+func loadClipboardContent() -> String? {
+    if let clipboardText = readClipboardText() {
+        // Update UI with clipboard text
+        updateOriginalText(clipboardText)
+        return clipboardText
+    } else {
+        // Handle non-text or empty clipboard
+        displayEmptyClipboardMessage()
+        return nil
+    }
+}
+```
+
+#### Clipboard Error Handling
+
+| Error Type | Description | Handling Strategy |
+|------------|-------------|-------------------|
+| `ClipboardAccessError` | Failed to access clipboard | Log error and display user message |
+| `ClipboardContentTypeError` | Clipboard contains non-text content | Display message and enable paste button |
+| `ClipboardEmptyError` | Clipboard is empty | Display placeholder text |
+
+### 6.7 Initialization Method
 
 | Method | Description | Parameters | Return Value |
 |--------|-------------|------------|--------------|

@@ -31,6 +31,9 @@ class NewOrEditPrompt: BaseWindow {
         let windowSize = NSSize(width: 600, height: 518)
         super.init(size: windowSize)
         
+        // Set window level to modal panel (highest level) to ensure it always stays in front
+        self.level = .modalPanel
+        
         // Create content view
         let contentView = createStandardContentView(size: windowSize)
         
