@@ -116,9 +116,9 @@ class NewOrEditPrompt: BaseWindow {
             // Display in Markdown format (preserving Markdown syntax)
         } else {
             // New prompt: set placeholder text
-            promptNameField.placeholderString = "Enter your prompt name"
+            promptNameField.placeholderString = localizedString(for: "enter_prompt_name_placeholder")
             // Set placeholder text for NSTextView (since it doesn't have placeholderString property)
-            promptTextField.string = "Enter the prompt - Mark down formatting highly recommended"
+            promptTextField.string = localizedString(for: "markdown_format_recommended_tooltip")
         }
         
         // Tooltips are not needed as we use placeholder text for new prompts

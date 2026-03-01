@@ -170,6 +170,40 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         // Add footer container to main window
         if let window = window, let contentView = window.contentView {
             addFooterContainer(to: contentView, size: windowSize)
+            
+            // Add enhanced text container
+            let enhancedTextContainer = NSView(frame: NSRect(x: 20, y: 30, width: 338, height: 198))
+            enhancedTextContainer.wantsLayer = true
+            enhancedTextContainer.layer?.backgroundColor = NSColor.clear.cgColor
+            enhancedTextContainer.identifier = NSUserInterfaceItemIdentifier("pen_enhanced_text")
+            
+            // Add text field
+            let enhancedTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 338, height: 198))
+            enhancedTextField.stringValue = "Enhanced text will appear here"
+            enhancedTextField.isBezeled = false
+            enhancedTextField.drawsBackground = false
+            enhancedTextField.isEditable = false
+            enhancedTextField.isSelectable = true
+            enhancedTextField.font = NSFont.systemFont(ofSize: 14)
+            enhancedTextField.textColor = NSColor.labelColor
+            enhancedTextField.alignment = .left
+            enhancedTextField.identifier = NSUserInterfaceItemIdentifier("enhanced_text")
+            
+            // Add visible border
+            enhancedTextField.wantsLayer = true
+            enhancedTextField.layer?.backgroundColor = NSColor.lightGray.withAlphaComponent(0.1).cgColor
+            enhancedTextField.layer?.borderWidth = 1.0
+            // Set border color to C0C0C0
+            let borderColor = NSColor(red: 192.0/255.0, green: 192.0/255.0, blue: 192.0/255.0, alpha: 1.0)
+            enhancedTextField.layer?.borderColor = borderColor.cgColor
+            // Set rounded corner
+            enhancedTextField.layer?.cornerRadius = 8.0
+            
+            // Add text field to container
+            enhancedTextContainer.addSubview(enhancedTextField)
+            
+            // Add container to content view
+            contentView.addSubview(enhancedTextContainer)
         }
         
         // Don't show window automatically on app launch
@@ -189,13 +223,13 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         footerContainer.identifier = NSUserInterfaceItemIdentifier("pen_footer")
         
         // Add text label
-        let textLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 180, height: footerHeight))
-        textLabel.stringValue = "Pen - AI writing assistent"
+        let textLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 250, height: footerHeight))
+        textLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_shortcut")
         textLabel.isBezeled = false
         textLabel.drawsBackground = false
         textLabel.isEditable = false
         textLabel.isSelectable = false
-        textLabel.font = NSFont.systemFont(ofSize: 12)
+        textLabel.font = NSFont.systemFont(ofSize: 14)
         textLabel.textColor = NSColor.secondaryLabelColor
         textLabel.alignment = .right
         
@@ -203,15 +237,15 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         let logoPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/logo.png"
         if let logo = NSImage(contentsOfFile: logoPath) {
             let logoSize: CGFloat = 26
-            let logoView = NSImageView(frame: NSRect(x: 0, y: 2, width: logoSize, height: logoSize))
+            let logoView = NSImageView(frame: NSRect(x: 0, y: 0, width: logoSize, height: logoSize))
             logoView.image = logo
             
-            // Set text position to 148, 3 absolute
-            let textX: CGFloat = 148
-            let textY: CGFloat = -3 // 6 (footer Y) + (-3) = 3
-            // Set logo position to 336, 6
+            // Set text position to 80, -6 to achieve absolute (330, 9)
+            let textX: CGFloat = 80
+            let textY: CGFloat = -6 // 0 (footer Y) + (-6) + 15 (text center) = 9
+            // Set logo position to 336, 2
             let logoX: CGFloat = 336
-            let logoY: CGFloat = 6
+            let logoY: CGFloat = 2
             
             textLabel.frame.origin.x = textX
             textLabel.frame.origin.y = textY
@@ -222,9 +256,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             footerContainer.addSubview(logoView)
         }
         
-        // Position at the specified coordinates (0, 6)
-        footerContainer.frame.origin = NSPoint(x: 0, y: 6)
-        print("PenDelegate: Footer position set to (0, 6)")
+        // Position at the specified coordinates (0, 0)
+        footerContainer.frame.origin = NSPoint(x: 0, y: 0)
+        print("PenDelegate: Footer position set to (0, 0)")
         
         // Add footer container to content view
         contentView.addSubview(footerContainer)

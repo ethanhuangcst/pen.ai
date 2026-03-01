@@ -134,6 +134,20 @@
 "pen_menu_title" = "Pen";
 "pen_menu_title_offline" = "Pen (Offline)";
 
+/* Footer text */
+"pen_footer_text" = "Pen - AI writing assistent";
+"pen_footer_shortcut" = " Pen ";
+
+/* Login window */
+"pen_ai_login" = "Pen AI Login";
+"email_label" = "Email:";
+"enter_email_placeholder" = "Enter your email";
+"password_label" = "Password:";
+"enter_password_placeholder" = "Enter your password";
+"remember_me" = "Remember Me";
+"login_button" = "Login";
+"invalid_credentials" = "Invalid email or password";
+
 /* Prompts tab */
 "prompts_title" = "Prompts";
 "first_prompt_default" = "First prompt will be the default prompt";

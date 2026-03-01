@@ -1,0 +1,9 @@
+As a Pen user, I want Pen app to conduct a Initialization when I open Pen window, so that I have minimal waste in finding basic informatinos
+- 
+
+
+As a Pen user, I want Pen app to have defifferent UI sections on the UI, so that I can good user experience
+- pen_footer
+- pen_enhanced_text
+- pen_controller
+- pen_original_text

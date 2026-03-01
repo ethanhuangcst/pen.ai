@@ -62,7 +62,7 @@ class LoginWindow: BaseWindow {
         
         // Add title
         let titleLabel = NSTextField(frame: NSRect(x: 70, y: windowHeight - 55, width: 200, height: 30))
-        titleLabel.stringValue = "Pen AI Login"
+        titleLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_ai_login")
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
         titleLabel.isEditable = false
@@ -72,7 +72,7 @@ class LoginWindow: BaseWindow {
         
         // Add email label
         let emailLabel = NSTextField(frame: NSRect(x: 40, y: windowHeight - 120, width: 100, height: 20))
-        emailLabel.stringValue = "Email:" 
+        emailLabel.stringValue = LocalizationService.shared.localizedString(for: "email_label")
         emailLabel.isBezeled = false
         emailLabel.drawsBackground = false
         emailLabel.isEditable = false
@@ -81,14 +81,14 @@ class LoginWindow: BaseWindow {
         
         // Add email text field
         emailField = NSTextField(frame: NSRect(x: 140, y: windowHeight - 120, width: 260, height: 25))
-        emailField.placeholderString = "Enter your email"
+        emailField.placeholderString = LocalizationService.shared.localizedString(for: "enter_email_placeholder")
         // Set background to system text background color
         emailField.backgroundColor = NSColor.textBackgroundColor
         contentView.addSubview(emailField)
         
         // Add password label
         let passwordLabel = NSTextField(frame: NSRect(x: 40, y: windowHeight - 160, width: 100, height: 20))
-        passwordLabel.stringValue = "Password:" 
+        passwordLabel.stringValue = LocalizationService.shared.localizedString(for: "password_label")
         passwordLabel.isBezeled = false
         passwordLabel.drawsBackground = false
         passwordLabel.isEditable = false
@@ -97,14 +97,14 @@ class LoginWindow: BaseWindow {
         
         // Add secure password field
         securePasswordField = NSSecureTextField(frame: NSRect(x: 140, y: windowHeight - 160, width: 260, height: 25))
-        securePasswordField.placeholderString = "Enter your password"
+        securePasswordField.placeholderString = LocalizationService.shared.localizedString(for: "enter_password_placeholder")
         // Set background to system text background color
         securePasswordField.backgroundColor = NSColor.textBackgroundColor
         contentView.addSubview(securePasswordField)
         
         // Add plain password field (initially hidden)
         plainPasswordField = NSTextField(frame: NSRect(x: 140, y: windowHeight - 160, width: 260, height: 25))
-        plainPasswordField.placeholderString = "Enter your password"
+        plainPasswordField.placeholderString = LocalizationService.shared.localizedString(for: "enter_password_placeholder")
         // Set background to system text background color
         plainPasswordField.backgroundColor = NSColor.textBackgroundColor
         plainPasswordField.isHidden = true
@@ -138,14 +138,14 @@ class LoginWindow: BaseWindow {
         // Add remember me checkbox
         rememberMeCheckbox = FocusableButton(frame: NSRect(x: 140, y: windowHeight - 200, width: 200, height: 20))
         rememberMeCheckbox.setButtonType(.switch)
-        rememberMeCheckbox.title = "Remember Me"
+        rememberMeCheckbox.title = LocalizationService.shared.localizedString(for: "remember_me")
         rememberMeCheckbox.target = self
         rememberMeCheckbox.action = #selector(rememberMeToggled)
         contentView.addSubview(rememberMeCheckbox)
         
         // Add login button
         loginButton = FocusableButton(frame: NSRect(x: 190, y: windowHeight - 240, width: 140, height: 30))
-        loginButton.title = "Login"
+        loginButton.title = LocalizationService.shared.localizedString(for: "login_button")
         loginButton.bezelStyle = .rounded
         loginButton.target = self
         loginButton.action = #selector(login)
