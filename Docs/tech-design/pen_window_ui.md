@@ -33,6 +33,15 @@ The Pen window is a compact, focused UI for the Pen AI application, featuring a 
 - **Background**: Transparent
 - **Identifier**: `pen_footer`
 
+### Footer Instruction
+- **Content**: "Toggle window with [shortcut]" (localized)
+- **Font**: System font, 12pt
+- **Color**: Secondary label color
+- **Alignment**: Left
+- **Position**: (30, 9) absolute (relative to window bottom-left)
+- **Identifier**: `pen_footer_instruction`
+- **Localization**: Uses `pen_footer_instruction` key in Localizable.strings
+
 ### Footer Text
 - **Content**: " Pen " (with spaces around "Pen")
 - **Font**: System font, 14pt
@@ -40,7 +49,7 @@ The Pen window is a compact, focused UI for the Pen AI application, featuring a 
 - **Alignment**: Right
 - **Position**: (330, 9) absolute (relative to window bottom-left)
 - **Identifier**: `pen_footer_lable`
-- **Localization**: Uses `pen_footer_shortcut` key in Localizable.strings
+- **Localization**: Uses `pen_footer_label` key in Localizable.strings
 
 ### Logo
 - **Size**: 26px × 26px
@@ -86,6 +95,33 @@ The Pen window is a compact, focused UI for the Pen AI application, featuring a 
 - **Background**: Transparent
 - **Border**: Visible, color = C0C0C0, rounded corner, 4.0
 - **Identifier**: `Pen_original_text_text`
+
+### Manual Paste Container
+- **Size**: 300px (width) × 30px (height)
+- **Position**: (20, 346) from the bottom-left corner of the window
+- **Background**: Transparent
+- **Identifier**: `pen_manual_paste`
+
+### Paste Button
+- **Size**: 20px (width) × 20px (height)
+- **Position**: (0, 5) relative to container
+- **Background**: Transparent
+- **Border**: None
+- **Image**: `paste.svg` from Resources/Assets
+- **Identifier**: `pen_manual_paste_button`
+- **Selected**: False
+- **Focused**: False
+
+### Paste Label
+- **Content**: "Paste from clipboard" (localized)
+- **Font**: System font, 12pt
+- **Color**: Label color
+- **Alignment**: Left
+- **Size**: 270px (width) × 30px (height)
+- **Position**: (26, -7) relative to container (absolute: 46, 339)
+- **Properties**: Read-only, not selectable
+- **Identifier**: `pen_manual_paste_text`
+- **Localization**: Uses `paste_from_clipboard_simple` key in Localizable.strings
 
 ## Coordinate System
 - **Origin**: Bottom-left corner of the window

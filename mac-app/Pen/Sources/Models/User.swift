@@ -23,6 +23,9 @@ class User {
     
     /// Creates a User instance from database row
     static func fromDatabaseRow(_ row: [String: Any]) -> User? {
+        // Print all row data for debugging
+        print("[User] Full row data: \(row)")
+        
         // Check each field
         if let name = row["name"] as? String {
             print("[User] name: \(name)")
@@ -46,8 +49,10 @@ class User {
         let id: Int
         if let idInt = row["id"] as? Int {
             id = idInt
+            print("[User] id: \(id)")
         } else if let idString = row["id"] as? String, let idInt = Int(idString) {
             id = idInt
+            print("[User] id (from string): \(id)")
         } else {
             print("[User] Missing or invalid id: \(row["id"] ?? "nil")")
             return nil
@@ -81,7 +86,9 @@ class User {
         // Get password if present (optional)
         let password = row["password"] as? String ?? ""
         
-        return User(id: id, name: name, email: email, password: password, profileImage: profileImage, createdAt: createdAt, systemFlag: systemFlag)
+        let user = User(id: id, name: name, email: email, password: password, profileImage: profileImage, createdAt: createdAt, systemFlag: systemFlag)
+        print("[User] Created user: \(user.name) with email \(user.email)")
+        return user
     }
     
     /// Creates a new User instance with default PEN system flag

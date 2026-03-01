@@ -10,7 +10,23 @@ class PromptsService {
     
     /// Creates a new prompt in the database
     func createPrompt(userId: Int, promptName: String, promptText: String) async throws -> Prompt {
-        let newPrompt = Prompt.createNewPrompt(userId: userId, promptName: promptName, promptText: promptText)
+        // Create prompt with DEFAULT_PROMPT_ID if it's the default prompt
+        let newPrompt: Prompt
+        if promptName == "Default Prompt" && promptText.contains("You are Pen, an AI writing assistant") {
+            // This is likely the default prompt
+            newPrompt = Prompt(
+                id: Prompt.DEFAULT_PROMPT_ID,
+                userId: userId,
+                promptName: promptName,
+                promptText: promptText,
+                createdDatetime: Date(),
+                updatedDatetime: nil,
+                systemFlag: "PEN"
+            )
+        } else {
+            // Regular prompt with generated ID
+            newPrompt = Prompt.createNewPrompt(userId: userId, promptName: promptName, promptText: promptText)
+        }
         
         let query = """
         INSERT INTO wingman_db.prompts (id, user_id, prompt_name, prompt_text, system_flag)
@@ -75,6 +91,11 @@ class PromptsService {
     
     /// Deletes a prompt from the database
     func deletePrompt(id: String) async throws -> Bool {
+        // Prevent deletion of default prompt
+        if id == Prompt.DEFAULT_PROMPT_ID {
+            throw NSError(domain: "PromptsService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Default prompt cannot be deleted"])
+        }
+        
         let query = "DELETE FROM wingman_db.prompts WHERE id = ?"
         
         do {
@@ -121,7 +142,7 @@ class PromptsService {
         }
     }
     
-    /// Gets all prompts for a user
+    /// Gets all prompts for a user, including the default prompt if it doesn't exist
     func getPromptsByUserId(userId: Int) async throws -> [Prompt] {
         let query = "SELECT * FROM wingman_db.prompts WHERE user_id = ? ORDER BY created_datetime ASC"
         
@@ -135,7 +156,38 @@ class PromptsService {
             }
             
             let rows = try await connection.execute(query: query, parameters: [MySQLData(int: userId)])
-            return rows.compactMap { Prompt.fromDatabaseRow($0) }
+            var prompts = rows.compactMap { Prompt.fromDatabaseRow($0) }
+            
+            // Check if default prompt exists for this user
+            let hasDefaultPrompt = prompts.contains { $0.id == Prompt.DEFAULT_PROMPT_ID }
+            
+            if !hasDefaultPrompt {
+                // Load default prompt from file or create fallback
+                let defaultPrompt = Prompt.loadDefaultPrompt() ?? Prompt.createFallbackDefaultPrompt()
+                
+                // Create a copy with the user's ID
+                let userDefaultPrompt = Prompt(
+                    id: Prompt.DEFAULT_PROMPT_ID,
+                    userId: userId,
+                    promptName: defaultPrompt.promptName,
+                    promptText: defaultPrompt.promptText,
+                    createdDatetime: Date(),
+                    updatedDatetime: nil,
+                    systemFlag: "PEN"
+                )
+                
+                // Add to database
+                _ = try await createPrompt(
+                    userId: userId,
+                    promptName: userDefaultPrompt.promptName,
+                    promptText: userDefaultPrompt.promptText
+                )
+                
+                // Add to the list
+                prompts.insert(userDefaultPrompt, at: 0)
+            }
+            
+            return prompts
         } catch {
             print("[PromptsService] Failed to get prompts by user id: \(error)")
             throw error

@@ -1,5 +1,13 @@
 # PenAI Preferences Feature
 
+# User Story 0: Close Other Windows when open Preferences window
+As a Pen user, I want Pen app to close all other windows when I open Preferences window, so that I can focus on the Preferences window
+Scenario: close other windows when open Preferences window
+    Given Pen app is running
+    AND other windows are open
+    When I open Preferences window
+    Then all other windows should be closed
+
 ## User Story 1
 
 As a PenAI user, I want to enter the Preferences window by right-clicking the menubar icon, so that I can configure my app settings

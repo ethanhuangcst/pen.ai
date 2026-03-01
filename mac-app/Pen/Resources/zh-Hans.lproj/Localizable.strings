@@ -149,3 +149,6 @@
 
 /* Footer text */
 "pen_footer_label" = " Pen ";
+"pen_footer_instruction" = "热键： %@ ";
+"paste_from_clipboard" = "从剪贴板粘贴，或按 %@";
+"paste_from_clipboard_simple" = "从剪贴板粘贴";

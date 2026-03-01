@@ -1,5 +1,13 @@
 # PenAI Account Management Feature
 
+# User Story 0: Close Other Windows when launch login window
+As a Pen user, I want Pen app to close all other windows when I launch login window, so that I can focus on the login window
+Scenario: close other windows when launch login window
+    Given Pen app is running
+    AND other windows are open
+    When I launch login window
+    Then all other windows should be closed
+
 ## User Story 1
 
 As a PenAI user, I want to log in to my account so that I can access my personalized settings and data
@@ -161,6 +169,34 @@ Scenario: User cancels registration
   When the user clicks the "Cancel" button
   Then the registration window closes
   And the login window opens
+```
+
+## User Story 2
+
+As a PenAI user, I want to log out of my account so that I can secure my account and prevent unauthorized access
+
+### Acceptance Criteria
+
+```gherkin
+Scenario: User logs out successfully
+  Given the Pen app is running
+  And the user is logged in
+  When the logout process is initiated
+  Then all app windows are closed
+  And the menubar icon remains available
+  And user information is cleaned up, including AI configurations and prompts
+  And the local global user object is removed
+  And other system resources are cleaned up
+  And the app is set to online-logout mode
+  And a popup message appears: "User logged out. Please log in again to use Pen."
+  And the message follows i18n guidelines
+
+Scenario: Consistent logout behavior
+  Given the Pen app is running
+  And the user is logged in
+  When the user selects "Logout" from the right-click menu of the menubar icon
+  or clicks the "Logout" button from Preferences window, Account tab
+  Then Pen app will trigger the same logout process as described in the "User logs out successfully" scenario
 ```
 
 ## User Story 4

@@ -275,13 +275,25 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         
         switch columnIdentifier.rawValue {
         case "name":
-            return createReadonlyTextField(text: prompt.promptName)
+            let textField = createReadonlyTextField(text: prompt.promptName)
+            // Add "(Default)" suffix to default prompt
+            if prompt.id == Prompt.DEFAULT_PROMPT_ID {
+                textField.stringValue = "\(prompt.promptName) (Default)"
+            }
+            return textField
         case "prompt":
             return createPromptTextField(text: prompt.promptText)
         case "edit":
             return createEditButton(tag: row)
         case "delete":
-            return createDeleteButton(tag: row)
+            let deleteButton = createDeleteButton(tag: row)
+            // Disable delete button for default prompt
+            if prompt.id == Prompt.DEFAULT_PROMPT_ID {
+                deleteButton.isEnabled = false
+                deleteButton.contentTintColor = NSColor.secondaryLabelColor
+                deleteButton.toolTip = "Default prompt cannot be deleted"
+            }
+            return deleteButton
         default:
             return nil
         }
@@ -430,6 +442,13 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         let row = sender.tag
         if row < prompts.count {
             let prompt = prompts[row]
+            
+            // Safety check: prevent deletion of default prompt
+            if prompt.id == Prompt.DEFAULT_PROMPT_ID {
+                WindowManager.displayPopupMessage("Default prompt cannot be deleted")
+                return
+            }
+            
             showDeleteConfirmationDialog(prompt: prompt, row: row)
         }
     }

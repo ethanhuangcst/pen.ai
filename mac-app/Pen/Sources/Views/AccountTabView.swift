@@ -445,16 +445,14 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         // Close the preferences window
         parentWindow?.orderOut(nil)
         
-        // Notify the delegate to update app mode to online-logout
+        // Call PenDelegate's logout method for consistent behavior
         print("AccountTabView: Getting application delegate")
         if let appDelegate = NSApplication.shared.delegate {
             print("AccountTabView: App delegate found: \(appDelegate)")
             if let penDelegate = appDelegate as? PenDelegate {
                 print("AccountTabView: Cast to PenDelegate successful")
-                penDelegate.setAppMode(.onlineLogout)
-                print("AccountTabView: setAppMode called")
-                penDelegate.setLoginStatus(false)
-                print("AccountTabView: setLoginStatus called")
+                penDelegate.logout()
+                print("AccountTabView: logout() called on PenDelegate")
             } else {
                 print("AccountTabView: Failed to cast to PenDelegate")
                 print("AccountTabView: Delegate type: \(type(of: appDelegate))")

@@ -13,6 +13,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private var loginWindow: LoginWindow?
     private var preferencesWindow: PreferencesWindow?
     private var newOrEditPromptWindow: NewOrEditPrompt?
+    private let penWindowService = PenWindowService.shared
 
     private let windowWidth: CGFloat = 378
     private let windowHeight: CGFloat = 388
@@ -163,123 +164,8 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private func createMainWindow() {
         print("SimpleAppDelegate: Creating main window")
         
-        // Create window using BaseWindow with standard UI behaviors but without logo and title
-        let windowSize = NSSize(width: windowWidth, height: windowHeight)
-        window = BaseWindow.createStandardWindow(size: windowSize, showLogo: false, showTitle: false)
-        
-        // Add footer container to main window
-        if let window = window, let contentView = window.contentView {
-            addFooterContainer(to: contentView, size: windowSize)
-            
-            // Add enhanced text container
-            let enhancedTextContainer = NSView(frame: NSRect(x: 20, y: 30, width: 338, height: 198))
-            enhancedTextContainer.wantsLayer = true
-            enhancedTextContainer.layer?.backgroundColor = NSColor.clear.cgColor
-            enhancedTextContainer.identifier = NSUserInterfaceItemIdentifier("pen_enhanced_text")
-            
-            // Add text field
-            let enhancedTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 338, height: 198))
-            enhancedTextField.stringValue = "Enhanced text will appear here"
-            enhancedTextField.isBezeled = false
-            enhancedTextField.drawsBackground = false
-            enhancedTextField.isEditable = false
-            enhancedTextField.isSelectable = true
-            enhancedTextField.font = NSFont.systemFont(ofSize: 14)
-            // Set font color to 6899D2
-            enhancedTextField.textColor = NSColor(red: 104.0/255.0, green: 153.0/255.0, blue: 210.0/255.0, alpha: 1.0)
-            enhancedTextField.alignment = .left
-            enhancedTextField.identifier = NSUserInterfaceItemIdentifier("pen_enhanced_text_text")
-            
-            // Add visible border
-            enhancedTextField.wantsLayer = true
-            enhancedTextField.layer?.backgroundColor = NSColor.clear.cgColor
-            enhancedTextField.layer?.borderWidth = 1.0
-            // Set border color to C0C0C0
-            let borderColor = NSColor(red: 192.0/255.0, green: 192.0/255.0, blue: 192.0/255.0, alpha: 1.0)
-            enhancedTextField.layer?.borderColor = borderColor.cgColor
-            // Set rounded corner to 4.0
-            enhancedTextField.layer?.cornerRadius = 4.0
-            
-            // Add text field to container
-            enhancedTextContainer.addSubview(enhancedTextField)
-            
-            // Add container to content view
-            contentView.addSubview(enhancedTextContainer)
-            
-            // Add controller container
-            let controllerContainer = NSView(frame: NSRect(x: 20, y: 228, width: 338, height: 30))
-            controllerContainer.wantsLayer = true
-            controllerContainer.layer?.backgroundColor = NSColor.clear.cgColor
-            controllerContainer.identifier = NSUserInterfaceItemIdentifier("pen_controller")
-            
-            // Add pen_controller_prompts drop-down box
-            let promptsDropdown = NSPopUpButton(frame: NSRect(x: 0, y: 5, width: 222, height: 20))
-            promptsDropdown.identifier = NSUserInterfaceItemIdentifier("pen_controller_prompts")
-            promptsDropdown.addItem(withTitle: "Select Prompt")
-            // Add visible border
-            promptsDropdown.wantsLayer = true
-            promptsDropdown.layer?.backgroundColor = NSColor.clear.cgColor
-            promptsDropdown.layer?.borderWidth = 1.0
-            // Set border color to C0C0C0
-            // Reuse the borderColor variable defined earlier
-            promptsDropdown.layer?.borderColor = borderColor.cgColor
-            // Set rounded corner with 0.2 ratio (20 * 0.2 = 4)
-            promptsDropdown.layer?.cornerRadius = 4.0
-            
-            // Add pen_controller_provider drop-down box
-            let providerDropdown = NSPopUpButton(frame: NSRect(x: 228, y: 5, width: 110, height: 20))
-            providerDropdown.identifier = NSUserInterfaceItemIdentifier("pen_controller_provider")
-            providerDropdown.addItem(withTitle: "Select Provider")
-            // Add visible border
-            providerDropdown.wantsLayer = true
-            providerDropdown.layer?.backgroundColor = NSColor.clear.cgColor
-            providerDropdown.layer?.borderWidth = 1.0
-            // Set border color to C0C0C0
-            providerDropdown.layer?.borderColor = borderColor.cgColor
-            // Set rounded corner with 0.2 ratio (20 * 0.2 = 4)
-            providerDropdown.layer?.cornerRadius = 4.0
-            
-            // Add drop-down boxes to container
-            controllerContainer.addSubview(promptsDropdown)
-            controllerContainer.addSubview(providerDropdown)
-            
-            // Add container to content view
-            contentView.addSubview(controllerContainer)
-            
-            // Add original text container
-            let originalTextContainer = NSView(frame: NSRect(x: 20, y: 258, width: 338, height: 88))
-            originalTextContainer.wantsLayer = true
-            originalTextContainer.layer?.backgroundColor = NSColor.clear.cgColor
-            originalTextContainer.identifier = NSUserInterfaceItemIdentifier("pen_original_text")
-            
-            // Add text field
-            let originalTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 338, height: 88))
-            originalTextField.stringValue = "Original text will appear here"
-            originalTextField.isBezeled = false
-            originalTextField.drawsBackground = false
-            originalTextField.isEditable = false
-            originalTextField.isSelectable = true
-            originalTextField.font = NSFont.systemFont(ofSize: 14)
-            originalTextField.textColor = NSColor.labelColor
-            originalTextField.alignment = .left
-            originalTextField.identifier = NSUserInterfaceItemIdentifier("Pen_original_text_text")
-            
-            // Add visible border
-            originalTextField.wantsLayer = true
-            originalTextField.layer?.backgroundColor = NSColor.clear.cgColor
-            originalTextField.layer?.borderWidth = 1.0
-            // Set border color to C0C0C0
-            // Reuse the borderColor variable defined earlier
-            originalTextField.layer?.borderColor = borderColor.cgColor
-            // Set rounded corner to 4.0
-            originalTextField.layer?.cornerRadius = 4.0
-            
-            // Add text field to container
-            originalTextContainer.addSubview(originalTextField)
-            
-            // Add container to content view
-            contentView.addSubview(originalTextContainer)
-        }
+        // Create window using PenWindowService
+        window = penWindowService.createWindow()
         
         // Don't show window automatically on app launch
         
@@ -296,6 +182,23 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         footerContainer.wantsLayer = true
         footerContainer.layer?.backgroundColor = NSColor.clear.cgColor
         footerContainer.identifier = NSUserInterfaceItemIdentifier("pen_footer")
+        
+        // Add instruction label
+        let instructionLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 250, height: footerHeight))
+        // Load saved shortcut from UserDefaults
+        let defaults = UserDefaults.standard
+        let shortcutKeyDefaultsKey = "pen.shortcutKey"
+        let defaultShortcut = "Command+Option+P"
+        let savedShortcut = defaults.string(forKey: shortcutKeyDefaultsKey) ?? defaultShortcut
+        instructionLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_instruction", withFormat: savedShortcut)
+        instructionLabel.isBezeled = false
+        instructionLabel.drawsBackground = false
+        instructionLabel.isEditable = false
+        instructionLabel.isSelectable = false
+        instructionLabel.font = NSFont.systemFont(ofSize: 12)
+        instructionLabel.textColor = NSColor.secondaryLabelColor
+        instructionLabel.alignment = .left
+        instructionLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_instruction")
         
         // Add text label
         let textLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 250, height: footerHeight))
@@ -316,18 +219,24 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             let logoView = NSImageView(frame: NSRect(x: 0, y: 0, width: logoSize, height: logoSize))
             logoView.image = logo
             
-            // Set text position to 80, -6 to achieve absolute (330, 9)
-            let textX: CGFloat = 80
+            // Set instruction label position to 30, 9
+            let instructionX: CGFloat = 30
+            let instructionY: CGFloat = -6 // 0 (footer Y) + (-6) + 15 (text center) = 9
+            // Set text label position to 330, 9
+            let textX: CGFloat = 330
             let textY: CGFloat = -6 // 0 (footer Y) + (-6) + 15 (text center) = 9
             // Set logo position to 336, 2
             let logoX: CGFloat = 336
             let logoY: CGFloat = 2
             
+            instructionLabel.frame.origin.x = instructionX
+            instructionLabel.frame.origin.y = instructionY
             textLabel.frame.origin.x = textX
             textLabel.frame.origin.y = textY
             logoView.frame.origin.x = logoX
             logoView.frame.origin.y = logoY
             
+            footerContainer.addSubview(instructionLabel)
             footerContainer.addSubview(textLabel)
             footerContainer.addSubview(logoView)
         }
@@ -448,10 +357,27 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    @objc private func logout() {
+    @objc internal func logout() {
         print("PenDelegate: User logged out")
+        
+        // 1. Close all app windows
+        closeOtherWindows()
+        
+        // 2. Clean up user information, including AI configurations and prompts
+        // Clear AI configuration
+        AIManager.shared.clearConfiguration()
+        print("PenDelegate: Cleared AI configuration")
+        
+        // 3. Remove the local global user object and clean up other system resources
         setLoginStatus(false)
-        setAppMode(.onlineLogout)
+        
+        // 4. Set Pen as online-logout mode without showing the hello_guest popup
+        setAppMode(.onlineLogout, showPopup: false)
+        
+        // 5. Display i18n logout message
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.displayPopupMessage("User logged out. Please log in again to use Pen.")
+        }
     }
     
 
@@ -529,6 +455,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         print("PenDelegate: Current user: \(currentUser?.name ?? "nil")")
         print("PenDelegate: Current user profileImage: \(currentUser?.profileImage != nil ? "[BASE64 ENCODED IMAGE]" : "nil")")
         
+        // Close other windows before opening preferences window
+        closeOtherWindows()
+        
         // Check if preferences window already exists
         if let window = preferencesWindow {
             // If it exists, just show it
@@ -570,12 +499,50 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 print("PenDelegate: Window is already open, closing it")
                 window.orderOut(nil)
             } else {
+                // Close other windows before opening Pen window
+                closeOtherWindows()
+                
                 // Position window relative to menu bar icon
                 window.positionRelativeToMenuBarIcon()
                 
                 print("PenDelegate: Opening window at specified position")
+                
+                // Initialize Pen window using PenWindowService
+                Task {
+                    await penWindowService.initiatePen()
+                }
+                
                 window.showAndFocus()
             }
+        }
+    }
+    
+    /// Closes all other windows except the one being opened
+    private func closeOtherWindows() {
+        print("PenDelegate: Closing other windows")
+        
+        // Close main Pen window if it's open
+        if let window = window {
+            window.orderOut(nil)
+            print("PenDelegate: Closed main Pen window")
+        }
+        
+        // Close login window if it's open
+        if let loginWindow = loginWindow {
+            loginWindow.orderOut(nil)
+            print("PenDelegate: Closed login window")
+        }
+        
+        // Close preferences window if it's open
+        if let preferencesWindow = preferencesWindow {
+            preferencesWindow.orderOut(nil)
+            print("PenDelegate: Closed preferences window")
+        }
+        
+        // Close new or edit prompt window if it's open
+        if let newOrEditPromptWindow = newOrEditPromptWindow {
+            newOrEditPromptWindow.orderOut(nil)
+            print("PenDelegate: Closed new or edit prompt window")
         }
     }
     
@@ -744,10 +711,18 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 print("PenDelegate: Window repositioned, app remains running with menubar icon available")
                 window.makeKeyAndOrderFront(nil)
             } else {
+                // Close other windows before opening Pen window
+                closeOtherWindows()
+                
                 print("PenDelegate: Window is closed, opening relative to mouse cursor")
                 
                 // Position window relative to mouse cursor
                 positionWindowRelativeToMouseCursor(window)
+                
+                // Initialize Pen window using PenWindowService
+                Task {
+                    await penWindowService.initiatePen()
+                }
                 
                 print("PenDelegate: Opening PenAI window at new position, app is ready for interaction")
                 window.showAndFocus()
@@ -764,8 +739,17 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 print("PenDelegate: Hiding window")
                 window.orderOut(nil)
             } else {
+                // Close other windows before opening Pen window
+                closeOtherWindows()
+                
                 print("PenDelegate: Showing window relative to mouse cursor")
                 positionWindowRelativeToMouseCursor(window)
+                
+                // Initialize Pen window using PenWindowService
+                Task {
+                    await penWindowService.initiatePen()
+                }
+                
                 window.showAndFocus()
             }
         }
@@ -780,6 +764,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     
     @objc func openLoginWindow() {
         print("PenDelegate: Opening login window")
+        
+        // Close other windows before opening login window
+        closeOtherWindows()
         
         // Create or show login window
         if loginWindow == nil {
@@ -800,7 +787,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     }
     
     /// Sets the app mode and updates the UI accordingly
-    func setAppMode(_ mode: AppMode) {
+    func setAppMode(_ mode: AppMode, showPopup: Bool = true) {
         switch mode {
         case .onlineLogin:
             isOnline = true
@@ -817,7 +804,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         updateStatusIcon(online: isOnline)
         
         // Display appropriate popup message based on mode
-        if mode == .onlineLogout {
+        if mode == .onlineLogout && showPopup {
             // Delay popup to give menu bar icon time to position itself
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.displayPopupMessage(LocalizationService.shared.localizedString(for: "hello_guest"))
@@ -841,6 +828,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     
     /// Loads and tests AI configurations for the user
     private func loadAndTestAIConfigurations(user: User) {
+        print("PenDelegate: loadAndTestAIConfigurations called for user \(user.name) with email \(user.email)")
         Task {
             do {
                 // Load all AI configurations for the user
@@ -889,12 +877,22 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         if let user = user {
             self.userName = user.name
             self.currentUser = user
+            // Also update UserService
+            UserService.shared.login(user: user)
+            print("PenDelegate: UserService.login called with user \(user.name) and email \(user.email)")
         } else if !userName.isEmpty {
             self.userName = userName
         } else if !loggedIn {
             // Clear user information when logging out
             self.userName = ""
             self.currentUser = nil
+            // Also clear UserService
+            UserService.shared.logout()
+            print("PenDelegate: UserService.logout called")
+            
+            // Clean up AI configurations and prompts
+            // This will be handled by AIManager and PromptsService
+            print("PenDelegate: Cleaning up AI configurations and prompts")
         }
         
         // Update the menu bar icon based on login status
@@ -910,7 +908,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 let greeting = LocalizationService.shared.localizedString(for: "hello_user", withFormat: self?.userName ?? "")
                 self?.displayPopupMessage(greeting)
             } else {
-                self?.displayPopupMessage(LocalizationService.shared.localizedString(for: "hello_guest"))
+                // Don't display hello_guest message here, as we'll show the logout message in the logout() method
             }
         }
     }
@@ -985,6 +983,13 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         }
         
         print("PenDelegate: Displayed reload option")
+    }
+    
+    /// Handles paste button click
+    @objc private func handlePasteButton() {
+        print("PenDelegate: Paste button clicked")
+        // Implement paste functionality here
+        // For now, we'll just print a message
     }
 
 }

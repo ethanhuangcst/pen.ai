@@ -252,17 +252,39 @@ public class AIManager {
         public let totalTokens: Int
     }
     
+    public struct AIProvider {
+        public let id: Int
+        public let name: String
+        public let baseURLs: [String: String]
+        public let defaultModel: String
+        public let requiresAuth: Bool
+        public let authHeader: String
+    }
+    
     // MARK: - Private Properties
     
     private var strategies: [String: ProviderStrategy] = [:]
     private var cachedProviders: [AIModelProvider]?
     private var databasePool: DatabaseConnectivityPool
     private var currentConfiguration: AIConfiguration?
+    private var _isInitialized: Bool = false
+    
+    // MARK: - Public Properties
+    
+    public var isInitialized: Bool {
+        return _isInitialized
+    }
     
     // MARK: - Initialization
     
     private init() {
         self.databasePool = DatabaseConnectivityPool.shared
+    }
+    
+    // MARK: - Initialization Method
+    
+    public func initialize() {
+        _isInitialized = true
     }
     
     // MARK: - Public Methods
@@ -733,6 +755,27 @@ public class AIManager {
             return configurations
         } catch {
             print("Error getting AI connections: \(error)")
+            throw error
+        }
+    }
+    
+    // MARK: - Provider Methods
+    
+    public func getProviders() async throws -> [AIProvider] {
+        do {
+            let publicProviders = try await loadAllProviders()
+            return publicProviders.map { provider in
+                AIProvider(
+                    id: provider.id,
+                    name: provider.name,
+                    baseURLs: provider.baseURLs,
+                    defaultModel: provider.defaultModel,
+                    requiresAuth: provider.requiresAuth,
+                    authHeader: provider.authHeader
+                )
+            }
+        } catch {
+            print("Error getting AI providers: \(error)")
             throw error
         }
     }

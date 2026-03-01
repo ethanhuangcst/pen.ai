@@ -1,6 +1,9 @@
 import Foundation
 
 class Prompt {
+    // Constants
+    static let DEFAULT_PROMPT_ID = "DEFAULT"
+    
     let id: String
     let userId: Int
     let promptName: String
@@ -87,5 +90,58 @@ class Prompt {
     /// Returns the prompt text formatted as markdown
     func getMarkdownText() -> String {
         return promptText
+    }
+    
+    /// Loads the default prompt from default_prompt.md file
+    static func loadDefaultPrompt() -> Prompt? {
+        let defaultPromptPath = "\(FileManager.default.currentDirectoryPath)/default_prompt.md"
+        
+        guard FileManager.default.fileExists(atPath: defaultPromptPath) else {
+            print("[Prompt] default_prompt.md not found at \(defaultPromptPath)")
+            return nil
+        }
+        
+        do {
+            let content = try String(contentsOfFile: defaultPromptPath, encoding: .utf8)
+            
+            // Parse the content to extract prompt name and text
+            var promptName = "Default Prompt"
+            var promptText = content
+            
+            // Simple parsing: first line is the name (after #), rest is the content
+            let lines = content.components(separatedBy: "\n")
+            if let firstLine = lines.first, firstLine.hasPrefix("# ") {
+                promptName = firstLine.replacingOccurrences(of: "# ", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+                promptText = lines.dropFirst().joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            
+            return Prompt(
+                id: DEFAULT_PROMPT_ID,
+                userId: 0, // 0 for system-wide default
+                promptName: promptName,
+                promptText: promptText,
+                createdDatetime: Date(),
+                updatedDatetime: nil,
+                systemFlag: "PEN"
+            )
+        } catch {
+            print("[Prompt] Failed to load default prompt: \(error)")
+            return nil
+        }
+    }
+    
+    /// Creates a fallback default prompt when default_prompt.md is missing
+    static func createFallbackDefaultPrompt() -> Prompt {
+        let fallbackPromptText = "You are Pen, an AI writing assistant designed to help users improve their writing. Your goal is to analyze the provided text and enhance it while maintaining the original meaning and intent."
+        
+        return Prompt(
+            id: DEFAULT_PROMPT_ID,
+            userId: 0, // 0 for system-wide default
+            promptName: "Default Prompt",
+            promptText: fallbackPromptText,
+            createdDatetime: Date(),
+            updatedDatetime: nil,
+            systemFlag: "PEN"
+        )
     }
 }
