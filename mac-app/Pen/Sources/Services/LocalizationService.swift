@@ -9,11 +9,21 @@ class LocalizationService {
     }
     
     private func loadStrings() {
-        // Try to find the Localizable.strings file
+        // Get the user's preferred language
+        let preferredLanguage = Locale.preferredLanguages.first ?? "en"
+        let languageCode = preferredLanguage.split(separator: "-").first ?? "en"
+        
+        // Try to find the Localizable.strings file for the preferred language
         let possiblePaths = [
-            // Development path
+            // Development path with preferred language
+            "\(FileManager.default.currentDirectoryPath)/Resources/\(languageCode)-Hans.lproj/Localizable.strings",
+            "\(FileManager.default.currentDirectoryPath)/Resources/\(languageCode).lproj/Localizable.strings",
+            // Build path with preferred language
+            Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: "\(languageCode)-Hans.lproj"),
+            Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: "\(languageCode).lproj"),
+            // Fallback to English development path
             "\(FileManager.default.currentDirectoryPath)/Resources/en.lproj/Localizable.strings",
-            // Build path
+            // Fallback to English build path
             Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: "en.lproj"),
             // Alternative build path
             Bundle.main.path(forResource: "Localizable", ofType: "strings")
@@ -40,5 +50,11 @@ class LocalizationService {
     func localizedString(for key: String, withFormat arguments: CVarArg..., comment: String = "") -> String {
         let format = localizedString(for: key, comment: comment)
         return String(format: format, arguments: arguments)
+    }
+    
+    // Method to reload strings (useful when language changes)
+    func reloadStrings() {
+        strings.removeAll()
+        loadStrings()
     }
 }

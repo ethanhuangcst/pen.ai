@@ -137,6 +137,7 @@
 /* Footer text */
 "pen_footer_text" = "Pen - AI writing assistent";
 "pen_footer_shortcut" = " Pen ";
+"pen_footer_label" = " Pen ";
 
 /* Login window */
 "pen_ai_login" = "Pen AI Login";

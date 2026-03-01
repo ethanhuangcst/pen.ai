@@ -185,25 +185,100 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             enhancedTextField.isEditable = false
             enhancedTextField.isSelectable = true
             enhancedTextField.font = NSFont.systemFont(ofSize: 14)
-            enhancedTextField.textColor = NSColor.labelColor
+            // Set font color to 6899D2
+            enhancedTextField.textColor = NSColor(red: 104.0/255.0, green: 153.0/255.0, blue: 210.0/255.0, alpha: 1.0)
             enhancedTextField.alignment = .left
-            enhancedTextField.identifier = NSUserInterfaceItemIdentifier("enhanced_text")
+            enhancedTextField.identifier = NSUserInterfaceItemIdentifier("pen_enhanced_text_text")
             
             // Add visible border
             enhancedTextField.wantsLayer = true
-            enhancedTextField.layer?.backgroundColor = NSColor.lightGray.withAlphaComponent(0.1).cgColor
+            enhancedTextField.layer?.backgroundColor = NSColor.clear.cgColor
             enhancedTextField.layer?.borderWidth = 1.0
             // Set border color to C0C0C0
             let borderColor = NSColor(red: 192.0/255.0, green: 192.0/255.0, blue: 192.0/255.0, alpha: 1.0)
             enhancedTextField.layer?.borderColor = borderColor.cgColor
-            // Set rounded corner
-            enhancedTextField.layer?.cornerRadius = 8.0
+            // Set rounded corner to 4.0
+            enhancedTextField.layer?.cornerRadius = 4.0
             
             // Add text field to container
             enhancedTextContainer.addSubview(enhancedTextField)
             
             // Add container to content view
             contentView.addSubview(enhancedTextContainer)
+            
+            // Add controller container
+            let controllerContainer = NSView(frame: NSRect(x: 20, y: 228, width: 338, height: 30))
+            controllerContainer.wantsLayer = true
+            controllerContainer.layer?.backgroundColor = NSColor.clear.cgColor
+            controllerContainer.identifier = NSUserInterfaceItemIdentifier("pen_controller")
+            
+            // Add pen_controller_prompts drop-down box
+            let promptsDropdown = NSPopUpButton(frame: NSRect(x: 0, y: 5, width: 222, height: 20))
+            promptsDropdown.identifier = NSUserInterfaceItemIdentifier("pen_controller_prompts")
+            promptsDropdown.addItem(withTitle: "Select Prompt")
+            // Add visible border
+            promptsDropdown.wantsLayer = true
+            promptsDropdown.layer?.backgroundColor = NSColor.clear.cgColor
+            promptsDropdown.layer?.borderWidth = 1.0
+            // Set border color to C0C0C0
+            // Reuse the borderColor variable defined earlier
+            promptsDropdown.layer?.borderColor = borderColor.cgColor
+            // Set rounded corner with 0.2 ratio (20 * 0.2 = 4)
+            promptsDropdown.layer?.cornerRadius = 4.0
+            
+            // Add pen_controller_provider drop-down box
+            let providerDropdown = NSPopUpButton(frame: NSRect(x: 228, y: 5, width: 110, height: 20))
+            providerDropdown.identifier = NSUserInterfaceItemIdentifier("pen_controller_provider")
+            providerDropdown.addItem(withTitle: "Select Provider")
+            // Add visible border
+            providerDropdown.wantsLayer = true
+            providerDropdown.layer?.backgroundColor = NSColor.clear.cgColor
+            providerDropdown.layer?.borderWidth = 1.0
+            // Set border color to C0C0C0
+            providerDropdown.layer?.borderColor = borderColor.cgColor
+            // Set rounded corner with 0.2 ratio (20 * 0.2 = 4)
+            providerDropdown.layer?.cornerRadius = 4.0
+            
+            // Add drop-down boxes to container
+            controllerContainer.addSubview(promptsDropdown)
+            controllerContainer.addSubview(providerDropdown)
+            
+            // Add container to content view
+            contentView.addSubview(controllerContainer)
+            
+            // Add original text container
+            let originalTextContainer = NSView(frame: NSRect(x: 20, y: 258, width: 338, height: 88))
+            originalTextContainer.wantsLayer = true
+            originalTextContainer.layer?.backgroundColor = NSColor.clear.cgColor
+            originalTextContainer.identifier = NSUserInterfaceItemIdentifier("pen_original_text")
+            
+            // Add text field
+            let originalTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 338, height: 88))
+            originalTextField.stringValue = "Original text will appear here"
+            originalTextField.isBezeled = false
+            originalTextField.drawsBackground = false
+            originalTextField.isEditable = false
+            originalTextField.isSelectable = true
+            originalTextField.font = NSFont.systemFont(ofSize: 14)
+            originalTextField.textColor = NSColor.labelColor
+            originalTextField.alignment = .left
+            originalTextField.identifier = NSUserInterfaceItemIdentifier("Pen_original_text_text")
+            
+            // Add visible border
+            originalTextField.wantsLayer = true
+            originalTextField.layer?.backgroundColor = NSColor.clear.cgColor
+            originalTextField.layer?.borderWidth = 1.0
+            // Set border color to C0C0C0
+            // Reuse the borderColor variable defined earlier
+            originalTextField.layer?.borderColor = borderColor.cgColor
+            // Set rounded corner to 4.0
+            originalTextField.layer?.cornerRadius = 4.0
+            
+            // Add text field to container
+            originalTextContainer.addSubview(originalTextField)
+            
+            // Add container to content view
+            contentView.addSubview(originalTextContainer)
         }
         
         // Don't show window automatically on app launch
@@ -224,7 +299,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         
         // Add text label
         let textLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 250, height: footerHeight))
-        textLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_shortcut")
+        textLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_label")
         textLabel.isBezeled = false
         textLabel.drawsBackground = false
         textLabel.isEditable = false
@@ -232,6 +307,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         textLabel.font = NSFont.systemFont(ofSize: 14)
         textLabel.textColor = NSColor.secondaryLabelColor
         textLabel.alignment = .right
+        textLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_lable")
         
         // Add small logo
         let logoPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/logo.png"

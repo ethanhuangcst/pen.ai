@@ -1,9 +1,60 @@
 As a Pen user, I want Pen app to conduct a Initialization when I open Pen window, so that I have minimal waste in finding basic informatinos
-- 
+-
 
 
 As a Pen user, I want Pen app to have defifferent UI sections on the UI, so that I can good user experience
 - pen_footer
+    define container view pen_footer
+    # pen_footer
+    ## size = 378x30
+    ## coordinate = 0, 0
+    ## background = transparent
+    ## identifier = pen_footer
+    ### text label pen_footer_lable
+    #### content = " Pen "
+    #### font = System font, 14pt
+    #### color = Secondary label color
+    #### alignment = Right
+    #### position = 330, 9
+    #### localization = Uses pen_footer_shortcut key in Localizable.strings
+    ### logo
+    #### size = 26x26
+    #### image = logo.png
+    #### position = 336, 2
+
 - pen_enhanced_text
+    define containt view "pen_enhanced_text", contains: 
+    # text field pen_enhanced_text_text 
+    ## read-only 
+    ## background = transparent
+    ## not resize-able 
+    ## size 338x198 
+    ## font color = 6899D2
+    ## border is visible, color = C0C0C0, rounded corner, 4.0
+    ## cordinate: 20, 30 
+
 - pen_controller
+    define container view pen_controller
+    # pen_controller
+    ## size = 338x30
+    ## coordinate = (20, 228)
+    ## drop-down box pen_controller_prompts
+    ## boarder = visible, color = C0C0C0, rounded corner, 4.0
+    ## background = transparent
+    ### size = 222x20
+    ### coordinate = (20, 233)
+    ## drop-bown box pen_cntroller_provider
+    ### size = 110x20
+    ### coordinate = (250, 233)
+    ## boarder = visible, color = C0C0C0, rounded corner, 4.0
+    ## background = transparent
+
 - pen_original_text
+    define containt view "pen_original_text": 
+    # text field Pen_original_text_text
+    ## read-only 
+    ## background = transparent
+    ## not resize-able 
+    ## size 338x88 
+    ## border is visible, color = C0C0C0, rounded corner, 4.0
+    ## cordinate: 20, 258 

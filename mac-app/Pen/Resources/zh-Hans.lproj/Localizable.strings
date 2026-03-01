@@ -146,3 +146,6 @@
 "failed_to_update_prompt" = "更新提示词失败";
 "failed_to_delete_prompt" = "删除提示词失败";
 "no_prompts_saved_yet" = "暂无保存的提示词";
+
+/* Footer text */
+"pen_footer_label" = " Pen ";
