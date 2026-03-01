@@ -45,14 +45,12 @@ Scenario: Attempting to delete Default Prompt shows error
   Then it should display an error message: "Default prompt cannot be deleted"
   And the default prompt should remain in the list
 
-Scenario: Default Prompt is created if missing for user
-  Given the user is logged in
-  And the user does not have a default prompt in their prompts list
-  When the user navigates to Preferences - Prompts tab
+Scenario: Default Prompt is created when registering a new user
+  Given the user is not logged in
+  And the user is on the New User Registration screen
+  When the user successfully completed the registration
   Then the system should automatically create the default prompt for the user
-  And the default prompt should be loaded from default_prompt.md
-  And the default prompt should be displayed at the top of the prompts list
-  And the delete button for the default prompt should be disabled
+  And the prompt ID = Prompt.DEFAULT_PROMPT_ID
 
 
 

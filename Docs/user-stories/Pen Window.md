@@ -86,10 +86,9 @@ Scenario: Handle AI configuration load failure
   And app is in online-login mode
   When Pen window launches
   And loading AI configurations fails
-  Then it should display a message in the providers drop-down box: "No AI providers available"
-  And it should display a message in the prompts drop-down box: "No prompts available"
-  And it should provide a button to open AI configuration settings
   And it should log the error for troubleshooting
+  And pops up a popup message: "Failed to load your AI connections.\nPlease try again later."
+  And pen_original_text_text should still fetch the text from system clipboard
 
 Scenario: Handle no AI providers configured
   Given Pen is running
@@ -99,9 +98,7 @@ Scenario: Handle no AI providers configured
   When Pen window launches
   Then it should display a popup message: "You don't have any available AI connections yet, go to Preference - AI Connections to set up a new connection."
   And it should display the same text in pen_enhanced_text_text
-  And it should display a message in the providers drop-down box: "No AI providers available"
-  And it should display a message in the prompts drop-down box: "No prompts available"
-  And it should provide a button to open AI configuration settings
+  And pen_original_text_text should still fetch the text from system clipboard
 
 # User Story 4: Automatically load clipboard text type content to pen_original_text_text text field
 As a Pen user

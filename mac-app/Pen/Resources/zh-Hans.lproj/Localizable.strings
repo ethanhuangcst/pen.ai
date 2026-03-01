@@ -158,3 +158,15 @@
 "clipboard_non_text_message" = "您剪贴板中的文本内容将自动显示在这里";
 "clipboard_access_error" = "无法访问剪贴板。请重试。";
 "text_copied_to_clipboard" = "文本已复制到剪贴板";
+
+/* Pen window */
+"pen_load_login_error" = "Pen 无法加载您的登录信息。\n请登录后重试。";
+"pen_not_logged_in_error" = "Pen 无法在您未登录时提供服务。\n请登录后重试。";
+"pen_no_ai_connections" = "您还没有可用的 AI 连接，请前往偏好设置 - AI 连接设置新连接。";
+"pen_ai_configuration_failure" = "无法加载您的 AI 连接。\n请稍后重试。";
+"pen_enhanced_text_placeholder" = "增强文本将显示在这里";
+"pen_original_text_placeholder" = "原始文本将显示在这里";
+"pen_select_prompt" = "选择提示词";
+"pen_select_provider" = "选择提供商";
+"pen_no_providers_available" = "没有可用的 AI 提供商";
+"pen_no_prompts_available" = "没有可用的提示词";

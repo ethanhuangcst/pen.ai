@@ -73,7 +73,7 @@ class PenWindowService {
         // 3. Load AI Configurations
         await loadAIConfigurations()
         
-        // 4. Load Clipboard Content
+        // 4. Load Clipboard Content - Always load regardless of AI configuration status
         await MainActor.run {
             loadClipboardContent()
         }
@@ -105,20 +105,20 @@ class PenWindowService {
                 } else {
                     print("[PenWindowService] userService.currentUser is nil even though isLoggedIn is true")
                     showDefaultUI()
-                    WindowManager.shared.displayPopupMessage("Pen cannot load your login information.\nPlease log in and try again.")
+                    WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "pen_load_login_error"))
                     return
                 }
             } catch {
                 // Handle user information load failure
                 print("[PenWindowService] Failed to load user information: \(error)")
                 showDefaultUI()
-                WindowManager.shared.displayPopupMessage("Pen cannot load your login information.\nPlease log in and try again.")
+                WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "pen_load_login_error"))
                 return
             }
         } else if isOnline && !isLoggedIn {
             // User is not logged in
             showDefaultUI()
-            WindowManager.shared.displayPopupMessage("Pen cannot serve when you are not logged in.\nPlease log in and try again.")
+            WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "pen_not_logged_in_error"))
             return
         }
     }
@@ -130,7 +130,11 @@ class PenWindowService {
         
         // Check if AIManager instance exists
         guard let aiManager = userService.aiManager else {
-            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager NOT found, AI configuration and Prompts not loaded. #################@@@@@@@@@@@@@@@")
+            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager NOT found, AI configuration not loaded. #################@@@@@@@@@@@@@@@")
+            // Load prompts even if AIManager is not found
+            if let user = userService.currentUser {
+                await loadPrompts()
+            }
             await handleNoAIProviders()
             return
         }
@@ -150,6 +154,9 @@ class PenWindowService {
                 await handleNoAIProviders()
                 return
             }
+            
+            // Load prompts regardless of AI configuration status
+            await loadPrompts()
             
             // Get user's AI configurations
             let configurations = try await aiManager.getConnections(for: user.id)
@@ -174,9 +181,6 @@ class PenWindowService {
                 } else {
                     // Populate AI providers dropdown with user's configured providers
                     await populateProvidersDropdown(providers: userProviders)
-                    
-                    // Load prompts
-                    await loadPrompts()
                 }
             }
         } catch {
@@ -191,6 +195,10 @@ class PenWindowService {
         
         do {
             let prompts = try await promptsService.getPromptsByUserId(userId: user.id)
+            print("[PenWindowService] Loaded \(prompts.count) prompts for user \(user.id)")
+            for (index, prompt) in prompts.enumerated() {
+                print("[PenWindowService] Prompt \(index): \(prompt.promptName) (ID: \(prompt.id), UserID: \(prompt.userId))")
+            }
             await populatePromptsDropdown(prompts: prompts)
         } catch {
             print("[PenWindowService] Failed to load prompts: \(error)")
@@ -302,7 +310,7 @@ class PenWindowService {
         
         // Add text field
         let enhancedTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 338, height: 198))
-        enhancedTextField.stringValue = "Enhanced text will appear here"
+        enhancedTextField.stringValue = LocalizationService.shared.localizedString(for: "pen_enhanced_text_placeholder")
         enhancedTextField.isBezeled = false
         enhancedTextField.drawsBackground = false
         enhancedTextField.isEditable = false
@@ -333,7 +341,7 @@ class PenWindowService {
         // Add pen_controller_prompts drop-down box
         let promptsDropdown = NSPopUpButton(frame: NSRect(x: 0, y: 5, width: 222, height: 20))
         promptsDropdown.identifier = NSUserInterfaceItemIdentifier("pen_controller_prompts")
-        promptsDropdown.addItem(withTitle: "Select Prompt")
+        promptsDropdown.addItem(withTitle: LocalizationService.shared.localizedString(for: "pen_select_prompt"))
         promptsDropdown.font = NSFont.systemFont(ofSize: 12)
         
         // Add visible border
@@ -347,7 +355,7 @@ class PenWindowService {
         // Add pen_controller_provider drop-down box
         let providerDropdown = NSPopUpButton(frame: NSRect(x: 228, y: 5, width: 110, height: 20))
         providerDropdown.identifier = NSUserInterfaceItemIdentifier("pen_controller_provider")
-        providerDropdown.addItem(withTitle: "Select Provider")
+        providerDropdown.addItem(withTitle: LocalizationService.shared.localizedString(for: "pen_select_provider"))
         providerDropdown.font = NSFont.systemFont(ofSize: 12)
         
         // Add visible border
@@ -370,7 +378,7 @@ class PenWindowService {
         
         // Add text field
         let originalTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 338, height: 88))
-        originalTextField.stringValue = "Original text will appear here"
+        originalTextField.stringValue = LocalizationService.shared.localizedString(for: "pen_original_text_placeholder")
         originalTextField.isBezeled = false
         originalTextField.drawsBackground = false
         originalTextField.isEditable = false
@@ -449,7 +457,7 @@ class PenWindowService {
                             if !providers.isEmpty {
                                 dropdown.selectItem(at: 0)
                             } else {
-                                dropdown.addItem(withTitle: "No AI providers available")
+                                dropdown.addItem(withTitle: LocalizationService.shared.localizedString(for: "pen_no_providers_available"))
                             }
                             
                             break
@@ -481,7 +489,7 @@ class PenWindowService {
                             if !prompts.isEmpty {
                                 dropdown.selectItem(at: 0)
                             } else {
-                                dropdown.addItem(withTitle: "No prompts available")
+                                dropdown.addItem(withTitle: LocalizationService.shared.localizedString(for: "pen_no_prompts_available"))
                             }
                             
                             break
@@ -503,21 +511,8 @@ class PenWindowService {
         await MainActor.run {
             guard let contentView = window?.contentView else { return }
             
-            // Update providers dropdown
-            for subview in contentView.subviews {
-                if let container = subview as? NSView, container.identifier?.rawValue == "pen_controller" {
-                    for subview in container.subviews {
-                        if let dropdown = subview as? NSPopUpButton, dropdown.identifier?.rawValue == "pen_controller_provider" {
-                            dropdown.removeAllItems()
-                            dropdown.addItem(withTitle: "No AI providers available")
-                        } else if let dropdown = subview as? NSPopUpButton, dropdown.identifier?.rawValue == "pen_controller_prompts" {
-                            dropdown.removeAllItems()
-                            dropdown.addItem(withTitle: "No prompts available")
-                        }
-                    }
-                    break
-                }
-            }
+            // Display popup message
+            WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "pen_ai_configuration_failure"))
             
             // Remove any existing settings button if present
             for subview in contentView.subviews {
@@ -534,30 +529,15 @@ class PenWindowService {
             guard let contentView = window?.contentView else { return }
             
             // Display popup message
-            WindowManager.shared.displayPopupMessage("You don't have any available AI connections yet, go to Preference - AI Connections to set up a new connection.")
+            let noAIConnectionsMessage = LocalizationService.shared.localizedString(for: "pen_no_ai_connections")
+            WindowManager.shared.displayPopupMessage(noAIConnectionsMessage)
             
             // Update enhanced text field
             for subview in contentView.subviews {
                 if let container = subview as? NSView, container.identifier?.rawValue == "pen_enhanced_text" {
                     for subview in container.subviews {
                         if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
-                            textField.stringValue = "You don't have any available AI connections yet, go to Preference - AI Connections to set up a new connection."
-                        }
-                    }
-                    break
-                }
-            }
-            
-            // Update dropdowns
-            for subview in contentView.subviews {
-                if let container = subview as? NSView, container.identifier?.rawValue == "pen_controller" {
-                    for subview in container.subviews {
-                        if let dropdown = subview as? NSPopUpButton, dropdown.identifier?.rawValue == "pen_controller_provider" {
-                            dropdown.removeAllItems()
-                            dropdown.addItem(withTitle: "No AI providers available")
-                        } else if let dropdown = subview as? NSPopUpButton, dropdown.identifier?.rawValue == "pen_controller_prompts" {
-                            dropdown.removeAllItems()
-                            dropdown.addItem(withTitle: "No prompts available")
+                            textField.stringValue = noAIConnectionsMessage
                         }
                     }
                     break

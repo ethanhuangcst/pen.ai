@@ -7,7 +7,8 @@ let package = Package(
        .macOS(.v13)
     ],
     products: [
-        .executable(name: "Pen", targets: ["Pen"])
+        .executable(name: "Pen", targets: ["Pen"]),
+        .executable(name: "check-default-prompts", targets: ["check-default-prompts"])
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/mysql-kit.git", exact: "4.10.1")
@@ -31,6 +32,14 @@ let package = Package(
             name: "PenTests",
             dependencies: ["Pen"],
             path: "Tests"
+        ),
+        .executableTarget(
+            name: "check-default-prompts",
+            dependencies: [
+                .product(name: "MySQLKit", package: "mysql-kit")
+            ],
+            path: "Sources",
+            sources: ["check-default-prompts.swift"]
         )
     ]
 )

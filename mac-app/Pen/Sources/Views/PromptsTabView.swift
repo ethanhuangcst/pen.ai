@@ -62,7 +62,12 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
             do {
                 let loadedPrompts = try await promptsService.getPromptsByUserId(userId: userId)
                 DispatchQueue.main.async {
-                    self.prompts = loadedPrompts
+                    // Sort prompts: Default Prompt first, then others by creation date
+                    self.prompts = loadedPrompts.sorted { (p1, p2) in
+                        if p1.id == Prompt.DEFAULT_PROMPT_ID { return true }
+                        if p2.id == Prompt.DEFAULT_PROMPT_ID { return false }
+                        return p1.createdDatetime < p2.createdDatetime
+                    }
                     self.tableView.reloadData()
                     self.updateEmptyStateView()
                 }
@@ -590,8 +595,13 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
                     )
                     
                     DispatchQueue.main.async {
-                        // Add the new prompt to the array
-                        self.prompts.append(createdPrompt) // Add to the end (newest last)
+                        // Add the new prompt to the array and sort: Default Prompt first, then others by creation date
+                        self.prompts.append(createdPrompt)
+                        self.prompts.sort { (p1, p2) in
+                            if p1.id == Prompt.DEFAULT_PROMPT_ID { return true }
+                            if p2.id == Prompt.DEFAULT_PROMPT_ID { return false }
+                            return p1.createdDatetime < p2.createdDatetime
+                        }
                         self.tableView.reloadData()
                         self.updateEmptyStateView()
                         WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_created_successfully"))

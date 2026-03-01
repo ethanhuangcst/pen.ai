@@ -188,3 +188,15 @@
 "clipboard_non_text_message" = "The text content in your clipboard will be automatically retrieved here";
 "clipboard_access_error" = "Unable to access clipboard. Please try again.";
 "text_copied_to_clipboard" = "Text copied to clipboard";
+
+/* Pen window */
+"pen_load_login_error" = "Pen cannot load your login information.\nPlease log in and try again.";
+"pen_not_logged_in_error" = "Pen cannot serve when you are not logged in.\nPlease log in and try again.";
+"pen_no_ai_connections" = "You don't have any available AI connections yet, go to Preference - AI Connections to set up a new connection.";
+"pen_ai_configuration_failure" = "Failed to load your AI connections.\nPlease try again later.";
+"pen_enhanced_text_placeholder" = "Enhanced text will appear here";
+"pen_original_text_placeholder" = "Original text will appear here";
+"pen_select_prompt" = "Select Prompt";
+"pen_select_provider" = "Select Provider";
+"pen_no_providers_available" = "No AI providers available";
+"pen_no_prompts_available" = "No prompts available";
