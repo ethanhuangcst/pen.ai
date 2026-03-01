@@ -154,6 +154,13 @@ As a Pen user
 I want Pen app to have well-organized UI sections
 So that I can have a good user experience
 
+Feature: Pen window post text to AI and get response
+
+
+
+
+
+
 # UI Components Definition
 
 - pen_footer
