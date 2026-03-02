@@ -404,10 +404,44 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     // MARK: - Button Actions
     @objc private func editButtonClicked(_ sender: NSButton) {
         let row = sender.tag
-        if row < prompts.count {
+        if row < prompts.count, let parentWindow = parentWindow {
             let prompt = prompts[row]
-            // Open edit window using the new NewOrEditPrompt class
+            // Open edit window as a normal window
             let editWindow = NewOrEditPrompt(prompt: prompt, originatingWindow: parentWindow)
+            editWindow.onSave = { updatedPrompt in
+                guard let userId = self.user?.id else {
+                    print("[PromptsTabView] No user ID available")
+                    return
+                }
+                
+                Task {
+                    do {
+                        // Update prompt in database
+                        try await self.promptsService.updatePrompt(
+                            id: updatedPrompt.id,
+                            promptName: updatedPrompt.promptName,
+                            promptText: updatedPrompt.promptText
+                        )
+                        
+                        DispatchQueue.main.async {
+                            // Update the prompt in the array
+                            if let index = self.prompts.firstIndex(where: { $0.id == updatedPrompt.id }) {
+                                self.prompts[index] = updatedPrompt
+                                self.tableView.reloadData()
+                                WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_updated_successfully"))
+                            }
+                        }
+                    } catch {
+                        print("[PromptsTabView] Failed to update prompt: \(error)")
+                        DispatchQueue.main.async {
+                            WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_update_prompt"))
+                        }
+                    }
+                }
+            }
+            // Hide the parent window
+            parentWindow.orderOut(nil)
+            // Show the edit window
             editWindow.showAndFocus()
         }
     }
@@ -577,43 +611,48 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
     }
     
     @objc private func addNewPrompt() {
-        // Open NewOrEditPrompt window with empty fields
-        let newPromptWindow = NewOrEditPrompt(prompt: nil, originatingWindow: parentWindow)
-        newPromptWindow.onSave = { newPrompt in
-            guard let userId = self.user?.id else {
-                print("[PromptsTabView] No user ID available")
-                return
-            }
-            
-            Task {
-                do {
-                    // Create prompt in database
-                    let createdPrompt = try await self.promptsService.createPrompt(
-                        userId: userId,
-                        promptName: newPrompt.promptName,
-                        promptText: newPrompt.promptText
-                    )
-                    
-                    DispatchQueue.main.async {
-                        // Add the new prompt to the array and sort: Default Prompt first, then others by creation date
-                        self.prompts.append(createdPrompt)
-                        self.prompts.sort { (p1, p2) in
-                            if p1.id == Prompt.DEFAULT_PROMPT_ID { return true }
-                            if p2.id == Prompt.DEFAULT_PROMPT_ID { return false }
-                            return p1.createdDatetime < p2.createdDatetime
+        if let parentWindow = parentWindow {
+            // Open NewOrEditPrompt as a normal window
+            let newPromptWindow = NewOrEditPrompt(prompt: nil, originatingWindow: parentWindow)
+            newPromptWindow.onSave = { newPrompt in
+                guard let userId = self.user?.id else {
+                    print("[PromptsTabView] No user ID available")
+                    return
+                }
+                
+                Task {
+                    do {
+                        // Create prompt in database
+                        let createdPrompt = try await self.promptsService.createPrompt(
+                            userId: userId,
+                            promptName: newPrompt.promptName,
+                            promptText: newPrompt.promptText
+                        )
+                        
+                        DispatchQueue.main.async {
+                            // Add the new prompt to the array and sort: Default Prompt first, then others by creation date
+                            self.prompts.append(createdPrompt)
+                            self.prompts.sort { (p1, p2) in
+                                if p1.id == Prompt.DEFAULT_PROMPT_ID { return true }
+                                if p2.id == Prompt.DEFAULT_PROMPT_ID { return false }
+                                return p1.createdDatetime < p2.createdDatetime
+                            }
+                            self.tableView.reloadData()
+                            self.updateEmptyStateView()
+                            WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_created_successfully"))
                         }
-                        self.tableView.reloadData()
-                        self.updateEmptyStateView()
-                        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_created_successfully"))
-                    }
-                } catch {
-                    print("[PromptsTabView] Failed to create prompt: \(error)")
-                    DispatchQueue.main.async {
-                        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_create_prompt"))
+                    } catch {
+                        print("[PromptsTabView] Failed to create prompt: \(error)")
+                        DispatchQueue.main.async {
+                            WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_create_prompt"))
+                        }
                     }
                 }
             }
+            // Hide the parent window
+            parentWindow.orderOut(nil)
+            // Show the new prompt window
+            newPromptWindow.showAndFocus()
         }
-        newPromptWindow.showAndFocus()
     }
 }

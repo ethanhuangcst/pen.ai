@@ -70,8 +70,8 @@ class PreferencesWindow: BaseWindow {
         let tabView = NSTabView(frame: NSRect(x: 0, y: 0, width: userSettingsFrame.frame.width, height: userSettingsFrame.frame.height))
         
         // Create tabs
-        addTab(to: tabView, title: LocalizationService.shared.localizedString(for: "general"), iconPath: "\(FileManager.default.currentDirectoryPath)/Resources/Assets/settings.png")
         addTab(to: tabView, title: LocalizationService.shared.localizedString(for: "account"), iconPath: "\(FileManager.default.currentDirectoryPath)/Resources/Assets/account.png")
+        addTab(to: tabView, title: LocalizationService.shared.localizedString(for: "general"), iconPath: "\(FileManager.default.currentDirectoryPath)/Resources/Assets/settings.png")
         addTab(to: tabView, title: LocalizationService.shared.localizedString(for: "ai_connections"), iconPath: "\(FileManager.default.currentDirectoryPath)/Resources/Assets/AI.png")
         addTab(to: tabView, title: LocalizationService.shared.localizedString(for: "prompts"), iconPath: "\(FileManager.default.currentDirectoryPath)/Resources/Assets/prompts.png")
         addTab(to: tabView, title: LocalizationService.shared.localizedString(for: "history"), iconPath: "\(FileManager.default.currentDirectoryPath)/Resources/Assets/account.png")

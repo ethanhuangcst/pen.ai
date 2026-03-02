@@ -149,16 +149,103 @@ Scenario: user clicks pen_manual_paste_button
   Then Pen should identify text content from clipboard, consistent with the scenarios described in User Story Automatically load clipboard text type content to pen_original_text_text text field
 
 
+Feature: Pen window post text to AI and get enhanced text
+# User Story 1: post original text to AI and get enhanced text
+As a Pen user
+I want to post the text in pen_original_text_text text field to AI and get the enhanced text in pen_enhanced_text_text text field
+So that I can easily use Pen to process the text without manual input
+
+Scenario: enhance text
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND user AI Configuratinos are loaded in pen_controller_provider drop-down box
+  AND user prompts are loaded in pen_controller_prompts drop-down box
+  WHEN generate prompt event is triggered
+  THEN it will generate default prompt using the current selected prompt in pen_controller_prompts drop-down box
+  AND the current text in pen_original_text_text text field
+  AND follow RULE_GENERAGE_MESSAGE
+  AND call AIManager and send the gnerated text to AI, initialized with the current selected AI provider in pen_controller_provider drop-down box
+  AND display the response in pen_enhanced_text_text text field
+  AND it should be trimmed using penWindowController.trimText()
+  And it should follow i18n
+
+Scenario: enhance text automatically on Pen window initialized
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND user AI Configuratinos are loaded in pen_controller_provider drop-down box
+  AND user prompts are loaded in pen_controller_prompts drop-down box
+  WHEN Pen window is initialized
+  OR user presses button pen_manual_paste_button
+  OR Pen window is reloaded by pressing shortcut key
+  OR Pen window is reloaded by left-clicking the Pen icon in the menu bar
+  OR user slects a different AI provider in pen_controller_provider drop-down box
+  OR user slects a different prompt in pen_controller_prompts drop-down box
+  THEN it will trigger enhence text event as described in enhance text Scenario
+
+
+  ## RULE_GENERAGE_MESSAGE
+  ### The generated prompt should follow the format: "PROMPT:\n{current_prompt}\n\nTEXT:\n{current_original_text}"
+  ### Example
+  #### prompt:
+  ```
+    # Enhance English Content
+    ## Act as a professional English editor and writing coach.
+    Improve the following text to sound natural, fluent, and professional while keeping my original meaning.
+
+    Please:
+
+    1. Correct grammar, spelling, and punctuation.
+    2. Improve sentence structure and clarity.
+    3. Replace unnatural phrasing with native-level expressions.
+    4. Suggest stronger vocabulary where appropriate, but keep it natural and not overly complex.
+    5. Briefly explain the most important corrections so I can learn from them.
+    6. Provide a final polished version at the end.
+
+    Rewrite this to sound like natural spoken English. Make it conversational and fluent.
+
+    Here is my text:
+  ```
+
+  #### Text:
+  ```
+    Hello, I want to express my gratitude for your help. Your support means a lot to me.
+  ```
+  #### postMessage:
+  ```
+    PROMPT:
+    # Enhance English Content
+    ## Act as a professional English editor and writing coach.
+    Improve the following text to sound natural, fluent, and professional while keeping my original meaning.
+
+    Please:
+
+    1. Correct grammar, spelling, and punctuation.
+    2. Improve sentence structure and clarity.
+    3. Replace unnatural phrasing with native-level expressions.
+    4. Suggest stronger vocabulary where appropriate, but keep it natural and not overly complex.
+    5. Briefly explain the most important corrections so I can learn from them.
+    6. Provide a final polished version at the end.
+
+    Rewrite this to sound like natural spoken English. Make it conversational and fluent.
+
+    Here is my text:
+
+    TEXT:
+    Hello, I want to express my gratitude for your help. Your support means a lot to me.
+  ```
+
+
+
+
+
+
+
 Feature: Pen window UI default display
 As a Pen user
 I want Pen app to have well-organized UI sections
 So that I can have a good user experience
-
-Feature: Pen window post text to AI and get response
-
-
-
-
 
 
 # UI Components Definition
@@ -251,3 +338,64 @@ Feature: Pen window post text to AI and get response
   ### coordinate = 24, -8 (relative to container)
   ### text = "Paste from clipboard", font size = 12
   ### i18n = yes
+
+# User Story 2: Compare clipboard content before enhancing text
+As a Pen user
+I want Pen app to only automatically enhance text when the clipboard content changes
+So that I don't get duplicate enhancements when the clipboard hasn't changed
+
+Scenario: Pen window reloads with same clipboard content
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND system clipboard contains text content
+  AND Pen window is open with the same text in pen_original_text_text
+  WHEN Pen window is initialized
+  OR Pen window is reloaded by pressing shortcut key
+  OR Pen window is reloaded by left-clicking the Pen icon in the menu bar
+  THEN it should get the new content from clipboard
+  AND compare it with the current text in pen_original_text_text
+  AND only call AIManager to enhance text when they are different
+  AND if they are the same, skip the enhancement process
+  AND keep the current text in pen_enhanced_text_text
+  AND keep the current text in pen_original_text_text
+
+Scenario: When Pen window open, auto enhance text in realtime when clipboard content changes
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND system clipboard contains text content A
+  AND Pen window is open with text in pen_original_text_text
+  AND has enhanced text in pen_enhanced_text_text successfully
+  WHEN system clipboard content changes to B
+  AND Pen atumatically detects the clipbard content change
+  AND triggers the enhancement process in real time
+
+Scenario: Click pen_manual_paste_button force enhance text
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND system clipboard contains text content
+  AND Pen window is open with text A in pen_original_text_text
+  WHEN user clicks pen_manual_paste_button
+  THEN it should get the new content A from clipboard
+  AND by pass the comparison process
+  AND force trigger the enhancement process
+
+# User Story 3: Click enhanced text to copy and close window
+As a Pen user
+I want to click the enhanced text to copy it to the clipboard and close the window
+So that I can quickly use the enhanced text without manual copying
+
+Scenario: Click enhanced text to copy and close window
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND Pen window is open
+  AND text has been enhanced and displayed in pen_enhanced_text_text
+  WHEN user clicks on the text in pen_enhanced_text_text
+  THEN it should copy the enhanced text to the system clipboard
+  AND it should close the Pen window
+  AND it should display a popup message for 1 second
+  AND the message should say: "Text has been copied to clipboard"
+  AND it should follow i18n

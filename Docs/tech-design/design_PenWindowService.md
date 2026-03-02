@@ -179,7 +179,8 @@ sequenceDiagram
     U->>PWS: trigger enhancement
     PWS->>AM: processText()
     AM-->>PWS: return enhanced text
-    PWS->>BW: updateEnhancedText()
+    PWS->>PWS: trimTextToFitLines(enhancedText, in: pen_enhanced_text_text, maxLines: 5)
+    PWS->>BW: updateEnhancedText(trimmedText)
 ```
 
 ### 5.3 InitiatePen Flow
@@ -294,10 +295,62 @@ sequenceDiagram
 |--------|-------------|------------|--------------|
 | `initializeUIComponents()` | Initializes all UI components | None | `Void` |
 | `updateUIComponents()` | Updates UI components with current data | None | `Void` |
-| `updateOriginalText(_:)` | Updates original text field with text and tooltip for hover-over functionality | `String` | `Void` |
-| `updateEnhancedText(_:)` | Updates enhanced text field with text and tooltip for hover-over functionality | `String` | `Void` |
+| `updateOriginalText(_:)` | Updates original text field with text, trims it to fit, and adds tooltip for hover-over functionality | `String` | `Void` |
+| `updateEnhancedText(_:)` | Updates enhanced text field with text, trims it to fit, and adds tooltip for hover-over functionality | `String` | `Void` |
 | `updatePromptDropdown(_:)` | Updates prompt dropdown with new data | `[Prompt]` | `Void` |
 | `updateProviderDropdown(_:)` | Updates provider dropdown with new data | `[AIProvider]` | `Void` |
+| `trimTextToFitLines(_:in:maxLines:)` | Trims text to fit within specified number of lines and adds "..." at the end | `String` (text to trim), `NSTextField` (text field), `Int` (max lines) | `String` (trimmed text) |
+
+#### trimTextToFitLines Method Details
+
+The `trimTextToFitLines` method is responsible for trimming text to fit within the specified number of lines in a text field, following the requirements from the user story. It ensures that long text is properly truncated with an ellipsis ("...") to maintain a clean UI.
+
+**Implementation Details:**
+
+```swift
+func trimTextToFitLines(_ text: String, in textField: NSTextField, maxLines: Int) -> String {
+    let font = textField.font ?? NSFont.systemFont(ofSize: 12)
+    let width = textField.frame.width - 10 // Account for padding
+    let height = textField.frame.height
+    
+    // Replace newlines with spaces to treat them as normal characters
+    let textWithoutNewlines = text.replacingOccurrences(of: "\n", with: " ")
+    
+    let textStorage = NSTextStorage(string: textWithoutNewlines, attributes: [.font: font])
+    let layoutManager = NSLayoutManager()
+    textStorage.addLayoutManager(layoutManager)
+    let textContainer = NSTextContainer(size: CGSize(width: width, height: height))
+    textContainer.lineFragmentPadding = 0.0
+    layoutManager.addTextContainer(textContainer)
+    
+    // Calculate the range that fits within the text field
+    let range = layoutManager.glyphRange(forBoundingRect: CGRect(x: 0, y: 0, width: width, height: height), in: textContainer)
+    let characterRange = layoutManager.characterRange(forGlyphRange: range, actualGlyphRange: nil)
+    
+    // Get the trimmed text from the original text (preserving newlines)
+    var trimmedText = (text as NSString).substring(to: characterRange.upperBound)
+    
+    // Replace last 3 characters with "..."
+    if trimmedText.count >= 3 {
+        trimmedText = String(trimmedText.prefix(trimmedText.count - 3)) + "..."
+    } else {
+        // If text is too short, just return it
+        return trimmedText
+    }
+    
+    return trimmedText
+}
+```
+
+**Usage:**
+
+- **pen_original_text_text**: Used to trim clipboard content to fit within 5 lines
+- **pen_enhanced_text_text**: Used to trim AI-enhanced text to fit within 5 lines
+- **Trimming Rules**: When text exceeds the maximum lines, it displays the maximum number of lines with "..." replacing the last 3 characters of the last line
+
+**Integration with User Story:**
+
+This method implements the requirement from the Pen-Window.md user story that states: "AND it should be trimmed using penWindowController.trimText()" for the enhanced text display. The method name `trimTextToFitLines` is used in the implementation, but it provides the same functionality as the `trimText` method mentioned in the user story.
 
 ### 6.4 Data Loading Methods
 
@@ -315,7 +368,7 @@ sequenceDiagram
 | `handleCopyButtonClick()` | Handles copy button click event | None | `Void` |
 | `handlePromptSelection(_:)` | Handles prompt selection change | `String` (prompt ID) | `Void` |
 | `handleProviderSelection(_:)` | Handles provider selection change | `String` (provider ID) | `Void` |
-| `handleEnhanceButtonClick()` | Handles enhance button click event | None | `Void` |
+| `handleEnhanceButtonClick()` | Handles enhance button click event, triggers AI processing, and trims the result | None | `Void` |
 
 ### 6.6 Clipboard Methods
 

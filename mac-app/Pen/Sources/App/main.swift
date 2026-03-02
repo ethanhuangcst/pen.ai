@@ -73,20 +73,7 @@ if arguments.count > 1 {
                     print("SUCCESS: 'password_hash' column exists in Users table")
                 }
                 
-                // Check profileImage for Ethan Huang
-                print("\n=== Checking profileImage for Ethan Huang ====")
-                let checkProfileImageQuery = "SELECT profileImage FROM users WHERE email = 'me@ethanhuang.com'"
-                let profileImageRows = try await connection.execute(query: checkProfileImageQuery)
-                
-                if !profileImageRows.isEmpty {
-                    if let profileImage = profileImageRows[0]["profileImage"] as? String {
-                        print("profileImage: [BASE64 ENCODED IMAGE]")
-                    } else {
-                        print("profileImage is NULL or not a string")
-                    }
-                } else {
-                    print("No user found with email 'me@ethanhuang.com'")
-                }
+
                 
                 print("\n=== Table inspection completed ====")
                 exit(0)

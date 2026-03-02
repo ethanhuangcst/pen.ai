@@ -314,16 +314,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                     // Restart initialization process
                     performInitialization()
                 } else if isLoggedIn {
-                    // Online-login mode: Check if NewOrEditPrompt window is open
-                    if windowManager.isWindowOpen(withIdentifier: "NewOrEditPrompt"), let newOrEditWindow = windowManager.getWindow(withIdentifier: "NewOrEditPrompt") as? NewOrEditPrompt {
-                        // If NewOrEditPrompt is open, bring it to front
-                        print("PenDelegate: NewOrEditPrompt window is open, bringing it to front")
-                        newOrEditWindow.bringToFront()
-                    } else {
-                        // Open PenAI window
-                        print("PenDelegate: Online-login mode - opening PenAI window")
-                        openWindow()
-                    }
+                    // Online-login mode: Open PenAI window
+                    print("PenDelegate: Online-login mode - opening PenAI window")
+                    openWindow()
                 } else {
                     // Online-logout mode: Open Login window
                     print("PenDelegate: Online-logout mode - opening Login window")
@@ -462,7 +455,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     @objc private func openPreferences() {
         print("PenDelegate: Opening preferences")
         print("PenDelegate: Current user: \(currentUser?.name ?? "nil")")
-        print("PenDelegate: Current user profileImage: \(currentUser?.profileImage != nil ? "[BASE64 ENCODED IMAGE]" : "nil")")
+
         
         // Close other windows before opening preferences window
         closeOtherWindows()

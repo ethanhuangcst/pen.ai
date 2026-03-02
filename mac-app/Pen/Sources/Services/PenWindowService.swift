@@ -8,6 +8,8 @@ class PenWindowService {
     private var window: BaseWindow?
     private var userService: UserService
     private var promptsService: PromptsService
+    private var currentClipboardContent: String?
+    private var isWindowOpen: Bool = false
     
     init() {
         self.userService = UserService.shared
@@ -28,10 +30,14 @@ class PenWindowService {
     
     func showWindow() {
         window?.showAndFocus()
+        isWindowOpen = true
+        startClipboardMonitoring()
     }
     
     func hideWindow() {
         window?.orderOut(nil)
+        isWindowOpen = false
+        stopClipboardMonitoring()
     }
     
     func toggleWindow() {
@@ -44,8 +50,47 @@ class PenWindowService {
         }
     }
     
+    // MARK: - Clipboard Monitoring
+    
+    private var clipboardPollingTask: Task<Void, Never>?
+    
+    private func startClipboardMonitoring() {
+        // Stop any existing polling task
+        stopClipboardMonitoring()
+        
+        // Start a new polling task
+        clipboardPollingTask = Task {
+            while true {
+                do {
+                    try await Task.sleep(nanoseconds: 1 * 1_000_000_000) // 1 second
+                } catch {
+                    // Task was canceled, exit the loop
+                    break
+                }
+                
+                guard isWindowOpen else { break }
+                
+                // Load clipboard content and trigger enhancement if changed
+                if loadClipboardContent() != nil {
+                    await enhanceText()
+                }
+            }
+        }
+        
+        print("[PenWindowService] Clipboard monitoring started")
+    }
+    
+    private func stopClipboardMonitoring() {
+        // Cancel the polling task
+        clipboardPollingTask?.cancel()
+        clipboardPollingTask = nil
+        print("[PenWindowService] Clipboard monitoring stopped")
+    }
+    
     func closeWindow() {
         window?.orderOut(nil)
+        isWindowOpen = false
+        stopClipboardMonitoring()
     }
     
     // MARK: - Positioning Methods
@@ -75,7 +120,15 @@ class PenWindowService {
         
         // 4. Load Clipboard Content - Always load regardless of AI configuration status
         await MainActor.run {
-            loadClipboardContent()
+            if let clipboardText = loadClipboardContent() {
+                // Trigger text enhancement if clipboard content is loaded successfully
+                Task {
+                    await enhanceText()
+                }
+            } else {
+                // Clipboard content is unchanged, skip enhancement
+                print("[PenWindowService] Clipboard content unchanged, skipping enhancement in initiatePen")
+            }
         }
     }
     
@@ -211,6 +264,31 @@ class PenWindowService {
     private func initializeUIComponents() {
         guard let window = window, let contentView = window.contentView else { return }
         
+        // Store current text values before resetting UI
+        var originalText: String? = nil
+        var enhancedText: String? = nil
+        var originalTextTooltip: String? = nil
+        var enhancedTextTooltip: String? = nil
+        
+        // Find and store current text values
+        for subview in contentView.subviews {
+            if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
+                for subview in container.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
+                        originalText = textField.stringValue
+                        originalTextTooltip = textField.toolTip
+                    }
+                }
+            } else if let container = subview as? NSView, container.identifier?.rawValue == "pen_enhanced_text" {
+                for subview in container.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
+                        enhancedText = textField.stringValue
+                        enhancedTextTooltip = textField.toolTip
+                    }
+                }
+            }
+        }
+        
         // Clear existing views except for the close button
         var closeButton: NSButton? = nil
         for subview in contentView.subviews {
@@ -249,6 +327,37 @@ class PenWindowService {
         } else {
             // If no close button found, add a new one
             window.addStandardCloseButton(to: contentView, windowWidth: window.frame.width, windowHeight: window.frame.height)
+        }
+        
+        // Restore text values if they exist (not placeholder text)
+        if let originalText = originalText, !originalText.isEmpty, 
+           originalText != LocalizationService.shared.localizedString(for: "pen_original_text_placeholder") {
+            for subview in contentView.subviews {
+                if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
+                    for subview in container.subviews {
+                        if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
+                            textField.stringValue = originalText
+                            textField.toolTip = originalTextTooltip
+                        }
+                    }
+                    break
+                }
+            }
+        }
+        
+        if let enhancedText = enhancedText, !enhancedText.isEmpty, 
+           enhancedText != LocalizationService.shared.localizedString(for: "pen_enhanced_text_placeholder") {
+            for subview in contentView.subviews {
+                if let container = subview as? NSView, container.identifier?.rawValue == "pen_enhanced_text" {
+                    for subview in container.subviews {
+                        if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
+                            textField.stringValue = enhancedText
+                            textField.toolTip = enhancedTextTooltip
+                        }
+                    }
+                    break
+                }
+            }
         }
     }
     
@@ -328,8 +437,65 @@ class PenWindowService {
         enhancedTextField.layer?.borderColor = borderColor.cgColor
         enhancedTextField.layer?.cornerRadius = 4.0
         
-        enhancedTextContainer.addSubview(enhancedTextField)
+        // Make text field clickable
+        let clickableTextField = ClickableTextField(frame: enhancedTextField.frame)
+        clickableTextField.stringValue = enhancedTextField.stringValue
+        clickableTextField.isBezeled = false
+        clickableTextField.drawsBackground = false
+        clickableTextField.isEditable = false
+        clickableTextField.isSelectable = true
+        clickableTextField.font = enhancedTextField.font
+        clickableTextField.textColor = enhancedTextField.textColor
+        clickableTextField.alignment = enhancedTextField.alignment
+        clickableTextField.identifier = enhancedTextField.identifier
+        clickableTextField.wantsLayer = true
+        clickableTextField.layer?.backgroundColor = NSColor.clear.cgColor
+        clickableTextField.layer?.borderWidth = 1.0
+        clickableTextField.layer?.borderColor = borderColor.cgColor
+        clickableTextField.layer?.cornerRadius = 4.0
+        
+        // Set action for click
+        clickableTextField.target = self
+        clickableTextField.action = #selector(handleEnhancedTextClick)
+        
+        enhancedTextContainer.addSubview(clickableTextField)
         contentView.addSubview(enhancedTextContainer)
+    }
+    
+    @objc private func handleEnhancedTextClick() {
+        // Get the enhanced text
+        guard let enhancedText = getEnhancedText() else { return }
+        
+        // Copy to clipboard
+        copyToClipboard(enhancedText)
+        
+        // Close the window
+        closeWindow()
+        
+        // Display popup message
+        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "text_copied_to_clipboard"))
+    }
+    
+    private func getEnhancedText() -> String? {
+        guard let contentView = window?.contentView else { return nil }
+        
+        for subview in contentView.subviews {
+            if subview.identifier?.rawValue == "pen_enhanced_text" {
+                for subview in subview.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
+                        return textField.stringValue
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    
+    func copyToClipboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        print("[PenWindowService] Text copied to clipboard: \(text)")
     }
     
     private func addControllerContainer(to contentView: NSView) {
@@ -343,6 +509,8 @@ class PenWindowService {
         promptsDropdown.identifier = NSUserInterfaceItemIdentifier("pen_controller_prompts")
         promptsDropdown.addItem(withTitle: LocalizationService.shared.localizedString(for: "pen_select_prompt"))
         promptsDropdown.font = NSFont.systemFont(ofSize: 12)
+        promptsDropdown.target = self
+        promptsDropdown.action = #selector(handlePromptSelectionChanged)
         
         // Add visible border
         promptsDropdown.wantsLayer = true
@@ -357,6 +525,8 @@ class PenWindowService {
         providerDropdown.identifier = NSUserInterfaceItemIdentifier("pen_controller_provider")
         providerDropdown.addItem(withTitle: LocalizationService.shared.localizedString(for: "pen_select_provider"))
         providerDropdown.font = NSFont.systemFont(ofSize: 12)
+        providerDropdown.target = self
+        providerDropdown.action = #selector(handleProviderSelectionChanged)
         
         // Add visible border
         providerDropdown.wantsLayer = true
@@ -396,7 +566,24 @@ class PenWindowService {
         originalTextField.layer?.borderColor = borderColor.cgColor
         originalTextField.layer?.cornerRadius = 4.0
         
-        originalTextContainer.addSubview(originalTextField)
+        // Use ClickableTextField for arrow cursor
+        let clickableTextField = ClickableTextField(frame: originalTextField.frame)
+        clickableTextField.stringValue = originalTextField.stringValue
+        clickableTextField.isBezeled = false
+        clickableTextField.drawsBackground = false
+        clickableTextField.isEditable = false
+        clickableTextField.isSelectable = true
+        clickableTextField.font = originalTextField.font
+        clickableTextField.textColor = originalTextField.textColor
+        clickableTextField.alignment = originalTextField.alignment
+        clickableTextField.identifier = originalTextField.identifier
+        clickableTextField.wantsLayer = true
+        clickableTextField.layer?.backgroundColor = NSColor.clear.cgColor
+        clickableTextField.layer?.borderWidth = 1.0
+        clickableTextField.layer?.borderColor = borderColor.cgColor
+        clickableTextField.layer?.cornerRadius = 4.0
+        
+        originalTextContainer.addSubview(clickableTextField)
         contentView.addSubview(originalTextContainer)
     }
     
@@ -570,33 +757,45 @@ class PenWindowService {
     
 
     
-    func loadClipboardContent() -> String? {
+    func loadClipboardContent(forceEnhance: Bool = false) -> String? {
         do {
             if isClipboardTextType() {
                 if let clipboardText = readClipboardText() {
                     if !clipboardText.isEmpty {
+                        // Check if clipboard content has changed
+                        if !forceEnhance && clipboardText == currentClipboardContent {
+                            // Clipboard content is the same, skip enhancement
+                            print("[PenWindowService] Clipboard content unchanged, skipping enhancement")
+                            return nil
+                        }
+                        
                         // Scenario: Paste valid text from clipboard on window launch
                         updateOriginalText(clipboardText)
+                        currentClipboardContent = clipboardText
                         return clipboardText
                     } else {
                         // Scenario: Handle empty clipboard
                         displayEmptyClipboardMessage()
+                        currentClipboardContent = nil
                         return nil
                     }
                 } else {
                     // Scenario: Handle clipboard read failure
                     displayClipboardErrorMessage()
+                    currentClipboardContent = nil
                     return nil
                 }
             } else {
                 // Scenario: Handle non-text clipboard content
                 displayNonTextClipboardMessage()
+                currentClipboardContent = nil
                 return nil
             }
         } catch {
             // Scenario: Handle clipboard read failure
             print("[PenWindowService] Error reading clipboard: \(error)")
             displayClipboardErrorMessage()
+            currentClipboardContent = nil
             return nil
         }
     }
@@ -767,14 +966,184 @@ class PenWindowService {
         }
     }
     
+    // MARK: - Text Enhancement Methods
+    
+    private func enhanceText() async {
+        guard let window = window else { return }
+        
+        // Get selected prompt
+        guard let selectedPrompt = await getSelectedPrompt() else {
+            print("[PenWindowService] No prompt selected")
+            return
+        }
+        
+        // Get selected provider
+        guard let selectedProvider = await getSelectedProvider() else {
+            print("[PenWindowService] No provider selected")
+            return
+        }
+        
+        // Get original text
+        guard let originalText = getOriginalText() else {
+            print("[PenWindowService] No original text")
+            return
+        }
+        
+        // Generate prompt message
+        let promptMessage = generatePromptMessage(prompt: selectedPrompt, text: originalText)
+        
+        // Call AIManager.AITestCall()
+        do {
+            guard let aiManager = userService.aiManager else {
+                print("[PenWindowService] AIManager not available")
+                return
+            }
+            
+            // Configure AIManager with the selected provider
+            guard let user = userService.currentUser else {
+                print("[PenWindowService] No user logged in")
+                return
+            }
+            
+            // Get user's AI connections
+            let connections = try await aiManager.getConnections(for: user.id)
+            let selectedConnection = connections.first { $0.apiProvider == selectedProvider.name }
+            
+            guard let connection = selectedConnection else {
+                print("[PenWindowService] No connection found for selected provider")
+                return
+            }
+            
+            // Configure AIManager with the selected connection
+            aiManager.configure(apiKey: connection.apiKey, providerName: connection.apiProvider, userId: user.id)
+            
+            // Call AITestCall to get enhanced text
+            let aiResponse = try await aiManager.AITestCall(
+                prompt: promptMessage
+            )
+            
+            // Update enhanced text field with trimmed response
+            await MainActor.run {
+                updateEnhancedText(aiResponse.content)
+            }
+        } catch {
+            print("[PenWindowService] Failed to enhance text: \(error)")
+            await MainActor.run {
+                updateEnhancedText(LocalizationService.shared.localizedString(for: "pen_enhance_error"))
+            }
+        }
+    }
+    
+    private func generatePromptMessage(prompt: Prompt, text: String) -> String {
+        return "PROMPT:\n\(prompt.promptText)\n\nTEXT:\n\(text)"
+    }
+    
+    private func getSelectedPrompt() async -> Prompt? {
+        // Get selected prompt title on main thread
+        let selectedTitle: String? = await MainActor.run { () -> String? in
+            guard let contentView = self.window?.contentView else { return nil }
+            
+            for subview in contentView.subviews {
+                if subview.identifier?.rawValue == "pen_controller" {
+                    for subview in subview.subviews {
+                        if let dropdown = subview as? NSPopUpButton, dropdown.identifier?.rawValue == "pen_controller_prompts" {
+                            if let selectedItem = dropdown.selectedItem {
+                                return selectedItem.title
+                            }
+                        }
+                    }
+                }
+            }
+            return nil
+        }
+        
+        // Find the prompt with the selected title
+        guard let selectedTitle = selectedTitle, let user = userService.currentUser else { return nil }
+        
+        do {
+            let prompts = try await promptsService.getPromptsByUserId(userId: user.id)
+            return prompts.first { $0.promptName == selectedTitle }
+        } catch {
+            print("[PenWindowService] Failed to get prompts: \(error)")
+            return nil
+        }
+    }
+    
+    private func getSelectedProvider() async -> AIProvider? {
+        // Get selected provider title on main thread
+        let selectedTitle: String? = await MainActor.run { () -> String? in
+            guard let contentView = self.window?.contentView else { return nil }
+            
+            for subview in contentView.subviews {
+                if subview.identifier?.rawValue == "pen_controller" {
+                    for subview in subview.subviews {
+                        if let dropdown = subview as? NSPopUpButton, dropdown.identifier?.rawValue == "pen_controller_provider" {
+                            if let selectedItem = dropdown.selectedItem {
+                                return selectedItem.title
+                            }
+                        }
+                    }
+                }
+            }
+            return nil
+        }
+        
+        // Find the provider with the selected title
+        guard let selectedTitle = selectedTitle, let aiManager = userService.aiManager else { return nil }
+        
+        do {
+            let providers = try await aiManager.getProviders()
+            return providers.first { $0.name == selectedTitle }
+        } catch {
+            print("[PenWindowService] Failed to get providers: \(error)")
+            return nil
+        }
+    }
+    
+    private func getOriginalText() -> String? {
+        guard let contentView = window?.contentView else { return nil }
+        
+        for subview in contentView.subviews {
+            if subview.identifier?.rawValue == "pen_original_text" {
+                for subview in subview.subviews {
+                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
+                        return textField.toolTip ?? textField.stringValue
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    
     // MARK: - Event Handling Methods
     
     @objc private func handlePasteButton() {
         print("[PenWindowService] Paste button clicked")
-        loadClipboardContent()
+        if loadClipboardContent(forceEnhance: true) != nil {
+            // Trigger text enhancement if clipboard content is loaded successfully
+            Task {
+                await enhanceText()
+            }
+        }
     }
     
-
+    @objc private func handlePromptSelectionChanged() {
+        print("[PenWindowService] Prompt selection changed")
+        // Trigger text enhancement when prompt selection changes
+        Task {
+            await enhanceText()
+        }
+    }
+    
+    @objc private func handleProviderSelectionChanged() {
+        print("[PenWindowService] Provider selection changed")
+        // Trigger text enhancement when provider selection changes
+        Task {
+            await enhanceText()
+        }
+    }
+    
+    // MARK: - UI Update Methods
     
 
 }

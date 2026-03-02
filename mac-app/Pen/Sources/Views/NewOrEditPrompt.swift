@@ -28,9 +28,6 @@ class NewOrEditPrompt: BaseWindow {
         let windowSize = NSSize(width: 600, height: 518)
         super.init(size: windowSize)
         
-        // Set window level to modal panel (highest level) to ensure it always stays in front
-        self.level = .modalPanel
-        
         // Create content view
         let contentView = createStandardContentView(size: windowSize)
         
@@ -43,8 +40,10 @@ class NewOrEditPrompt: BaseWindow {
         // Recalculate key view loop
         recalculateKeyViewLoop()
         
-        // Position the window relative to the originating window
-        positionRelativeToOriginatingWindow()
+        // Position at the same location as the originating window
+        if let originatingWindow = originatingWindow {
+            self.setFrameOrigin(originatingWindow.frame.origin)
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -170,98 +169,35 @@ class NewOrEditPrompt: BaseWindow {
             onSave?(newPrompt)
         }
         
-        actuallyCloseWindow()
+        // Close the window and unhide the originating window
+        closeAndUnhideOriginatingWindow()
     }
     
     @objc private func cancelButtonClicked() {
-        closeWindow()
-    }
-    
-    // MARK: - Positioning
-    private func positionRelativeToOriginatingWindow() {
-        if let originatingWindow = originatingWindow {
-            let parentFrame = originatingWindow.frame
-            let newOrigin = NSPoint(x: parentFrame.origin.x + 28, y: parentFrame.origin.y - 28)
-            setFrameOrigin(newOrigin)
-        } else {
-            // Fallback to default positioning if no originating window
-            positionRelativeToMenuBarIcon()
-        }
-    }
-    
-    // MARK: - Overrides
-    override func showAndFocus() {
-        // Set activation policy for system shortcuts
-        NSApp.setActivationPolicy(.regular)
-        
-        // Set window properties to ensure it stays in front
-        self.level = .modalPanel // Highest window level, stays above all others
-        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
-        
-        // Make the window modal (blocks interaction with other windows)
-        NSApp.activate(ignoringOtherApps: true)
-        self.makeKeyAndOrderFront(nil)
-        
-        // Ensure the window stays in front even if other windows are clicked
-        self.makeKey()
-        self.orderFrontRegardless()
-        
-        // Add observer for app activation to ensure window stays in front
-        NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: NSApplication.didBecomeActiveNotification, object: nil)
-        
-        // Set first responder to the first text field
-        if let contentView = self.contentView {
-            for subview in contentView.subviews {
-                if let textField = subview as? NSTextField, textField.isEditable {
-                    self.makeFirstResponder(textField)
-                    break
-                }
-                // Check subviews recursively
-                if let firstResponder = self.findFirstFocusableElement(in: subview) {
-                    self.makeFirstResponder(firstResponder)
-                    break
-                }
-            }
-        }
-        
-        // Make the window modal
-        NSApp.runModal(for: self)
-    }
-    
-    /// Ensures the window stays in front when the app becomes active
-    @objc private func appDidBecomeActive() {
-        // Force the window to the front and make it key
-        NSApp.activate(ignoringOtherApps: true)
-        self.makeKeyAndOrderFront(nil)
-        self.orderFrontRegardless()
-        self.makeKey()
-    }
-    
-    /// Brings the window to the front and makes it key
-    public func bringToFront() {
-        NSApp.activate(ignoringOtherApps: true)
-        self.makeKeyAndOrderFront(nil)
-        self.orderFrontRegardless()
-        self.makeKey()
-    }
-    
-    override func closeWindow() {
         // Show popup message
         let message = isNewPrompt ? 
             LocalizationService.shared.localizedString(for: "create_new_prompt_canceled") : 
             LocalizationService.shared.localizedString(for: "edit_prompt_canceled")
         WindowManager.shared.displayPopupMessage(message)
         
-        // Close the window
-        actuallyCloseWindow()
+        // Close the window and unhide the originating window
+        closeAndUnhideOriginatingWindow()
     }
     
-    private func actuallyCloseWindow() {
-        // Remove notification observer
-        NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)
+    override func closeWindow() {
+        // Close the window and unhide the originating window
+        closeAndUnhideOriginatingWindow()
+    }
+    
+    private func closeAndUnhideOriginatingWindow() {
+        // Close this window
+        self.orderOut(nil)
         
-        // Close the window
-        orderOut(nil)
+        // Unhide the originating window
+        if let originatingWindow = originatingWindow {
+            originatingWindow.orderFront(nil)
+            originatingWindow.makeKeyAndOrderFront(nil)
+        }
     }
     
     /// Recursively finds the first focusable UI element in a view hierarchy
