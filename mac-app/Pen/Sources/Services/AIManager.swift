@@ -546,8 +546,20 @@ public class AIManager {
     public func loadAllProviders() async throws -> [PublicAIModelProvider] {
         do {
             // Get a connection from the pool
-            guard let connection = databasePool.getConnection() else {
-                throw AIError.configurationError("Failed to get database connection")
+            var connection = databasePool.getConnection()
+            
+            // Wait for pool to be ready if no connection available
+            var attempts = 0
+            let maxAttempts = 5
+            while connection == nil && attempts < maxAttempts {
+                print("[AIManager] Waiting for database pool to be ready...")
+                try await Task.sleep(nanoseconds: 500_000_000) // Wait 0.5 seconds
+                connection = databasePool.getConnection()
+                attempts += 1
+            }
+            
+            guard let connection = connection else {
+                throw AIError.configurationError("Failed to get database connection after multiple attempts")
             }
             
             defer {
@@ -730,8 +742,20 @@ public class AIManager {
     public func getConnections(for userId: Int) async throws -> [PublicAIConfiguration] {
         do {
             // Get a connection from the pool
-            guard let connection = databasePool.getConnection() else {
-                throw AIError.configurationError("Failed to get database connection")
+            var connection = databasePool.getConnection()
+            
+            // Wait for pool to be ready if no connection available
+            var attempts = 0
+            let maxAttempts = 5
+            while connection == nil && attempts < maxAttempts {
+                print("[AIManager] Waiting for database pool to be ready...")
+                try await Task.sleep(nanoseconds: 500_000_000) // Wait 0.5 seconds
+                connection = databasePool.getConnection()
+                attempts += 1
+            }
+            
+            guard let connection = connection else {
+                throw AIError.configurationError("Failed to get database connection after multiple attempts")
             }
             
             defer {
@@ -866,8 +890,20 @@ public class AIManager {
         
         do {
             // Get a connection from the pool
-            guard let connection = databasePool.getConnection() else {
-                throw AIError.configurationError("Failed to get database connection")
+            var connection = databasePool.getConnection()
+            
+            // Wait for pool to be ready if no connection available
+            var attempts = 0
+            let maxAttempts = 5
+            while connection == nil && attempts < maxAttempts {
+                print("[AIManager] Waiting for database pool to be ready...")
+                try await Task.sleep(nanoseconds: 500_000_000) // Wait 0.5 seconds
+                connection = databasePool.getConnection()
+                attempts += 1
+            }
+            
+            guard let connection = connection else {
+                throw AIError.configurationError("Failed to get database connection after multiple attempts")
             }
             
             defer {

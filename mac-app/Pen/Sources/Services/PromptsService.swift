@@ -184,10 +184,16 @@ class PromptsService {
             
             if !hasDefaultPrompt {
                 // Create default prompt using the standalone method
-                let userDefaultPrompt = try await createDefaultPrompt(userId: userId)
-                
-                // Add to the list
-                prompts.insert(userDefaultPrompt, at: 0)
+                do {
+                    let userDefaultPrompt = try await createDefaultPrompt(userId: userId)
+                    
+                    // Add to the list
+                    prompts.insert(userDefaultPrompt, at: 0)
+                } catch {
+                    // Handle duplicate entry error gracefully
+                    print("[PromptsService] Failed to create default prompt (may already exist): \(error)")
+                    // Continue with existing prompts
+                }
             }
             
             // Sort prompts: Default Prompt first, then others by creation date
