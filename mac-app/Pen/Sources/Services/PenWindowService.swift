@@ -473,11 +473,11 @@ class PenWindowService {
         // Copy to clipboard
         copyToClipboard(enhancedText)
         
-        // Close the window
-        closeWindow()
-        
-        // Display popup message
-        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "text_copied_to_clipboard"))
+        // Display popup message with completion handler
+        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "text_copied_to_clipboard")) {
+            // Close the window after message disappears
+            self.closeWindow()
+        }
     }
     
     private func getEnhancedText() -> String? {

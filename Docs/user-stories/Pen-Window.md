@@ -395,8 +395,8 @@ Scenario: Click enhanced text to copy and close window
   AND text has been enhanced and displayed in pen_enhanced_text_text
   WHEN user clicks on the text in pen_enhanced_text_text
   THEN it should copy the enhanced text to the system clipboard
-  AND it should close the Pen window
   AND it should display a popup message for 1 second
+  AND the Pen window will be closed after the message is disappeared
   AND the message should say: "Text has been copied to clipboard"
   AND it should follow i18n
 

@@ -43,7 +43,7 @@ class WindowManager {
     }
     
     /// Displays a global popup message following the specified design guidelines
-    func displayPopupMessage(_ message: String) {
+    func displayPopupMessage(_ message: String, completion: (() -> Void)? = nil) {
         // Ensure all UI operations are on the main thread
         DispatchQueue.main.async {
             // Calculate message size
@@ -153,14 +153,16 @@ class WindowManager {
                 popupWindow.animator().alphaValue = 1.0
             }
             
-            // Hide the popup after 3 seconds with fade-out effect
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            // Hide the popup after 1 second with fade-out effect
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 NSAnimationContext.runAnimationGroup { context in
                     context.duration = 0.3
                     context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                     popupWindow.animator().alphaValue = 0.0
                 } completionHandler: {
                     popupWindow.orderOut(nil)
+                    // Call completion handler after message disappears
+                    completion?()
                 }
             }
             

@@ -105,6 +105,21 @@ This document describes the database structure for the Pen AI application. The d
 | created_at | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
 | updated_at | datetime(3) | YES | | NULL | |
 
+### content_history
+
+| Column | Type | Null | Key | Default | Extra |
+|--------|------|------|-----|---------|-------|
+| uuid | varchar(36) | NO | PRI | NULL | |
+| user_id | varchar(36) | YES | | NULL | |
+| enhance_datetime | datetime | NO | | NULL | |
+| original_content | text | NO | | NULL | |
+| enhanced_content | text | NO | | NULL | |
+| prompt_text | text | NO | | NULL | |
+| ai_provider | varchar(255) | NO | | NULL | |
+| is_hidden | tinyint(1) | YES | | 0 | |
+| created_at | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updated_at | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
+
 ### _prisma_migrations
 
 | Column | Type | Null | Key | Default | Extra |
@@ -126,14 +141,14 @@ This document describes the database structure for the Pen AI application. The d
       │                   │
       │                   │
       ▼                   ▼
-┌────────────┐     ┌────────────┐
-│   chats    │────▶│chat_messages│
-└────────────┘     └────────────┘
-      │
-      │
-      ▼
-┌────────────┐
-│  prompts   │
+┌────────────┐     ┌────────────┐     ┌───────────────┐
+│   chats    │────▶│chat_messages│     │content_history│
+└────────────┘     └────────────┘     └───────────────┘
+      │                                   ▲
+      │                                   │
+      ▼                                   │
+┌────────────┐                           │
+│  prompts   │───────────────────────────┘
 └────────────┘
 ```
 
@@ -149,11 +164,13 @@ This document describes the database structure for the Pen AI application. The d
 
 5. **AI Provider Configuration**: The `ai_providers` table stores configuration information for different AI service providers.
 
-6. **Data Consistency**: Foreign key relationships ensure data integrity between related tables.
+6. **Content History**: The `content_history` table stores records of enhanced content, including the original content, enhanced content, prompt used, and AI provider.
 
-7. **Timestamps**: Most tables include `created_at` and `updated_at` timestamps for tracking when records were created or modified.
+7. **Data Consistency**: Foreign key relationships ensure data integrity between related tables.
 
-8. **System Flag**: The `system_flag` column in several tables indicates whether records were created by the Wingman app or the Pen app.
+8. **Timestamps**: Most tables include `created_at` and `updated_at` timestamps for tracking when records were created or modified.
+
+9. **System Flag**: The `system_flag` column in several tables indicates whether records were created by the Wingman app or the Pen app.
 
 ## Security Considerations
 

@@ -49,6 +49,30 @@ let package = Package(
             ],
             path: "Sources",
             sources: ["check-user-preferences.swift"]
+        ),
+        .executableTarget(
+            name: "create-content-history-table",
+            dependencies: [
+                .product(name: "MySQLKit", package: "mysql-kit")
+            ],
+            path: "Sources",
+            sources: ["create-content-history-table.swift"]
+        ),
+        .executableTarget(
+            name: "alter-content-history-table",
+            dependencies: [
+                .product(name: "MySQLKit", package: "mysql-kit")
+            ],
+            path: "Sources",
+            sources: ["alter-content-history-table.swift"]
+        ),
+        .executableTarget(
+            name: "check-content-history-table",
+            dependencies: [
+                .product(name: "MySQLKit", package: "mysql-kit")
+            ],
+            path: "Sources",
+            sources: ["check-content-history-table.swift"]
         )
     ]
 )
