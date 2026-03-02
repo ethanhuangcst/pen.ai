@@ -245,4 +245,30 @@ Scenario: Pressing Enter key triggers active UI control
 - Then the element should respond appropriately in both modes
 - And text should be legible in both light and dark environments
 
+## User Story: Consistent Font Usage
+
+**US:** As a user, I want all text in the Pen app to use the San Francisco (SF Pro) font regardless of my system font settings, so that the app maintains a consistent visual identity across different Mac machines.
+
+**AC:**
+- Given the Pen app is running
+- When any window or UI element is displayed
+- Then all text should use the San Francisco (SF Pro) font
+- And the font should override any system font settings
+- And the font should be consistent across all UI elements
+
+- Given the Pen app is running on different Mac machines with different system font settings
+- When the app is launched on each machine
+- Then the font should remain San Francisco (SF Pro) on all machines
+- And the app's visual appearance should be consistent across machines
+
+- Given the Pen app is running
+- When text is displayed in different sizes and weights
+- Then all text should still use the San Francisco (SF Pro) font family
+- And different weights (regular, bold, etc.) should be properly applied
+
+- Given the Pen app is running
+- When the app displays text in different UI contexts (buttons, labels, text fields, etc.)
+- Then all text should use the San Francisco (SF Pro) font
+- And the font should be applied consistently across all UI contexts
+
 

@@ -256,17 +256,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         passwordMismatchLabel.isHidden = true
         passwordSection.addSubview(passwordMismatchLabel)
         
-        // Password instruction label
-        let passwordInstructionLabel = NSTextField(frame: NSRect(x: 120, y: 10, width: 220, height: 12))
-        passwordInstructionLabel.stringValue = "Leave password fields empty to keep your current password"
-        passwordInstructionLabel.isBezeled = false
-        passwordInstructionLabel.drawsBackground = false
-        passwordInstructionLabel.isEditable = false
-        passwordInstructionLabel.isSelectable = false
-        passwordInstructionLabel.font = NSFont.systemFont(ofSize: 10)
-        passwordInstructionLabel.alignment = .left
-        passwordInstructionLabel.textColor = .systemGray
-        passwordSection.addSubview(passwordInstructionLabel)
+
         
         // Set delegates for real-time validation
         passwordField.delegate = self
@@ -275,6 +265,18 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         plainConfirmField.delegate = self
         
         addSubview(passwordSection)
+        
+        // Password instruction label (moved to 20px from left, 58px from bottom)
+        let passwordInstructionLabel = NSTextField(frame: NSRect(x: 20, y: 58, width: 325, height: 12))
+        passwordInstructionLabel.stringValue = "Leave password fields empty to keep your current password"
+        passwordInstructionLabel.isBezeled = false
+        passwordInstructionLabel.drawsBackground = false
+        passwordInstructionLabel.isEditable = false
+        passwordInstructionLabel.isSelectable = false
+        passwordInstructionLabel.font = NSFont.systemFont(ofSize: 10)
+        passwordInstructionLabel.alignment = .left
+        passwordInstructionLabel.textColor = .systemGray
+        addSubview(passwordInstructionLabel)
         
         // Action buttons
         let saveButton = FocusableButton(frame: NSRect(x: contentWidth - 220, y: 20, width: 100, height: 32))
@@ -407,7 +409,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
                     id: currentUser.id,
                     name: name,
                     email: email,
-                    password: password ?? currentUser.password,
+                    password: password ?? (currentUser.password ?? ""),
                     profileImage: currentUser.profileImage,
                     createdAt: currentUser.createdAt
                 )

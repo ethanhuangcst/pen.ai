@@ -233,14 +233,7 @@ class BaseWindow: NSWindow {
         super.keyDown(with: event)
     }
     
-    // Override to handle system shortcuts like cmd+A, cmd+C, cmd+V
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        // Let the first responder handle the key equivalent
-        if let firstResponder = self.firstResponder, firstResponder.performKeyEquivalent(with: event) {
-            return true
-        }
-        return super.performKeyEquivalent(with: event)
-    }
+
     
 
     

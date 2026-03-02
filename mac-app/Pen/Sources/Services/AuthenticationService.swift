@@ -174,7 +174,7 @@ class AuthenticationService {
     }
     
     /// Updates user information in the database
-    func updateUser(id: Int, name: String, email: String, password: String? = nil, profileImage: String? = nil) async -> Bool {
+    func updateUser(id: Int, name: String, email: String, password: String? = nil, profileImage: String? = nil, penContentHistory: Int? = nil) async -> Bool {
         print("[AuthenticationService] Updating user: \(email)")
         
         // Check if we have a database connection
@@ -201,6 +201,11 @@ class AuthenticationService {
             if let profileImage = profileImage {
                 query += ", profileImage = ?"
                 parameters.append(MySQLData(string: profileImage))
+            }
+            
+            if let penContentHistory = penContentHistory {
+                query += ", pen_content_history = ?"
+                parameters.append(MySQLData(string: String(penContentHistory)))
             }
             
             query += " WHERE id = ?"

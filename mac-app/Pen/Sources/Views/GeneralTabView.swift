@@ -78,12 +78,35 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     }
     
     @objc private func saveButtonClicked() {
-        // TODO: Implement save functionality
         print("Save button clicked")
         
-        // Show success message
-        statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_saved_successfully")
-        statusLabel.textColor = .systemGreen
+        // Get current user
+        guard let user = UserService.shared.currentUser else {
+            print("No user logged in")
+            statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_save_error")
+            statusLabel.textColor = .systemRed
+            return
+        }
+        
+        // Update user with selected history count
+        Task {
+            let success = await AuthenticationService.shared.updateUser(
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                penContentHistory: selectedHistoryCount
+            )
+            
+            if success {
+                print("User updated successfully")
+                statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_saved_successfully")
+                statusLabel.textColor = .systemGreen
+            } else {
+                print("Failed to update user")
+                statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_save_error")
+                statusLabel.textColor = .systemRed
+            }
+        }
     }
     
     /// Creates a section view with consistent styling
@@ -102,6 +125,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     private var isRecording: Bool = false
     private var mouseEventMonitor: Any? = nil
     private var previousShortcut: String = "Command+Option+P" // Default shortcut
+    private var selectedHistoryCount: Int = 10 // Default value
     
     // UserDefaults key for shortcut storage
     private let shortcutKeyDefaultsKey = "pen.shortcutKey"
@@ -560,8 +584,11 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     }
 
     @objc private func historyCountSelected(_ sender: FocusableButton) {
-        // TODO: Save selected history count to preferences
-        print("History count selected: \(sender.title)")
+        // Save selected history count
+        if let count = Int(sender.title) {
+            selectedHistoryCount = count
+            print("History count selected: \(selectedHistoryCount)")
+        }
     }
     
     @objc private func languageSelected(_ sender: NSPopUpButton) {

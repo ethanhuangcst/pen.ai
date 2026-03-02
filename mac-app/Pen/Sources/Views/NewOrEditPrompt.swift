@@ -81,13 +81,21 @@ class NewOrEditPrompt: BaseWindow {
         // Prompt text field with scroll view
         let promptScrollView = NSScrollView(frame: NSRect(x: 40, y: 44 + 20, width: 520, height: 338))
         promptScrollView.hasVerticalScroller = true
-        promptTextField.frame = NSRect(x: 0, y: 0, width: promptScrollView.frame.width - 20, height: 338)
+        promptScrollView.autohidesScrollers = false
+        
+        promptTextField.frame = NSRect(x: 0, y: 0, width: promptScrollView.frame.width - 20, height: 336)
         promptTextField.font = NSFont.systemFont(ofSize: 14)
         promptTextField.wantsLayer = true
         promptTextField.layer?.backgroundColor = NSColor.lightGray.withAlphaComponent(0.1).cgColor
         promptTextField.layer?.borderWidth = 1.0
         promptTextField.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.5).cgColor
         promptTextField.layer?.cornerRadius = 4.0
+        promptTextField.autoresizingMask = [.width, .height]
+        promptTextField.maxSize = NSSize(width: promptScrollView.frame.width - 20, height: CGFloat.greatestFiniteMagnitude)
+        promptTextField.minSize = NSSize(width: promptScrollView.frame.width - 20, height: 336)
+        promptTextField.textContainer?.containerSize = NSSize(width: promptScrollView.frame.width - 20, height: CGFloat.greatestFiniteMagnitude)
+        promptTextField.textContainer?.widthTracksTextView = true
+        
         promptScrollView.documentView = promptTextField
         contentView.addSubview(promptScrollView)
         

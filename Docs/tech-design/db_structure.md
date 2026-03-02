@@ -16,6 +16,7 @@ This document describes the database structure for the Pen AI application. The d
 | profileImage | varchar(191) | YES | | NULL | |
 | createdAt | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
 | system_flag | varchar(20) | NO | | WINGMAN | |
+| pen_content_history | int | NO | | 10 | |
 
 **Sample Data:**
 | id | name | email | system_flag |

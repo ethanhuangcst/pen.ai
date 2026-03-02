@@ -66,6 +66,7 @@
 "chinese_language" = "简体中文";
 "save_button" = "保存";
 "settings_saved_successfully" = "设置保存成功";
+"settings_save_error" = "保存设置失败，请重试。";
 
 /* AI Connections tab */
 "ai_connections_for" = "AI连接 - %@";
@@ -158,6 +159,9 @@
 "clipboard_non_text_message" = "您剪贴板中的文本内容将自动显示在这里";
 "clipboard_access_error" = "无法访问剪贴板。请重试。";
 "text_copied_to_clipboard" = "文本已复制到剪贴板";
+
+/* User status */
+"no_user" = "无用户";
 
 /* Pen window */
 "pen_load_login_error" = "Pen 无法加载您的登录信息。\n请登录后重试。";

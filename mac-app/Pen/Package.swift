@@ -8,7 +8,8 @@ let package = Package(
     ],
     products: [
         .executable(name: "Pen", targets: ["Pen"]),
-        .executable(name: "check-default-prompts", targets: ["check-default-prompts"])
+        .executable(name: "check-default-prompts", targets: ["check-default-prompts"]),
+        .executable(name: "check-user-preferences", targets: ["check-user-preferences"])
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/mysql-kit.git", exact: "4.10.1")
@@ -40,6 +41,14 @@ let package = Package(
             ],
             path: "Sources",
             sources: ["check-default-prompts.swift"]
+        ),
+        .executableTarget(
+            name: "check-user-preferences",
+            dependencies: [
+                .product(name: "MySQLKit", package: "mysql-kit")
+            ],
+            path: "Sources",
+            sources: ["check-user-preferences.swift"]
         )
     ]
 )

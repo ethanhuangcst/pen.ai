@@ -1,6 +1,9 @@
 import Cocoa
 import Carbon
 
+// Import MainMenu for shortcut support
+import AppKit
+
 extension NSFont {
     var isBold: Bool {
         return fontDescriptor.symbolicTraits.contains(.bold)
@@ -32,6 +35,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         
         // Setup menu bar icon first so it's available for login window positioning
         setupMenuBarIcon()
+        
+        // Install main menu for system shortcut support
+        installMainMenu()
         
         // Perform 3-step initialization process
         performInitialization()
@@ -496,14 +502,19 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     @objc private func openWindow() {
         print("PenDelegate: Opening window from menubar icon")
         
+        // Close other windows before opening Pen window
+        closeOtherWindows()
+        
+        // Recreate window if it's nil
+        if window == nil {
+            createMainWindow()
+        }
+        
         if let window = window {
             if window.isVisible {
                 print("PenDelegate: Window is already open, closing it")
                 window.orderOut(nil)
             } else {
-                // Close other windows before opening Pen window
-                closeOtherWindows()
-                
                 // Position window relative to menu bar icon
                 window.positionRelativeToMenuBarIcon()
                 
@@ -523,29 +534,18 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private func closeOtherWindows() {
         print("PenDelegate: Closing other windows")
         
-        // Close main Pen window if it's open
-        if let window = window {
+        // Close all open windows
+        for window in NSApplication.shared.windows {
+            // Close the window
             window.orderOut(nil)
-            print("PenDelegate: Closed main Pen window")
+            print("PenDelegate: Closed window: \(type(of: window))")
         }
         
-        // Close login window if it's open
-        if let loginWindow = loginWindow {
-            loginWindow.orderOut(nil)
-            print("PenDelegate: Closed login window")
-        }
-        
-        // Close preferences window if it's open
-        if let preferencesWindow = preferencesWindow {
-            preferencesWindow.orderOut(nil)
-            print("PenDelegate: Closed preferences window")
-        }
-        
-        // Close new or edit prompt window if it's open
-        if let newOrEditPromptWindow = newOrEditPromptWindow {
-            newOrEditPromptWindow.orderOut(nil)
-            print("PenDelegate: Closed new or edit prompt window")
-        }
+        // Reset window references
+        window = nil
+        loginWindow = nil
+        preferencesWindow = nil
+        newOrEditPromptWindow = nil
     }
     
     private func setupShortcutKey() {

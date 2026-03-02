@@ -61,6 +61,18 @@ class PreferencesWindow: BaseWindow {
         titleLabel.font = NSFont.boldSystemFont(ofSize: 18)
         contentView.addSubview(titleLabel)
         
+        // Add user name label
+        let userNameLabel = NSTextField(frame: NSRect(x: 370, y: windowHeight - 55, width: 180, height: 30))
+        userNameLabel.identifier = NSUserInterfaceItemIdentifier("preference_user_name")
+        userNameLabel.stringValue = user?.name ?? LocalizationService.shared.localizedString(for: "no_user")
+        userNameLabel.isBezeled = false
+        userNameLabel.drawsBackground = false
+        userNameLabel.isEditable = false
+        userNameLabel.isSelectable = false
+        userNameLabel.font = NSFont.boldSystemFont(ofSize: 18)
+        userNameLabel.alignment = .right
+        contentView.addSubview(userNameLabel)
+        
         // Add user_settings frame
         let userSettingsFrame = NSView(frame: NSRect(x: 20, y: 20, width: windowWidth - 40, height: windowHeight - 120)) // Space from header
         userSettingsFrame.wantsLayer = true

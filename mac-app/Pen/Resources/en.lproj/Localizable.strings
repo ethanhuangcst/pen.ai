@@ -66,6 +66,7 @@
 "chinese_language" = "简体中文 (Simplified Chinese)";
 "save_button" = "Save";
 "settings_saved_successfully" = "Settings saved successfully";
+"settings_save_error" = "Failed to save settings. Please try again.";
 
 /* AI Connections tab */
 "ai_connections_for" = "AI Connections for %@";
@@ -123,6 +124,9 @@
 /* AI Configurations */
 "no_ai_configuration" = "No AI Configuration set up yet.\nGo to Preference → AI Configuration to set up.";
 
+/* User status */
+"no_user" = "No User";
+
 /* Menu items */
 "preferences" = "Preferences";
 "logout" = "Logout";
@@ -143,7 +147,7 @@
 "paste_from_clipboard_simple" = "Paste from clipboard";
 
 /* Login window */
-"pen_ai_login" = "Pen AI Login";
+"pen_ai_login" = "Pen - Login";
 "email_label" = "Email:";
 "enter_email_placeholder" = "Enter your email";
 "password_label" = "Password:";

@@ -1,15 +1,24 @@
 import Foundation
 
 class User {
+    // MARK: - Properties
+    
     let id: Int
     let name: String
     let email: String
-    let password: String
+    let password: String?
     let profileImage: String?
     let createdAt: Date
-    let systemFlag: String // WINGMAN: created by Wingman app; PEN: created by PEN app
+    let systemFlag: String
+    let penContentHistory: Int
     
-    init(id: Int, name: String, email: String, password: String = "", profileImage: String?, createdAt: Date, systemFlag: String = "PEN") {
+    // MARK: - Constants
+    
+    // System flag values
+    static let SYSTEM_FLAG_WINGMAN = "WINGMAN" // created by Wingman app
+    static let SYSTEM_FLAG_PEN = "PEN" // created by PEN app
+    
+    init(id: Int, name: String, email: String, password: String = "", profileImage: String?, createdAt: Date, systemFlag: String = "PEN", penContentHistory: Int = 10) {
         self.id = id
         self.name = name
         self.email = email
@@ -17,6 +26,7 @@ class User {
         self.profileImage = profileImage
         self.createdAt = createdAt
         self.systemFlag = systemFlag
+        self.penContentHistory = penContentHistory
     }
     
     // MARK: - Convenience Methods
@@ -81,12 +91,25 @@ class User {
         let profileImage = row["profileImage"] as? String
         let systemFlag = row["system_flag"] as? String ?? "PEN"
         
+        // Get pen_content_history
+        let penContentHistory: Int
+        if let historyInt = row["pen_content_history"] as? Int {
+            penContentHistory = historyInt
+            print("[User] pen_content_history: \(penContentHistory)")
+        } else if let historyString = row["pen_content_history"] as? String, let historyInt = Int(historyString) {
+            penContentHistory = historyInt
+            print("[User] pen_content_history (from string): \(penContentHistory)")
+        } else {
+            penContentHistory = 10 // Default value
+            print("[User] pen_content_history not found, using default: \(penContentHistory)")
+        }
+        
         print("[User] systemFlag: \(systemFlag)")
         
         // Get password if present (optional)
         let password = row["password"] as? String ?? ""
         
-        let user = User(id: id, name: name, email: email, password: password, profileImage: profileImage, createdAt: createdAt, systemFlag: systemFlag)
+        let user = User(id: id, name: name, email: email, password: password, profileImage: profileImage, createdAt: createdAt, systemFlag: systemFlag, penContentHistory: penContentHistory)
         print("[User] Created user: \(user.name) with email \(user.email)")
         return user
     }
