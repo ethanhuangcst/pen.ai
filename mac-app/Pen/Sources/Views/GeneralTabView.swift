@@ -7,9 +7,9 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     
     // UI Elements
     
-    private var historyCount10: FocusableButton!
-    private var historyCount20: FocusableButton!
-    private var historyCount40: FocusableButton!
+    private var historyCountLow: FocusableButton!
+    private var historyCountMedium: FocusableButton!
+    private var historyCountHigh: FocusableButton!
     
     private var languagePopup: NSPopUpButton!
     
@@ -58,10 +58,10 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         addSubview(languageSection)
         
         // Set tab order explicitly
-        historyCount10.nextKeyView = historyCount20
-        historyCount20.nextKeyView = historyCount40
-        historyCount40.nextKeyView = languagePopup
-        languagePopup.nextKeyView = historyCount10
+        historyCountLow.nextKeyView = historyCountMedium
+        historyCountMedium.nextKeyView = historyCountHigh
+        historyCountHigh.nextKeyView = languagePopup
+        languagePopup.nextKeyView = historyCountLow
         
         // Add save button at the bottom right
         addSaveButton()
@@ -243,25 +243,31 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         historyLabel.isSelectable = false
         section.addSubview(historyLabel)
         
+        // Get history count values from config service
+        let configService = SystemConfigService.shared
+        let lowValue = configService.CONTENT_HISTORY_LOW
+        let mediumValue = configService.CONTENT_HISTORY_MEDIUM
+        let highValue = configService.CONTENT_HISTORY_HIGH
+        
         // History count options
         let optionWidth: CGFloat = 80
         let optionHeight: CGFloat = 28
         let optionSpacing: CGFloat = 10
         
-        historyCount10 = createHistoryOptionButton(title: "10", x: 220, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
-        historyCount10.state = .on // Default selected
-        section.addSubview(historyCount10)
+        historyCountLow = createHistoryOptionButton(title: "\(lowValue)", x: 220, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
+        historyCountLow.state = .on // Default selected
+        section.addSubview(historyCountLow)
         
-        historyCount20 = createHistoryOptionButton(title: "20", x: 220 + optionWidth + optionSpacing, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
-        section.addSubview(historyCount20)
+        historyCountMedium = createHistoryOptionButton(title: "\(mediumValue)", x: 220 + optionWidth + optionSpacing, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
+        section.addSubview(historyCountMedium)
         
-        historyCount40 = createHistoryOptionButton(title: "40", x: 220 + (optionWidth + optionSpacing) * 2, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
-        section.addSubview(historyCount40)
+        historyCountHigh = createHistoryOptionButton(title: "\(highValue)", x: 220 + (optionWidth + optionSpacing) * 2, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
+        section.addSubview(historyCountHigh)
         
         // Group the radio buttons
-        historyCount10.setButtonType(.radio)
-        historyCount20.setButtonType(.radio)
-        historyCount40.setButtonType(.radio)
+        historyCountLow.setButtonType(.radio)
+        historyCountMedium.setButtonType(.radio)
+        historyCountHigh.setButtonType(.radio)
     }
     
     /// Creates a history option button

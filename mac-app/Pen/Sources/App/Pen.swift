@@ -33,6 +33,11 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("SimpleAppDelegate: Application launched")
         
+        // Initialize system config service
+        print("Initializing SystemConfigService...")
+        _ = SystemConfigService.shared
+        print("SystemConfigService initialized")
+        
         // Setup menu bar icon first so it's available for login window positioning
         setupMenuBarIcon()
         

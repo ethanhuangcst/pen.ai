@@ -182,50 +182,50 @@ Scenario: PenAI handles login failure
   AND sets the flag "Login Failure" to true
   And it should open the LoginWindow to allow the user to input new credentials
 ```
-# User Story 5: Load Content History Count option from configuration file
+# User Story 5: Load Content History Count option from database table
 
 ## User Story
 As a Pen user,
 I want to have 3 options for system content history count: low, medium, high, as the options in Preference - General - History Settings - Content history to save
-So that I can change these numbers in the future by modifying a configuration file
+So that I can change these numbers in the future through a centralized database table
 
 ## Acceptance Criteria
-### Scenario 1: Create configuration file with default content history count
-given the application is launched for the first time
-when it cannot find the configuration file CONTENT_HISTORY_COUNT.json
-and the file should be saved in the same directory as KeychainService (Application Support/Pen)
-then it will create this file with the default values: LOW=10, MEDIUM=20, HIGH=40
-AND set the global constants CONTENT_HISTORY_LOW, CONTENT_HISTORY_MEDIUM, CONTENT_HISTORY_HIGH from the file
-AND print in terminal： “ ********************************** Load Default Content History Count: LOW=" + CONTENT_HISTORY_LOW + ", MEDIUM=" + CONTENT_HISTORY_MEDIUM + ", HIGH=" + CONTENT_HISTORY_HIGH + " **********************************”
-
-
-
-### Scenario 2: Load content history count from configuration file
+### Scenario 1: Load system configuration from database table
 given the application is launched
-when it finds the configuration file CONTENT_HISTORY_COUNT.json in the Application Support/Pen directory
-then it will load the content history count options from this file
-AND set the global constants CONTENT_HISTORY_LOW, CONTENT_HISTORY_MEDIUM, CONTENT_HISTORY_HIGH from the file
+when it finds the system configuration in the database
+and the configuration is saved in a centralized system_config table
+then it will load the system configuration options from the database
+AND set the global constants CONTENT_HISTORY_LOW, CONTENT_HISTORY_MEDIUM, CONTENT_HISTORY_HIGH from the database
+AND load the default prompt settings from the database
 AND print in terminal： “ ********************************** Load Content History Count: LOW=" + CONTENT_HISTORY_LOW + ", MEDIUM=" + CONTENT_HISTORY_MEDIUM + ", HIGH=" + CONTENT_HISTORY_HIGH + " **********************************”
 
 
 
-### Scenario 3: Configuration file format
-Given the application needs to read the content history count configuration
-When reading the CONTENT_HISTORY_COUNT.json file
-Then it should expect the following JSON format:
-```json
-{
-  "CONTENT_HISTORY_LOW": 10,
-  "CONTENT_HISTORY_MEDIUM": 20,
-  "CONTENT_HISTORY_HIGH": 40
-}
-```
+### Scenario 2: Database table structure
+Given the application needs to read the system configuration
+When accessing the database table
+Then it should expect the following table structure:
+- Table name: system_config
+- Columns:
+  - id (primary key)
+  - default_prompt_name (varchar(255), nullable)
+  - default_prompt_text (text, nullable)
+  - content_history_count_low (integer, default: 10)
+  - content_history_count_medium (integer, default: 20)
+  - content_history_count_high (integer, default: 40)
+  - created_at (timestamp)
+  - updated_at (timestamp)
 
-### Scenario 4: Fallback to default values
-Given the application tries to load the content history count configuration
-When the file is corrupted or missing required fields
-Then it should fallback to the default values: LOW=10, MEDIUM=20, HIGH=40
-AND recreate the configuration file with these default values
+### Scenario 3: Fallback to default values
+Given the application tries to load the system configuration
+When the database record is missing or corrupted
+Then it should fallback to loading default prompt from default_prompt.md file
+And if default_prompt.md is missing or corrupted, it should use hardcoded default values:
+  - content_history_count_low=10
+  - content_history_count_medium=20
+  - content_history_count_high=40
+  - default_prompt_name= "Enhance English"
+  - default_prompt_text="Enhance English for the following text: "
 
 ## User Story 6
 

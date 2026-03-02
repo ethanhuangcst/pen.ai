@@ -34,7 +34,6 @@ class User {
     /// Creates a User instance from database row
     static func fromDatabaseRow(_ row: [String: Any]) -> User? {
         // Print all row data for debugging
-        print("[User] Full row data: \(row)")
         
         // Check each field
         if let name = row["name"] as? String {

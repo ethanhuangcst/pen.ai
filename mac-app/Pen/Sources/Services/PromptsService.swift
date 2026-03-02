@@ -39,16 +39,19 @@ class PromptsService {
         }
         
         let query = """
-        INSERT INTO wingman_db.prompts (id, user_id, prompt_name, prompt_text, system_flag)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO wingman_db.prompts (id, user_id, prompt_name, prompt_text, system_flag, is_default)
+        VALUES (?, ?, ?, ?, ?, ?)
         """
+        
+        let isDefault = newPrompt.id == Prompt.DEFAULT_PROMPT_ID ? 1 : 0
         
         let params: [MySQLData] = [
             MySQLData(string: newPrompt.id),
             MySQLData(int: newPrompt.userId),
             MySQLData(string: newPrompt.promptName),
             MySQLData(string: newPrompt.promptText),
-            MySQLData(string: newPrompt.systemFlag)
+            MySQLData(string: newPrompt.systemFlag),
+            MySQLData(int: isDefault)
         ]
         
         do {
@@ -101,8 +104,8 @@ class PromptsService {
     
     /// Deletes a prompt from the database
     func deletePrompt(id: String) async throws -> Bool {
-        // Prevent deletion of default prompt
-        if id == Prompt.DEFAULT_PROMPT_ID {
+        // Check if this is a default prompt
+        if let prompt = try await getPromptById(id: id), prompt.isDefault {
             throw NSError(domain: "PromptsService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Default prompt cannot be deleted"])
         }
         
@@ -175,10 +178,8 @@ class PromptsService {
             }
             
             // Check if default prompt exists for this user
-            // Check for both "DEFAULT" (string) and "0" (integer conversion) as the default prompt ID
-            let hasDefaultPrompt = prompts.contains { $0.id == Prompt.DEFAULT_PROMPT_ID || $0.id == "0" || $0.promptName == "Default Prompt" }
+            let hasDefaultPrompt = prompts.contains { $0.isDefault }
             print("[PromptsService] hasDefaultPrompt: \(hasDefaultPrompt)")
-            print("[PromptsService] Prompt.DEFAULT_PROMPT_ID: \(Prompt.DEFAULT_PROMPT_ID)")
             print("[PromptsService] Checking prompts for default: \(prompts.map { $0.promptName }.joined(by: ", "))")
             
             if !hasDefaultPrompt {
@@ -191,8 +192,8 @@ class PromptsService {
             
             // Sort prompts: Default Prompt first, then others by creation date
             prompts.sort { (p1, p2) in
-                if p1.id == Prompt.DEFAULT_PROMPT_ID { return true }
-                if p2.id == Prompt.DEFAULT_PROMPT_ID { return false }
+                if p1.isDefault { return true }
+                if p2.isDefault { return false }
                 return p1.createdDatetime < p2.createdDatetime
             }
             
@@ -219,18 +220,26 @@ class PromptsService {
     
     /// Creates a default prompt for a user
     func createDefaultPrompt(userId: Int) async throws -> Prompt {
-        // Load default prompt from file or create fallback
-        let defaultPrompt = Prompt.loadDefaultPrompt() ?? Prompt.createFallbackDefaultPrompt()
+        // Get default prompt from SystemConfigService
+        let (defaultPromptName, defaultPromptText) = SystemConfigService.shared.getDefaultPrompt()
+        
+        // Use fallback values if no default prompt is available
+        let promptName = defaultPromptName ?? "Default Prompt"
+        let promptText = defaultPromptText ?? "You are Pen, an AI writing assistant designed to help users improve their writing. Your goal is to analyze the provided text and enhance it while maintaining the original meaning and intent."
+        
+        // Create a unique ID for this user's default prompt
+        let uniqueDefaultId = "default-\(userId)"
         
         // Create a copy with the user's ID
         let userDefaultPrompt = Prompt(
-            id: Prompt.DEFAULT_PROMPT_ID,
+            id: uniqueDefaultId,
             userId: userId,
-            promptName: defaultPrompt.promptName,
-            promptText: defaultPrompt.promptText,
+            promptName: promptName,
+            promptText: promptText,
             createdDatetime: Date(),
             updatedDatetime: nil,
-            systemFlag: "PEN"
+            systemFlag: "PEN",
+            isDefault: true
         )
         
         // Add to database

@@ -11,8 +11,9 @@ class Prompt {
     let createdDatetime: Date
     let updatedDatetime: Date?
     let systemFlag: String // WINGMAN: created by Wingman app; PEN: created by PEN app
+    let isDefault: Bool
     
-    init(id: String, userId: Int, promptName: String, promptText: String, createdDatetime: Date, updatedDatetime: Date?, systemFlag: String = "PEN") {
+    init(id: String, userId: Int, promptName: String, promptText: String, createdDatetime: Date, updatedDatetime: Date?, systemFlag: String = "PEN", isDefault: Bool = false) {
         self.id = id
         self.userId = userId
         self.promptName = promptName
@@ -20,6 +21,7 @@ class Prompt {
         self.createdDatetime = createdDatetime
         self.updatedDatetime = updatedDatetime
         self.systemFlag = systemFlag
+        self.isDefault = isDefault
     }
     
     // MARK: - Convenience Methods
@@ -71,11 +73,21 @@ class Prompt {
         // Get system flag from database
         let systemFlag = row["system_flag"] as? String ?? "PEN"
         
-        return Prompt(id: id, userId: userId, promptName: promptName, promptText: promptText, createdDatetime: createdDatetime, updatedDatetime: nil, systemFlag: systemFlag)
+        // Get is_default from database
+        let isDefault: Bool
+        if let isDefaultInt = row["is_default"] as? Int {
+            isDefault = isDefaultInt == 1
+        } else if let isDefaultBool = row["is_default"] as? Bool {
+            isDefault = isDefaultBool
+        } else {
+            isDefault = false
+        }
+        
+        return Prompt(id: id, userId: userId, promptName: promptName, promptText: promptText, createdDatetime: createdDatetime, updatedDatetime: nil, systemFlag: systemFlag, isDefault: isDefault)
     }
     
     /// Creates a new Prompt instance with default PEN system flag
-    static func createNewPrompt(userId: Int, promptName: String, promptText: String) -> Prompt {
+    static func createNewPrompt(userId: Int, promptName: String, promptText: String, isDefault: Bool = false) -> Prompt {
         return Prompt(
             id: "prompt-\(Int(Date.timeIntervalSinceReferenceDate * 1000))", // Generate unique ID
             userId: userId,
@@ -83,7 +95,8 @@ class Prompt {
             promptText: promptText,
             createdDatetime: Date(),
             updatedDatetime: nil,
-            systemFlag: "PEN"
+            systemFlag: "PEN",
+            isDefault: isDefault
         )
     }
     
@@ -122,7 +135,8 @@ class Prompt {
                 promptText: promptText,
                 createdDatetime: Date(),
                 updatedDatetime: nil,
-                systemFlag: "PEN"
+                systemFlag: "PEN",
+                isDefault: true
             )
         } catch {
             print("[Prompt] Failed to load default prompt: \(error)")
@@ -141,7 +155,8 @@ class Prompt {
             promptText: fallbackPromptText,
             createdDatetime: Date(),
             updatedDatetime: nil,
-            systemFlag: "PEN"
+            systemFlag: "PEN",
+            isDefault: true
         )
     }
 }
