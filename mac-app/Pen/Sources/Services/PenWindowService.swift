@@ -1210,6 +1210,25 @@ class PenWindowService {
                 updateEnhancedText(aiResponse.content)
                 hideLoadingIndicator()
             }
+            
+            // Save to content history
+            let historyModel = ContentHistoryModel(
+                userID: user.id,
+                originalContent: originalText,
+                enhancedContent: aiResponse.content,
+                promptText: selectedPrompt.promptText,
+                aiProvider: selectedProvider.name
+            )
+            
+            Task {
+                let result = await ContentHistoryService.shared.addToHistoryByUserID(history: historyModel, userID: user.id)
+                switch result {
+                case .success:
+                    print("Content history saved successfully")
+                case .failure(let error):
+                    print("Error saving content history: \(error)")
+                }
+            }
         } catch {
             print("[PenWindowService] Failed to enhance text: \(error)")
             await MainActor.run {

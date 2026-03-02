@@ -164,3 +164,19 @@ The History tab in Preferences provides users with a read-only view of their enh
 - Date/time formats should respect system locale settings
 - Empty state message should be translatable
 - Copy confirmation message should be translatable
+
+# Feature 2: Add Content History Automatically
+## User Stories & Acceptance Criterio
+user story 1 - Automaically add Content History when receiving enhanced content from AI
+// Set user's content_history_count = X
+// Set Pen maxumunm_content_history_count = 40
+### Scenaro 1 - when the current content history items is less than the user's maximum history count
+Given the current content history items in DB is less than X
+AND other pre-conditions
+When user receives a new enhanced content from AI
+and loaded to pen_enhanced_text_text
+then 
+
+
+
+## UI Design

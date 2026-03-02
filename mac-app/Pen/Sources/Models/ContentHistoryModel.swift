@@ -1,11 +1,8 @@
 import Foundation
 
-// Forward declaration of ContentHistoryService
-class ContentHistoryService
-
 class ContentHistoryModel {
     let uuid: UUID
-    let userID: UUID
+    let userID: Int
     let enhanceDateTime: Date
     let originalContent: String
     let enhancedContent: String
@@ -17,7 +14,7 @@ class ContentHistoryModel {
     
     init(
         uuid: UUID = UUID(),
-        userID: UUID,
+        userID: Int,
         enhanceDateTime: Date = Date(),
         originalContent: String,
         enhancedContent: String,
@@ -42,7 +39,15 @@ class ContentHistoryModel {
     // Initialize from database row
     init(from row: [String: Any]) {
         self.uuid = UUID(uuidString: row["uuid"] as? String ?? UUID().uuidString) ?? UUID()
-        self.userID = UUID(uuidString: row["user_id"] as? String ?? UUID().uuidString) ?? UUID()
+        
+        // Handle userID as string or int
+        if let userIDInt = row["user_id"] as? Int {
+            self.userID = userIDInt
+        } else if let userIDString = row["user_id"] as? String, let userIDInt = Int(userIDString) {
+            self.userID = userIDInt
+        } else {
+            self.userID = 0
+        }
         
         if let enhanceDateTimeStr = row["enhance_datetime"] as? String {
             self.enhanceDateTime = Self.dateFromISOString(enhanceDateTimeStr) ?? Date()
@@ -73,7 +78,7 @@ class ContentHistoryModel {
     func toDictionary() -> [String: Any] {
         return [
             "uuid": uuid.uuidString,
-            "user_id": userID.uuidString,
+            "user_id": userID,
             "enhance_datetime": ContentHistoryService.isoStringFromDate(enhanceDateTime),
             "original_content": originalContent,
             "enhanced_content": enhancedContent,

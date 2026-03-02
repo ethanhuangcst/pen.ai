@@ -43,7 +43,7 @@ Scenario: Initialization step 1 - PenAI handles internet connectivity test pass
   Given the Pen app is launching
   When the internet connectivity test returns success
   And sets the flag "Internet Failure" to false
-  And print in terminal： “ ********************************** PenAI Initialization Step 1: Internet Connectivity Test: PASS! **********************************”
+  And print in terminal： " ********************************** PenAI Initialization Step 1: Internet Connectivity Test: PASS! **********************************"
   And continue the next step 2 initialization process
 
 Scenario: PenAI handles internet connectivity test failure
@@ -51,8 +51,8 @@ Scenario: PenAI handles internet connectivity test failure
   When the internet connectivity test returns failure
   And sets the flag "Internet Failure" to true
   And the app sets itself to offline-internet-failure mode
-  And print in terminal： “ ********************************** PenAI Initialization Step 1: Internet Connectivity Test: FAIL! **********************************”
-  And print in terminal： “ ********************************** OFFLINE-Internet-FAILURE MODE **********************************”
+  And print in terminal： " ********************************** PenAI Initialization Step 1: Internet Connectivity Test: FAIL! **********************************"
+  And print in terminal： " ********************************** OFFLINE-Internet-FAILURE MODE **********************************"
   And load the Mac menu bar icon and it's behaviors as offline-internet-failure mode
   AND do not open any window
   AND end the initialization process without proceeding to step 2
@@ -76,7 +76,7 @@ Scenario: Creating database connectivity pool success
   And the step 2 initialization is successfully completed
   When the database connectivity test returns success
   Then sets the flag "Database Failure" to false
-  And print in terminal： “ ********************************** PenAI Initialization Step 2: Database Connectivity Test: PASS! **********************************”
+  And print in terminal： " ********************************** PenAI Initialization Step 2: Database Connectivity Test: PASS! **********************************"
   And continue the next step 3 initialization process
 
 Scenario: Creating database connectivity pool failure
@@ -84,8 +84,8 @@ Scenario: Creating database connectivity pool failure
   And the step 2 initialization is completed
   When the database connectivity test returns failure
   Then sets the flag "Database Failure" to true
-  And print in terminal： “ ********************************** PenAI Initialization Step 2: Database Connectivity Test: FAIL! **********************************”
-  And print in terminal： “ ********************************** OFFLINE-DB-FAILURE MODE **********************************”
+  And print in terminal： " ********************************** PenAI Initialization Step 2: Database Connectivity Test: FAIL! **********************************"
+  And print in terminal： " ********************************** OFFLINE-DB-FAILURE MODE **********************************"
   And the menu bar icon changes to icon_offline.png
   And the tooltip says "Pen AI (Offline)"
   And the app sets itself to offline-db-failure mode
@@ -121,7 +121,7 @@ Scenario: Pre-stored credentials loaded successfully
   And the step 3 initialization process starts
   And the app completed loading the pre-stored user credentials
   When it returns the pre-stored user credentials
-  Then print in terminal： “ ********************************** Load Pre-stored Credentials: " + preStoredCredentials + "  *********************************”
+  Then print in terminal： " ********************************** Load Pre-stored Credentials: " + preStoredCredentials + "  *********************************"
   AND parse the pre-stored user credentials
   AND try to log in with the stored credentials at background without opening any window
   AND returns the login result (success or failure)
@@ -134,8 +134,8 @@ Scenario: automatic login process - successful login
   When it returns success
   Then load the user data from the database
   AND create a global user data object to store the user data
-  AND print in terminal： “ ********************************** PenAI Initialization Step 3: Load User Data: PASS! **********************************”
-  AND print in terminal： “ ********************************** Hello, " + userData + " **********************************”
+  AND print in terminal： " ********************************** PenAI Initialization Step 3: Load User Data: PASS! **********************************"
+  AND print in terminal： " ********************************** Hello, " + userData + " **********************************"
   AND sets the app as online-login mode
   AND load the menu bar icon and it's behaviors as online mode
   AND end the initialization process
@@ -146,9 +146,9 @@ Scenario: automatic login process - failed login
   And the app completed loading the pre-stored user credentials
   And the app completed the auto login process with the stored credentials
   When it returns failure
-  Then print in terminal： “ ********************************** Auto Login Failed **********************************”
+  Then print in terminal： " ********************************** Auto Login Failed **********************************"
   AND set the app to online-logout mode
-  AND print in terminal： “ ********************************** ONLINE-LOGOUT MODE **********************************”
+  AND print in terminal： " ********************************** ONLINE-LOGOUT MODE **********************************"
   AND the app sets itself to online-logout mode
   AND end the initialization process
 
@@ -158,7 +158,7 @@ Scenario: PenAI opens LoginWindow if there is no stored credentials
   And the step 3 initialization process starts
   And the app completed loading the pre-stored user credentials
   When it returns null
-  Then print in terminal： “ ********************************** No Pre-stored Credentials Found **********************************”
+  Then print in terminal： " ********************************** No Pre-stored Credentials Found **********************************"
   AND set the app to online-logout mode
   AND end the initialization process
   AND load the menu bar icon and it's behaviors as online-logout mode
@@ -182,7 +182,50 @@ Scenario: PenAI handles login failure
   AND sets the flag "Login Failure" to true
   And it should open the LoginWindow to allow the user to input new credentials
 ```
+# User Story 5: Load Content History Count option from configuration file
 
+## User Story
+As a Pen user,
+I want to have 3 options for system content history count: low, medium, high, as the options in Preference - General - History Settings - Content history to save
+So that I can change these numbers in the future by modifying a configuration file
+
+## Acceptance Criteria
+### Scenario 1: Create configuration file with default content history count
+given the application is launched for the first time
+when it cannot find the configuration file CONTENT_HISTORY_COUNT.json
+and the file should be saved in the same directory as KeychainService (Application Support/Pen)
+then it will create this file with the default values: LOW=10, MEDIUM=20, HIGH=40
+AND set the global constants CONTENT_HISTORY_LOW, CONTENT_HISTORY_MEDIUM, CONTENT_HISTORY_HIGH from the file
+AND print in terminal： “ ********************************** Load Default Content History Count: LOW=" + CONTENT_HISTORY_LOW + ", MEDIUM=" + CONTENT_HISTORY_MEDIUM + ", HIGH=" + CONTENT_HISTORY_HIGH + " **********************************”
+
+
+
+### Scenario 2: Load content history count from configuration file
+given the application is launched
+when it finds the configuration file CONTENT_HISTORY_COUNT.json in the Application Support/Pen directory
+then it will load the content history count options from this file
+AND set the global constants CONTENT_HISTORY_LOW, CONTENT_HISTORY_MEDIUM, CONTENT_HISTORY_HIGH from the file
+AND print in terminal： “ ********************************** Load Content History Count: LOW=" + CONTENT_HISTORY_LOW + ", MEDIUM=" + CONTENT_HISTORY_MEDIUM + ", HIGH=" + CONTENT_HISTORY_HIGH + " **********************************”
+
+
+
+### Scenario 3: Configuration file format
+Given the application needs to read the content history count configuration
+When reading the CONTENT_HISTORY_COUNT.json file
+Then it should expect the following JSON format:
+```json
+{
+  "CONTENT_HISTORY_LOW": 10,
+  "CONTENT_HISTORY_MEDIUM": 20,
+  "CONTENT_HISTORY_HIGH": 40
+}
+```
+
+### Scenario 4: Fallback to default values
+Given the application tries to load the content history count configuration
+When the file is corrupted or missing required fields
+Then it should fallback to the default values: LOW=10, MEDIUM=20, HIGH=40
+AND recreate the configuration file with these default values
 
 ## User Story 6
 

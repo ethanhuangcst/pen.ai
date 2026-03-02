@@ -1,4 +1,4 @@
-# User Story: Customizable Shortcut Key
+# User Story 1: Customizable Shortcut Key
 
 ## User Story
 As a Pen user,
@@ -85,7 +85,7 @@ Then I should be able to continue recording the shortcut key.
 
 
 
-//ToDo
+//Done
 ### Scenario 8: Persisting Custom Shortcut Key
 Given I have saved a custom shortcut key combination,
 When I restart the application,
@@ -99,3 +99,6 @@ Then the custom shortcut key should still be active.
 - Conflict detection should check both system and application-level shortcuts
 - The application should support canceling recording by clicking outside the text field
 - The UI should be responsive and provide visual feedback for all user interactions
+
+
+

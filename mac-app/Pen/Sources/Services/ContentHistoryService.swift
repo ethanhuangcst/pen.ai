@@ -9,7 +9,7 @@ class ContentHistoryService {
     // MARK: - Public Methods
     
     /// Get the count of non-deleted history records for a user
-    func readHistoryCount(userID: UUID) -> Result<Int, Error> {
+    func readHistoryCount(userID: Int) async -> Result<Int, Error> {
         guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
             return .failure(NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"]))
         }
@@ -17,9 +17,9 @@ class ContentHistoryService {
         
         do {
             let query = "SELECT COUNT(*) as count FROM content_history WHERE user_id = ? AND is_hidden = FALSE"
-            let parameters: [MySQLData] = [MySQLData(string: userID.uuidString)]
+            let parameters: [MySQLData] = [MySQLData(int: userID)]
             
-            let result = try connection.execute(query: query, parameters: parameters).get()
+            let result = try await connection.execute(query: query, parameters: parameters)
             
             if let firstRow = result.first, let count = firstRow["count"] as? Int {
                 return .success(count)
@@ -32,7 +32,7 @@ class ContentHistoryService {
     }
     
     /// Load recent history records for a user, sorted by date (most recent first)
-    func loadHistoryByUserID(userID: UUID, count: Int) -> Result<[ContentHistoryModel], Error> {
+    func loadHistoryByUserID(userID: Int, count: Int) async -> Result<[ContentHistoryModel], Error> {
         guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
             return .failure(NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"]))
         }
@@ -40,9 +40,9 @@ class ContentHistoryService {
         
         do {
             let query = "SELECT * FROM content_history WHERE user_id = ? AND is_hidden = FALSE ORDER BY enhance_datetime DESC LIMIT ?"
-            let parameters: [MySQLData] = [MySQLData(string: userID.uuidString), MySQLData(int: count)]
+            let parameters: [MySQLData] = [MySQLData(int: userID), MySQLData(int: count)]
             
-            let result = try connection.execute(query: query, parameters: parameters).get()
+            let result = try await connection.execute(query: query, parameters: parameters)
             
             let historyItems = result.map { ContentHistoryModel(from: $0) }
             return .success(historyItems)
@@ -52,7 +52,7 @@ class ContentHistoryService {
     }
     
     /// Add a new history record for a user
-    func addToHistoryByUserID(history: ContentHistoryModel, userID: UUID) -> Result<Bool, Error> {
+    func addToHistoryByUserID(history: ContentHistoryModel, userID: Int) async -> Result<Bool, Error> {
         guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
             return .failure(NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"]))
         }
@@ -66,7 +66,7 @@ class ContentHistoryService {
             
             let parameters: [MySQLData] = [
                 MySQLData(string: history.uuid.uuidString),
-                MySQLData(string: history.userID.uuidString),
+                MySQLData(int: userID),
                 MySQLData(string: ContentHistoryService.isoStringFromDate(history.enhanceDateTime)),
                 MySQLData(string: history.originalContent),
                 MySQLData(string: history.enhancedContent),
@@ -77,10 +77,10 @@ class ContentHistoryService {
                 MySQLData(string: ContentHistoryService.isoStringFromDate(history.updatedAt))
             ]
             
-            _ = try connection.execute(query: query, parameters: parameters).get()
+            _ = try await connection.execute(query: query, parameters: parameters)
             
             // After adding, check if we need to trim old records
-            try trimHistoryIfNeeded(userID: userID)
+            try await trimHistoryIfNeeded(userID: userID)
             
             return .success(true)
         } catch {
@@ -89,7 +89,7 @@ class ContentHistoryService {
     }
     
     /// Soft delete all history records for a user
-    func resetHistoryByUserID(userID: UUID) -> Result<Bool, Error> {
+    func resetHistoryByUserID(userID: Int) async -> Result<Bool, Error> {
         guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
             return .failure(NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"]))
         }
@@ -97,9 +97,9 @@ class ContentHistoryService {
         
         do {
             let query = "UPDATE content_history SET is_hidden = TRUE WHERE user_id = ? AND is_hidden = FALSE"
-            let parameters: [MySQLData] = [MySQLData(string: userID.uuidString)]
+            let parameters: [MySQLData] = [MySQLData(int: userID)]
             
-            _ = try connection.execute(query: query, parameters: parameters).get()
+            _ = try await connection.execute(query: query, parameters: parameters)
             return .success(true)
         } catch {
             return .failure(error)
@@ -109,12 +109,18 @@ class ContentHistoryService {
     // MARK: - Private Methods
     
     /// Trim old history records if the count exceeds the user's limit
-    private func trimHistoryIfNeeded(userID: UUID) throws {
+    private func trimHistoryIfNeeded(userID: Int) async throws {
         // Get user's history limit from preferences
-        let historyLimit = try getUserHistoryLimit(userID: userID)
+        let historyLimit = try await getUserHistoryLimit(userID: userID)
         
         // Get current history count
-        let currentCount = try readHistoryCount(userID: userID).get()
+        let currentCountResult = await readHistoryCount(userID: userID)
+        guard case .success(let currentCount) = currentCountResult else {
+            if case .failure(let error) = currentCountResult {
+                throw error
+            }
+            throw NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get history count"])
+        }
         
         if currentCount > historyLimit {
             // Get oldest records to delete
@@ -133,25 +139,25 @@ class ContentHistoryService {
             """
             
             let parameters: [MySQLData] = [
-                MySQLData(string: userID.uuidString),
+                MySQLData(int: userID),
                 MySQLData(int: recordsToDelete)
             ]
             
-            _ = try connection.execute(query: query, parameters: parameters).get()
+            _ = try await connection.execute(query: query, parameters: parameters)
         }
     }
     
     /// Get the user's history limit from preferences
-    private func getUserHistoryLimit(userID: UUID) throws -> Int {
+    private func getUserHistoryLimit(userID: Int) async throws -> Int {
         guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
             throw NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"])
         }
         defer { DatabaseConnectivityPool.shared.returnConnection(connection) }
         
         let query = "SELECT pen_content_history FROM users WHERE id = ?"
-        let parameters: [MySQLData] = [MySQLData(string: userID.uuidString)]
+        let parameters: [MySQLData] = [MySQLData(int: userID)]
         
-        let result = try connection.execute(query: query, parameters: parameters).get()
+        let result = try await connection.execute(query: query, parameters: parameters)
         
         if let firstRow = result.first, let limit = firstRow["pen_content_history"] as? Int {
             return limit

@@ -127,6 +127,10 @@ class PreferencesWindow: BaseWindow {
             // Use the new PromptsTabView
             let promptsTabView = PromptsTabView(frame: tabContentView.bounds, user: user, parentWindow: self)
             tabContentView.addSubview(promptsTabView)
+        } else if title == LocalizationService.shared.localizedString(for: "history") {
+            // Use the new HistoryTabView
+            let historyTabView = HistoryTabView(frame: tabContentView.bounds, user: user, parentWindow: self)
+            tabContentView.addSubview(historyTabView)
         }
         
         tabItem.view = tabContentView
