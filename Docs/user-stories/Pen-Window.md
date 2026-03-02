@@ -1,11 +1,11 @@
 Feature: Pen window initialization when launch
 
-# User Story 1: Close Other Windows when launch Pen app
-As a Pen user, I want Pen app to close all other windows when I launch Pen app, so that I can focus on the Pen window
-Scenario: close other windows when launch Pen app
+# User Story 1: Close Other Windows when open Pen window
+As a Pen user, I want Pen app to close all other windows when I open the Pen window, so that I can focus on the Pen window
+Scenario: close other windows when open Pen window
     Given Pen app is running
     AND other windows are open
-    When I launch Pen app
+    When I open the Pen window
     Then all other windows should be closed
 
 

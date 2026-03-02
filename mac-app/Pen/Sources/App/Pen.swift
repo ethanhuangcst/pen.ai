@@ -502,8 +502,11 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     @objc private func openWindow() {
         print("PenDelegate: Opening window from menubar icon")
         
-        // Close other windows before opening Pen window
-        closeOtherWindows()
+        // Check if app is in online login mode
+        if !isOnline || !isLoggedIn {
+            print("PenDelegate: Not in online login mode, cannot open window")
+            return
+        }
         
         // Recreate window if it's nil
         if window == nil {
@@ -515,17 +518,27 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 print("PenDelegate: Window is already open, closing it")
                 window.orderOut(nil)
             } else {
-                // Position window relative to menu bar icon
-                window.positionRelativeToMenuBarIcon()
+                // Close other windows before opening Pen window
+                closeOtherWindows()
                 
-                print("PenDelegate: Opening window at specified position")
-                
-                // Initialize Pen window using PenWindowService
-                Task {
-                    await penWindowService?.initiatePen()
+                // Recreate window if it's nil after closing other windows
+                if self.window == nil {
+                    createMainWindow()
                 }
                 
-                window.showAndFocus()
+                if let window = self.window {
+                    // Position window relative to menu bar icon
+                    window.positionRelativeToMenuBarIcon()
+                    
+                    print("PenDelegate: Opening window at specified position")
+                    
+                    // Initialize Pen window using PenWindowService
+                    Task {
+                        await penWindowService?.initiatePen()
+                    }
+                    
+                    window.showAndFocus()
+                }
             }
         }
     }
@@ -742,6 +755,17 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     /// Toggles the main window visibility
     func toggleMainWindow() {
         print("PenDelegate: Toggling main window")
+        
+        // Check if app is in online login mode
+        if !isOnline || !isLoggedIn {
+            print("PenDelegate: Not in online login mode, cannot open window")
+            return
+        }
+        
+        // Recreate window if it's nil
+        if window == nil {
+            createMainWindow()
+        }
         
         if let window = window {
             if window.isVisible {
