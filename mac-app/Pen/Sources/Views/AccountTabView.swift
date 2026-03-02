@@ -414,20 +414,74 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
                     createdAt: currentUser.createdAt
                 )
                 
-                // Update the user in the app delegate
-                appDelegate.currentUser = updatedUser
-                
-                // Clear password fields
-                DispatchQueue.main.async {
-                    self.passwordField.stringValue = ""
-                    self.confirmField.stringValue = ""
-                    self.plainPasswordField.stringValue = ""
-                    self.plainConfirmField.stringValue = ""
-                }
-                
-                // Show success message
-                DispatchQueue.main.async {
-                    appDelegate.displayPopupMessage("Changes saved successfully!")
+                // Reload the user from the database to ensure we have the latest data
+                if let reloadedUser = await AuthenticationService.shared.getUserByEmail(email: email) {
+                    // Update the user in the app delegate
+                    appDelegate.currentUser = reloadedUser
+                    
+                    // Update the user in UserService
+                    UserService.shared.currentUser = reloadedUser
+                    
+                    // Clear password fields
+                    DispatchQueue.main.async {
+                        self.passwordField.stringValue = ""
+                        self.confirmField.stringValue = ""
+                        self.plainPasswordField.stringValue = ""
+                        self.plainConfirmField.stringValue = ""
+                        
+                        // Update the user name label in the Preferences window
+                        if let window = self.parentWindow as? PreferencesWindow {
+                            // Find the user name label and update it
+                            if let contentView = window.contentView {
+                                for subview in contentView.subviews {
+                                    if let label = subview as? NSTextField, label.identifier == NSUserInterfaceItemIdentifier("preference_user_name") {
+                                        label.stringValue = reloadedUser.name
+                                        break
+                                    }
+                                }
+                            }
+                            
+                            // Reload the Account tab view
+                            if let contentView = window.contentView {
+                                for subview in contentView.subviews {
+                                    if subview.identifier?.rawValue == "user_settings" {
+                                        for tabViewSubview in subview.subviews {
+                                            if let tabView = tabViewSubview as? NSTabView {
+                                                if let selectedTabItem = tabView.selectedTabViewItem, 
+                                                   let tabViewContent = selectedTabItem.view {
+                                                    // Remove existing AccountTabView
+                                                    for existingSubview in tabViewContent.subviews {
+                                                        if existingSubview is AccountTabView {
+                                                            existingSubview.removeFromSuperview()
+                                                            break
+                                                        }
+                                                    }
+                                                    // Add new AccountTabView with updated user
+                                                    let accountTabView = AccountTabView(frame: tabViewContent.bounds, user: reloadedUser, parentWindow: window)
+                                                    tabViewContent.addSubview(accountTabView)
+                                                    break
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Update the user label in the Pen window
+                        let penWindowService = PenWindowService()
+                        penWindowService.updateUserLabel()
+                    }
+                    
+                    // Show success message
+                    DispatchQueue.main.async {
+                        appDelegate.displayPopupMessage("Changes saved successfully!")
+                    }
+                } else {
+                    // Show error message if user reload failed
+                    DispatchQueue.main.async {
+                        appDelegate.displayPopupMessage("Failed to reload user data. Please try again.")
+                    }
                 }
             } else {
                 // Show error message

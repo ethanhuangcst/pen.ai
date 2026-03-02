@@ -399,3 +399,29 @@ Scenario: Click enhanced text to copy and close window
   AND it should display a popup message for 1 second
   AND the message should say: "Text has been copied to clipboard"
   AND it should follow i18n
+
+# User Story 4: Display loading indicator during AI processing
+As a Pen user
+I want to see a semi-transparent message "Refining content ..." with animation effect floating in front of pen_enhanced_text_text
+So that I know what's going on while waiting for the AI response
+
+Scenario: Display loading indicator when sending chat to AI
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND Pen window is open
+  AND text is ready to be enhanced
+  WHEN the generate prompt event is triggered
+  THEN it should display a semi-transparent message "Refining content ..." with animation effect
+  AND the message should float in front of pen_enhanced_text_text
+  AND the animation should continue until the AI response is received
+
+Scenario: Hide loading indicator when receiving AI response
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND Pen window is open
+  AND the loading indicator is displayed
+  WHEN the AI response is received
+  THEN it should hide the loading indicator
+  AND display the enhanced text in pen_enhanced_text_text

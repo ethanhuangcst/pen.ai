@@ -144,13 +144,36 @@ textField.isSelectable = true
 
 ## Expected Results After Fix
 
-- ✅ Command+C (Copy) works
-- ✅ Command+V (Paste) works
-- ✅ Command+A (Select All) works
-- ✅ Command+X (Cut) works
-- ✅ Command+Z (Undo) works
-- ✅ Shift+Command+Arrow keys (Text navigation) works
-- ✅ All native macOS text behaviors restored
+### Basic Editing Shortcuts
+- ✅ Command+C (Copy)
+- ✅ Command+V (Paste)
+- ✅ Command+A (Select All)
+- ✅ Command+X (Cut)
+- ✅ Command+Z (Undo)
+- ✅ Shift+Command+Z (Redo)
+
+### Text Navigation Shortcuts
+- ✅ Shift+Command+Left Arrow (Select to beginning of line)
+- ✅ Shift+Command+Right Arrow (Select to end of line)
+- ✅ Shift+Command+Up Arrow (Select to beginning of document)
+- ✅ Shift+Command+Down Arrow (Select to end of document)
+- ✅ Option+Left Arrow (Move to beginning of word)
+- ✅ Option+Right Arrow (Move to end of word)
+- ✅ Option+Up Arrow (Move to beginning of paragraph)
+- ✅ Option+Down Arrow (Move to end of paragraph)
+
+### Advanced Editing Shortcuts
+- ✅ Command+F (Find)
+- ✅ Command+G (Find Next)
+- ✅ Shift+Command+G (Find Previous)
+- ✅ Command+D (Duplicate)
+- ✅ Command+Delete (Delete to beginning of word)
+- ✅ Option+Delete (Delete to end of word)
+
+### All Native macOS Text Behaviors
+- ✅ All standard macOS text editing behaviors are restored
+- ✅ Consistent shortcut behavior across all text fields
+- ✅ Familiar user experience for macOS users
 
 ## Why This Is the Only Correct Solution
 

@@ -9,6 +9,25 @@ The Pen window is a compact, focused UI for the Pen AI application, featuring a 
 
 ## UI Components
 
+define container view in Pen window:
+### identifier = pen_userlabel
+### size = 110x30
+### background = transparent
+### coordinate = 44, 238
+### user profile image thumbnail 
+#### identifier = pen_userlabel_img
+#### image = user profile image
+#### size = 30x30
+#### coordinate = 0, 0, relative position
+### user name text label
+#### identifier = pen_userlable_text
+#### font = Pen global font, size = 12, bold
+#### size = 70x30
+#### coordinate = 40, 0, relative position
+#### text = user name, trimed to fit width
+#### support i18n
+
+
 ### Enhanced Text Container
 - **Size**: 338px (width) × 198px (height)
 - **Position**: (20, 30) from the bottom-left corner of the window
@@ -131,7 +150,69 @@ The Pen window is a compact, focused UI for the Pen AI application, featuring a 
 - **Footer Creation**: `addFooterContainer` method in `Pen.swift`
 - **Localization String**: `pen_footer_shortcut` in `Localizable.strings`
 
+
+### Loading Indicator Container
+- **Size**: 338px (width) × 198px (height)
+- **Position**: (20, 30) from the bottom-left corner of the window (same as enhanced text container)
+- **Background**: Semi-transparent black (rgba(0, 0, 0, 0.5))
+- **Border**: Rounded corner, 4.0
+- **Identifier**: `pen_loading_indicator`
+- **Z-Order**: Above pen_enhanced_text_text
+
+### Loading Text
+- **Content**: "Refining content ..." (localized)
+- **Font**: System font, 14pt
+- **Color**: White
+- **Alignment**: Center
+- **Position**: Center of the container
+- **Identifier**: `pen_loading_text`
+- **Localization**: Uses `refining_content` key in Localizable.strings
+
+### Animation
+- **Type**: Fade-in/out + pulse effect
+- **Duration**: 1 second fade-in, continuous pulse
+- **Implementation**: Use Core Animation for smooth transitions
+
 ## Styling
 - **Footer Text**: Right-aligned, secondary label color, 14pt system font
 - **Logo**: 26x26px, positioned to the right of the footer text
 - **Background**: Transparent footer container
+- **Loading Indicator**: Semi-transparent black background with white text and pulse animation
+
+## Technical Implementation
+
+### Loading Indicator Management
+1. **Show Loading Indicator**:
+   - Create the loading indicator view when the generate prompt event is triggered
+   - Add it as a subview to the window's content view
+   - Position it exactly over the pen_enhanced_text_text field
+   - Start the fade-in animation
+   - Start the pulse animation
+
+2. **Hide Loading Indicator**:
+   - When the AI response is received, start a fade-out animation
+   - Remove the loading indicator from the view hierarchy after animation completes
+   - Display the enhanced text in pen_enhanced_text_text
+
+### Animation Implementation
+```swift
+// Fade-in animation
+NSAnimationContext.runAnimationGroup { context in
+    context.duration = 0.5
+    loadingIndicator.animator().alphaValue = 1.0
+} completionHandler: {}
+
+// Pulse animation
+let pulseAnimation = CABasicAnimation(keyPath: "opacity")
+pulseAnimation.duration = 1.0
+pulseAnimation.fromValue = 0.7
+pulseAnimation.toValue = 1.0
+pulseAnimation.autoreverses = true
+pulseAnimation.repeatCount = .infinity
+loadingIndicator.layer?.add(pulseAnimation, forKey: "pulse")
+```
+
+### Integration Points
+- **Show**: In the method that sends the prompt to the AI
+- **Hide**: In the completion handler that receives the AI response
+- **Localization**: Add "refining_content" key to Localizable.strings files

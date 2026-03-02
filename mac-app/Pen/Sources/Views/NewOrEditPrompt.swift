@@ -1,13 +1,14 @@
 import Cocoa
 import Foundation
 
-class NewOrEditPrompt: BaseWindow {
+class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
     
     // MARK: - Properties
     private let promptNameLabel = NSTextField()
     private let promptNameField = NSTextField()
     private let promptLabel = NSTextField()
     private let promptTextField = NSTextView()
+    private let promptPlaceholderLabel = NSTextField()
     private let saveButton = FocusableButton()
     private let cancelButton = FocusableButton()
     
@@ -83,20 +84,46 @@ class NewOrEditPrompt: BaseWindow {
         promptScrollView.hasVerticalScroller = true
         promptScrollView.autohidesScrollers = false
         
-        promptTextField.frame = NSRect(x: 0, y: 0, width: promptScrollView.frame.width - 20, height: 336)
+        // Create container view
+        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: promptScrollView.frame.width, height: 336))
+        
+        // Create placeholder label
+        promptPlaceholderLabel.frame = NSRect(x: 8, y: 8, width: promptScrollView.frame.width - 16, height: 336 - 16)
+        promptPlaceholderLabel.stringValue = localizedString(for: "markdown_format_recommended_tooltip")
+        promptPlaceholderLabel.textColor = NSColor.lightGray
+        promptPlaceholderLabel.isBezeled = false
+        promptPlaceholderLabel.drawsBackground = false
+        promptPlaceholderLabel.isEditable = false
+        promptPlaceholderLabel.isSelectable = false
+        promptPlaceholderLabel.font = NSFont.systemFont(ofSize: 14)
+        
+        // Set up text view
+        promptTextField.frame = NSRect(x: 0, y: 0, width: promptScrollView.frame.width, height: 336)
         promptTextField.font = NSFont.systemFont(ofSize: 14)
+        promptTextField.drawsBackground = false // This is key to make the text view transparent
         promptTextField.wantsLayer = true
-        promptTextField.layer?.backgroundColor = NSColor.lightGray.withAlphaComponent(0.1).cgColor
+        promptTextField.layer?.backgroundColor = NSColor.clear.cgColor
         promptTextField.layer?.borderWidth = 1.0
         promptTextField.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.5).cgColor
         promptTextField.layer?.cornerRadius = 4.0
         promptTextField.autoresizingMask = [.width, .height]
-        promptTextField.maxSize = NSSize(width: promptScrollView.frame.width - 20, height: CGFloat.greatestFiniteMagnitude)
-        promptTextField.minSize = NSSize(width: promptScrollView.frame.width - 20, height: 336)
-        promptTextField.textContainer?.containerSize = NSSize(width: promptScrollView.frame.width - 20, height: CGFloat.greatestFiniteMagnitude)
+        promptTextField.maxSize = NSSize(width: promptScrollView.frame.width, height: 336)
+        promptTextField.minSize = NSSize(width: promptScrollView.frame.width, height: 336)
+        promptTextField.isVerticallyResizable = false
+        promptTextField.isHorizontallyResizable = false
+        promptTextField.textContainerInset = NSSize(width: 8, height: 8)
+        promptTextField.textContainer?.containerSize = NSSize(width: promptScrollView.frame.width - 16, height: 336 - 16)
         promptTextField.textContainer?.widthTracksTextView = true
         
-        promptScrollView.documentView = promptTextField
+        // Add subviews to container
+        containerView.addSubview(promptPlaceholderLabel)
+        containerView.addSubview(promptTextField)
+        
+        // Set container as document view
+        promptScrollView.documentView = containerView
+        
+        // Set up text view delegate to handle placeholder visibility
+        promptTextField.delegate = self
         contentView.addSubview(promptScrollView)
         
         // Save button
@@ -120,12 +147,16 @@ class NewOrEditPrompt: BaseWindow {
             // Edit prompt: pre-fill with existing values
             promptNameField.stringValue = prompt.promptName
             promptTextField.string = prompt.promptText
+            // Hide placeholder since we have content
+            promptPlaceholderLabel.isHidden = true
             // Display in Markdown format (preserving Markdown syntax)
         } else {
             // New prompt: set placeholder text
             promptNameField.placeholderString = localizedString(for: "enter_prompt_name_placeholder")
-            // Set placeholder text for NSTextView (since it doesn't have placeholderString property)
-            promptTextField.string = localizedString(for: "markdown_format_recommended_tooltip")
+            // Set empty string for text view, placeholder will be shown
+            promptTextField.string = ""
+            // Show placeholder
+            promptPlaceholderLabel.isHidden = false
         }
         
         // Tooltips are not needed as we use placeholder text for new prompts
@@ -233,5 +264,26 @@ class NewOrEditPrompt: BaseWindow {
         }
         
         return nil
+    }
+    
+    // MARK: - NSTextDelegate Methods
+    
+    func textDidChange(_ notification: Notification) {
+        // Update placeholder visibility based on text content
+        promptPlaceholderLabel.isHidden = !promptTextField.string.isEmpty
+    }
+    
+    func textDidBeginEditing(_ notification: Notification) {
+        // Hide placeholder when text view gains focus
+        if promptTextField.string.isEmpty {
+            promptPlaceholderLabel.isHidden = true
+        }
+    }
+    
+    func textDidEndEditing(_ notification: Notification) {
+        // Show placeholder if text view is empty when losing focus
+        if promptTextField.string.isEmpty {
+            promptPlaceholderLabel.isHidden = false
+        }
     }
 }

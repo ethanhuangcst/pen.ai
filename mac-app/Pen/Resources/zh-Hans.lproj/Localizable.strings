@@ -174,3 +174,4 @@
 "pen_select_provider" = "选择提供商";
 "pen_no_providers_available" = "没有可用的 AI 提供商";
 "pen_no_prompts_available" = "没有可用的提示词";
+"pen_refining_content" = "优化中...";

@@ -24,10 +24,13 @@ class ShortcutService {
         // Unregister any existing shortcut
         unregisterShortcut()
         
+        print("ShortcutService: Registering shortcut with keyCode: \(keyCode), modifiers: \(modifiers)")
+        
         // Create event handler
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyPressed))
         
         let handler: EventHandlerUPP = { (nextHandler, event, userData) -> OSStatus in
+            print("ShortcutService: Hot key event received")
             let selfPtr = Unmanaged<ShortcutService>.fromOpaque(userData!).takeUnretainedValue()
             selfPtr.handleHotKeyEvent()
             return noErr
@@ -35,12 +38,19 @@ class ShortcutService {
         
         // Install event handler
         var handlerRef: EventHandlerRef?
-        InstallEventHandler(GetEventDispatcherTarget(), handler, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), &handlerRef)
+        let handlerStatus = InstallEventHandler(GetEventDispatcherTarget(), handler, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), &handlerRef)
+        if handlerStatus != noErr {
+            print("ShortcutService: Failed to install event handler: \(handlerStatus)")
+        } else {
+            print("ShortcutService: Event handler installed successfully")
+        }
         
         // Register hot key
         let status = RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &hotKeyRef)
         if status != noErr {
-            print("Failed to register hot key: \(status)")
+            print("ShortcutService: Failed to register hot key: \(status)")
+        } else {
+            print("ShortcutService: Hot key registered successfully")
         }
     }
     
@@ -52,16 +62,20 @@ class ShortcutService {
     }
     
     func handleHotKeyEvent() {
+        print("ShortcutService: Handling hot key event")
         togglePenWindow()
     }
     
     func togglePenWindow() {
+        print("ShortcutService: Toggling Pen window")
         // Get the application delegate
         guard let appDelegate = NSApplication.shared.delegate as? PenDelegate else {
+            print("ShortcutService: Failed to get PenDelegate")
             return
         }
         
         // Toggle the main window
+        print("ShortcutService: Calling appDelegate.toggleMainWindow()")
         appDelegate.toggleMainWindow()
     }
     

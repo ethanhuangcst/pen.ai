@@ -14,6 +14,7 @@ class PenWindowService {
     init() {
         self.userService = UserService.shared
         self.promptsService = PromptsService()
+        print("[PenWindowService] Initializer called, currentUser: \(userService.currentUser?.name ?? "nil")")
     }
     
     // MARK: - Window Lifecycle Methods
@@ -107,13 +108,13 @@ class PenWindowService {
             return
         }
         
-        // 1. Initialize UI Components on main thread
+        // 1. Load User Information
+        await loadUserInformation()
+        
+        // 2. Initialize UI Components on main thread
         await MainActor.run {
             initializeUIComponents()
         }
-        
-        // 2. Load User Information
-        await loadUserInformation()
         
         // 3. Load AI Configurations
         await loadAIConfigurations()
@@ -313,6 +314,9 @@ class PenWindowService {
         // Add controller container
         addControllerContainer(to: contentView)
         
+        // Add user label container
+        addUserLabelContainer(to: contentView)
+        
         // Add original text container
         addOriginalTextContainer(to: contentView)
         
@@ -369,7 +373,7 @@ class PenWindowService {
         footerContainer.identifier = NSUserInterfaceItemIdentifier("pen_footer")
         
         // Add instruction label
-        let instructionLabel = NSTextField(frame: NSRect(x: 30, y: -6, width: 250, height: footerHeight))
+        let instructionLabel = NSTextField(frame: NSRect(x: 20, y: -6, width: 250, height: footerHeight))
         let defaults = UserDefaults.standard
         let shortcutKeyDefaultsKey = "pen.shortcutKey"
         let defaultShortcut = "Command+Option+P"
@@ -585,6 +589,171 @@ class PenWindowService {
         
         originalTextContainer.addSubview(clickableTextField)
         contentView.addSubview(originalTextContainer)
+    }
+    
+    private func setPlaceholderImage(to imageView: NSImageView) {
+        // Try multiple paths to find the logo.png file
+        let possiblePaths = [
+            // Absolute paths
+            "/Users/ethanhuang/code/pen.ai/pen/mac-app/Pen/Resources/Assets/logo.png",
+            "/Users/ethanhuang/code/pen.ai/pen/web-app/public/logo.png",
+            // Relative paths
+            "Resources/Assets/logo.png",
+            "mac-app/Pen/Resources/Assets/logo.png",
+            "pen/mac-app/Pen/Resources/Assets/logo.png"
+        ]
+        
+        for path in possiblePaths {
+            print("[PenWindowService] Trying placeholder image path: \(path)")
+            if let image = NSImage(contentsOfFile: path) {
+                imageView.image = image
+                print("[PenWindowService] Using placeholder image from: \(path)")
+                return
+            }
+        }
+        
+        print("[PenWindowService] Placeholder image not found at any path")
+        // As a last resort, try to create a simple placeholder
+        let placeholderImage = NSImage(size: NSSize(width: 20, height: 20))
+        placeholderImage.lockFocus()
+        NSColor.gray.setFill()
+        NSRect(x: 0, y: 0, width: 20, height: 20).fill()
+        placeholderImage.unlockFocus()
+        imageView.image = placeholderImage
+        print("[PenWindowService] Using generated placeholder image")
+    }
+    
+    private func addUserLabelContainer(to contentView: NSView) {
+        print("[PenWindowService] addUserLabelContainer called")
+        let userLabelContainer = NSView(frame: NSRect(x: 232, y: 352, width: 120, height: 30))
+        userLabelContainer.wantsLayer = true
+        userLabelContainer.layer?.backgroundColor = NSColor.clear.cgColor
+        userLabelContainer.identifier = NSUserInterfaceItemIdentifier("pen_userlabel")
+        
+        // Add user profile image
+        let profileImage = NSImageView(frame: NSRect(x: 0, y: 0, width: 20, height: 20))
+        profileImage.identifier = NSUserInterfaceItemIdentifier("pen_userlabel_img")
+        
+        // Set profile image if available
+        if let user = userService.currentUser, let profileImageData = user.profileImage, !profileImageData.isEmpty {
+            print("[PenWindowService] User has profile image")
+            // Check if it's a base64-encoded image
+            if profileImageData.hasPrefix("data:image") {
+                // Handle base64-encoded image
+                print("[PenWindowService] Profile image is base64-encoded")
+                if let base64String = profileImageData.components(separatedBy: ",").last {
+                    if let imageData = Data(base64Encoded: base64String) {
+                        if let image = NSImage(data: imageData) {
+                            profileImage.image = image
+                            print("[PenWindowService] Loaded base64-encoded profile image")
+                        } else {
+                            // Use placeholder if image fails to load
+                            print("[PenWindowService] Failed to load base64-encoded image")
+                            self.setPlaceholderImage(to: profileImage)
+                        }
+                    } else {
+                        // Use placeholder if base64 data is invalid
+                        print("[PenWindowService] Invalid base64 data")
+                        self.setPlaceholderImage(to: profileImage)
+                    }
+                } else {
+                    // Use placeholder if base64 data is invalid
+                    print("[PenWindowService] Invalid base64 format")
+                    self.setPlaceholderImage(to: profileImage)
+                }
+            } else {
+                // Try to load as file path
+                print("[PenWindowService] Profile image is file path: \(profileImageData)")
+                let possiblePaths = [
+                    "Resources/ProfileImages/\(profileImageData)",
+                    "mac-app/Pen/Resources/ProfileImages/\(profileImageData)",
+                    "pen/mac-app/Pen/Resources/ProfileImages/\(profileImageData)"
+                ]
+                
+                var foundImage = false
+                for path in possiblePaths {
+                    print("[PenWindowService] Trying profile image path: \(path)")
+                    if let image = NSImage(contentsOfFile: path) {
+                        profileImage.image = image
+                        print("[PenWindowService] Loaded profile image from: \(path)")
+                        foundImage = true
+                        break
+                    }
+                }
+                
+                if !foundImage {
+                    print("[PenWindowService] Profile image not found at any path")
+                    // Add a placeholder image if no profile image found
+                    self.setPlaceholderImage(to: profileImage)
+                }
+            }
+        } else {
+            print("[PenWindowService] No user or no profile image")
+            // Add a placeholder image if no user or no profile image
+            self.setPlaceholderImage(to: profileImage)
+        }
+        
+        // Add user name text label
+        let userNameLabel = NSTextField(frame: NSRect(x: 26, y: -13, width: 90, height: 30))
+        userNameLabel.identifier = NSUserInterfaceItemIdentifier("pen_userlable_text")
+        
+        // Set user name
+        if let user = userService.currentUser {
+            let name = user.name
+            // Trim name to fit width
+            let font = NSFont.boldSystemFont(ofSize: 12)
+            let trimmedName = trimTextToFitWidth(name, font: font, maxWidth: 90)
+            userNameLabel.stringValue = trimmedName
+            print("[PenWindowService] Set user name: \(name), trimmed to: \(trimmedName)")
+        } else {
+            userNameLabel.stringValue = LocalizationService.shared.localizedString(for: "no_user")
+            print("[PenWindowService] Set user name to: no_user")
+        }
+        
+        userNameLabel.isBezeled = false
+        userNameLabel.drawsBackground = false
+        userNameLabel.isEditable = false
+        userNameLabel.isSelectable = false
+        userNameLabel.font = NSFont.boldSystemFont(ofSize: 12)
+        userNameLabel.textColor = NSColor.labelColor
+        userNameLabel.alignment = .left
+        
+        userLabelContainer.addSubview(profileImage)
+        userLabelContainer.addSubview(userNameLabel)
+        contentView.addSubview(userLabelContainer)
+        print("[PenWindowService] Added user label container to content view")
+    }
+    
+    private func trimTextToFitWidth(_ text: String, font: NSFont, maxWidth: CGFloat) -> String {
+        // Create a temporary text field to measure text width
+        let tempTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: maxWidth, height: 30))
+        tempTextField.font = font
+        tempTextField.stringValue = text
+        tempTextField.sizeToFit()
+        
+        // If text fits, return as is
+        if tempTextField.frame.width <= maxWidth {
+            return text
+        }
+        
+        // If text doesn't fit, trim with ellipsis
+        var trimmedText = text
+        
+        // Gradually trim characters until it fits
+        while true {
+            if trimmedText.count <= 3 {
+                // Minimum text length reached
+                return "..."
+            }
+            
+            trimmedText = String(trimmedText.prefix(trimmedText.count - 1))
+            tempTextField.stringValue = trimmedText + "..."
+            tempTextField.sizeToFit()
+            
+            if tempTextField.frame.width <= maxWidth {
+                return trimmedText + "..."
+            }
+        }
     }
     
     private func addManualPasteContainer(to contentView: NSView) {
@@ -992,16 +1161,27 @@ class PenWindowService {
         // Generate prompt message
         let promptMessage = generatePromptMessage(prompt: selectedPrompt, text: originalText)
         
+        // Show loading indicator
+        await MainActor.run {
+            showLoadingIndicator()
+        }
+        
         // Call AIManager.AITestCall()
         do {
             guard let aiManager = userService.aiManager else {
                 print("[PenWindowService] AIManager not available")
+                await MainActor.run {
+                    hideLoadingIndicator()
+                }
                 return
             }
             
             // Configure AIManager with the selected provider
             guard let user = userService.currentUser else {
                 print("[PenWindowService] No user logged in")
+                await MainActor.run {
+                    hideLoadingIndicator()
+                }
                 return
             }
             
@@ -1011,6 +1191,9 @@ class PenWindowService {
             
             guard let connection = selectedConnection else {
                 print("[PenWindowService] No connection found for selected provider")
+                await MainActor.run {
+                    hideLoadingIndicator()
+                }
                 return
             }
             
@@ -1025,11 +1208,13 @@ class PenWindowService {
             // Update enhanced text field with trimmed response
             await MainActor.run {
                 updateEnhancedText(aiResponse.content)
+                hideLoadingIndicator()
             }
         } catch {
             print("[PenWindowService] Failed to enhance text: \(error)")
             await MainActor.run {
                 updateEnhancedText(LocalizationService.shared.localizedString(for: "pen_enhance_error"))
+                hideLoadingIndicator()
             }
         }
     }
@@ -1145,5 +1330,190 @@ class PenWindowService {
     
     // MARK: - UI Update Methods
     
-
+    // MARK: - Loading Indicator Methods
+    
+    private func showLoadingIndicator() {
+        guard let contentView = window?.contentView else { return }
+        
+        // Check if loading indicator already exists
+        for subview in contentView.subviews {
+            if subview.identifier?.rawValue == "pen_loading_indicator" {
+                return
+            }
+        }
+        
+        // Find the enhanced text container to get its center
+        guard let enhancedTextContainer = findEnhancedTextContainer() else { return }
+        
+        // Calculate center of the enhanced text container
+        let containerFrame = enhancedTextContainer.frame
+        let centerX = containerFrame.origin.x + containerFrame.width / 2
+        let centerY = containerFrame.origin.y + containerFrame.height / 2
+        
+        // Create loading indicator overlay with specified size and centered position
+        let loadingWidth: CGFloat = 120
+        let loadingHeight: CGFloat = 45
+        let loadingOverlay = NSView(frame: CGRect(
+            x: centerX - loadingWidth / 2,
+            y: centerY - loadingHeight / 2,
+            width: loadingWidth,
+            height: loadingHeight
+        ))
+        loadingOverlay.wantsLayer = true
+        loadingOverlay.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.3).cgColor
+        loadingOverlay.layer?.cornerRadius = 4.0
+        loadingOverlay.identifier = NSUserInterfaceItemIdentifier("pen_loading_indicator")
+        
+        // Create a container for the label to ensure proper centering
+        let labelContainer = NSView(frame: CGRect(x: 0, y: 0, width: loadingWidth, height: loadingHeight))
+        labelContainer.autoresizesSubviews = true
+        
+        // Create loading text label
+        let loadingLabel = NSTextField(frame: CGRect(x: 10, y: 0, width: loadingWidth - 20, height: loadingHeight))
+        loadingLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_refining_content")
+        loadingLabel.isBezeled = false
+        loadingLabel.drawsBackground = false
+        loadingLabel.isEditable = false
+        loadingLabel.isSelectable = false
+        loadingLabel.font = NSFont.systemFont(ofSize: 14, weight: .medium)
+        loadingLabel.textColor = NSColor.white
+        loadingLabel.alignment = .center
+        loadingLabel.identifier = NSUserInterfaceItemIdentifier("pen_loading_text")
+        
+        // Center the label vertically by setting its frame properly
+        let font = NSFont.systemFont(ofSize: 14, weight: .medium)
+        let lineHeight = font.ascender - font.descender
+        let labelY = (loadingHeight - lineHeight) / 2.0
+        loadingLabel.frame = CGRect(x: 10, y: labelY, width: loadingWidth - 20, height: lineHeight)
+        
+        labelContainer.addSubview(loadingLabel)
+        loadingOverlay.addSubview(labelContainer)
+        contentView.addSubview(loadingOverlay, positioned: .above, relativeTo: enhancedTextContainer)
+        
+        // Animate fade in
+        loadingOverlay.alphaValue = 0.0
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.3
+            loadingOverlay.animator().alphaValue = 1.0
+        }
+        
+        // Add pulse animation to the text
+        animateLoadingText(loadingLabel)
+    }
+    
+    private func hideLoadingIndicator() {
+        guard let contentView = window?.contentView else { return }
+        
+        for subview in contentView.subviews {
+            if subview.identifier?.rawValue == "pen_loading_indicator" {
+                // Animate fade out
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.3
+                    subview.animator().alphaValue = 0.0
+                } completionHandler: {
+                    subview.removeFromSuperview()
+                }
+                break
+            }
+        }
+    }
+    
+    private func animateLoadingText(_ label: NSTextField) {
+        // Create pulse animation
+        let animation = CABasicAnimation(keyPath: "opacity")
+        animation.fromValue = 0.7
+        animation.toValue = 1.0
+        animation.duration = 1.0
+        animation.repeatCount = .infinity
+        animation.autoreverses = true
+        
+        label.layer?.add(animation, forKey: "pulseAnimation")
+    }
+    
+    private func findEnhancedTextContainer() -> NSView? {
+        guard let contentView = window?.contentView else { return nil }
+        
+        for subview in contentView.subviews {
+            if subview.identifier?.rawValue == "pen_enhanced_text" {
+                return subview
+            }
+        }
+        return nil
+    }
+    
+    func updateUserLabel() {
+        DispatchQueue.main.async {
+            if let window = self.window, let contentView = window.contentView {
+                // Find the user label container
+                for subview in contentView.subviews {
+                    if subview.identifier == NSUserInterfaceItemIdentifier("pen_userlabel") {
+                        // Find the user name label and profile image within the container
+                        for labelSubview in subview.subviews {
+                            if let userNameLabel = labelSubview as? NSTextField, userNameLabel.identifier == NSUserInterfaceItemIdentifier("pen_userlable_text") {
+                                // Update the user name
+                                if let user = self.userService.currentUser {
+                                    let name = user.name
+                                    // Trim name to fit width
+                                    let font = NSFont.boldSystemFont(ofSize: 12)
+                                    let trimmedName = self.trimTextToFitWidth(name, font: font, maxWidth: 90)
+                                    userNameLabel.stringValue = trimmedName
+                                } else {
+                                    userNameLabel.stringValue = LocalizationService.shared.localizedString(for: "no_user")
+                                }
+                            } else if let profileImage = labelSubview as? NSImageView, profileImage.identifier == NSUserInterfaceItemIdentifier("pen_userlabel_img") {
+                                // Update the profile image
+                                if let user = self.userService.currentUser, let profileImageData = user.profileImage, !profileImageData.isEmpty {
+                                    // Check if it's a base64-encoded image
+                                    if profileImageData.hasPrefix("data:image") {
+                                        // Handle base64-encoded image
+                                        if let base64String = profileImageData.components(separatedBy: ",").last {
+                                            if let imageData = Data(base64Encoded: base64String) {
+                                                if let image = NSImage(data: imageData) {
+                                                    profileImage.image = image
+                                                } else {
+                                                    // Use placeholder if image fails to load
+                                                    self.setPlaceholderImage(to: profileImage)
+                                                }
+                                            } else {
+                                                // Use placeholder if base64 data is invalid
+                                                self.setPlaceholderImage(to: profileImage)
+                                            }
+                                        } else {
+                                            // Use placeholder if base64 data is invalid
+                                            self.setPlaceholderImage(to: profileImage)
+                                        }
+                                    } else {
+                                        // Try to load as file path
+                                        let possiblePaths = [
+                                            "Resources/ProfileImages/\(profileImageData)",
+                                            "mac-app/Pen/Resources/ProfileImages/\(profileImageData)",
+                                            "pen/mac-app/Pen/Resources/ProfileImages/\(profileImageData)"
+                                        ]
+                                        
+                                        var foundImage = false
+                                        for path in possiblePaths {
+                                            if let image = NSImage(contentsOfFile: path) {
+                                                profileImage.image = image
+                                                foundImage = true
+                                                break
+                                            }
+                                        }
+                                        
+                                        if !foundImage {
+                                            // Add a placeholder image if no profile image found
+                                            self.setPlaceholderImage(to: profileImage)
+                                        }
+                                    }
+                                } else {
+                                    // Add a placeholder image if no user or no profile image
+                                    self.setPlaceholderImage(to: profileImage)
+                                }
+                            }
+                        }
+                        break
+                    }
+                }
+            }
+        }
+    }
 }

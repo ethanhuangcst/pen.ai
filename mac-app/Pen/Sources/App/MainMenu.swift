@@ -20,13 +20,13 @@ func installMainMenu() {
     
     editMenu.addItem(  
         withTitle: "Undo",  
-        action: #selector(NSResponder.undo(_:)),  
+        action: Selector("undo:"),  
         keyEquivalent: "z"  
     )  
     
     editMenu.addItem(  
         withTitle: "Redo",  
-        action: #selector(NSResponder.redo(_:)),  
+        action: Selector("redo:"),  
         keyEquivalent: "Z"  
     )  
     
@@ -34,25 +34,25 @@ func installMainMenu() {
     
     editMenu.addItem(  
         withTitle: "Cut",  
-        action: #selector(NSText.cut(_:)),  
+        action: Selector("cut:"),  
         keyEquivalent: "x"  
     )  
     
     editMenu.addItem(  
         withTitle: "Copy",  
-        action: #selector(NSText.copy(_:)),  
+        action: Selector("copy:"),  
         keyEquivalent: "c"  
     )  
     
     editMenu.addItem(  
         withTitle: "Paste",  
-        action: #selector(NSText.paste(_:)),  
+        action: Selector("paste:"),  
         keyEquivalent: "v"  
     )  
     
     editMenu.addItem(  
         withTitle: "Select All",  
-        action: #selector(NSText.selectAll(_:)),  
+        action: Selector("selectAll:"),  
         keyEquivalent: "a"  
     )  
     
@@ -60,29 +60,23 @@ func installMainMenu() {
     
     editMenu.addItem(  
         withTitle: "Find...",  
-        action: #selector(NSResponder.performFindPanelAction(_:)),  
+        action: Selector("performFindPanelAction:"),  
         keyEquivalent: "f"  
     )  
     
     editMenu.addItem(  
         withTitle: "Find Next",  
-        action: #selector(NSResponder.findNext(_:)),  
+        action: Selector("findNext:"),  
         keyEquivalent: "g"  
     )  
     
     editMenu.addItem(  
         withTitle: "Find Previous",  
-        action: #selector(NSResponder.findPrevious(_:)),  
+        action: Selector("findPrevious:"),  
         keyEquivalent: "G"  
     )  
     
-    editMenu.addItem(.separator())  
-    
-    editMenu.addItem(  
-        withTitle: "Duplicate",  
-        action: #selector(NSResponder.duplicate(_:)),  
-        keyEquivalent: "d"  
-    )  
+      
     
     editMenuItem.submenu = editMenu  
     mainMenu.addItem(editMenuItem)  
