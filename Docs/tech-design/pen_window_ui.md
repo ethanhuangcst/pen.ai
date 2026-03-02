@@ -11,19 +11,19 @@ The Pen window is a compact, focused UI for the Pen AI application, featuring a 
 
 define container view in Pen window:
 ### identifier = pen_userlabel
-### size = 110x30
+### size = 120x30
 ### background = transparent
-### coordinate = 44, 238
+### coordinate = 232, 352
 ### user profile image thumbnail 
 #### identifier = pen_userlabel_img
 #### image = user profile image
-#### size = 30x30
+#### size = 20x20
 #### coordinate = 0, 0, relative position
 ### user name text label
 #### identifier = pen_userlable_text
 #### font = Pen global font, size = 12, bold
-#### size = 70x30
-#### coordinate = 40, 0, relative position
+#### size = 90x30
+#### coordinate = 26, -13, relative position
 #### text = user name, trimed to fit width
 #### support i18n
 
@@ -53,11 +53,11 @@ define container view in Pen window:
 - **Identifier**: `pen_footer`
 
 ### Footer Instruction
-- **Content**: "Toggle window with [shortcut]" (localized)
+- **Content**: "Hot key: [shortcut]" (localized)
 - **Font**: System font, 12pt
 - **Color**: Secondary label color
 - **Alignment**: Left
-- **Position**: (30, 9) absolute (relative to window bottom-left)
+- **Position**: (20, 24) absolute (relative to window bottom-left)
 - **Identifier**: `pen_footer_instruction`
 - **Localization**: Uses `pen_footer_instruction` key in Localizable.strings
 
@@ -216,3 +216,56 @@ loadingIndicator.layer?.add(pulseAnimation, forKey: "pulse")
 - **Show**: In the method that sends the prompt to the AI
 - **Hide**: In the completion handler that receives the AI response
 - **Localization**: Add "refining_content" key to Localizable.strings files
+
+## Floating Message
+
+### Overview
+The floating message is a temporary notification that appears when the application starts, welcoming the user and providing a brief introduction to Pen AI.
+
+### UI Components
+
+### Floating Message Window
+- **Size**: Dynamic, based on content (minimum 240x40)
+- **Position**: Below the menu bar icon
+- **Background**: Semi-transparent system blue (75% opacity)
+- **Border**: Rounded corners, 12pt
+- **Shadow**: Light shadow for depth
+- **Level**: Floating (above other windows)
+
+### Floating Message Text
+- **Content**: "Hello, [user name], I'm Pen, your AI writing assistant."
+- **Font**: System font, 14pt
+- **Color**: White
+- **Alignment**: Center
+- **Position**: Center of the window
+
+### Animation
+- **Type**: Fade-in/out
+- **Duration**: 0.3 seconds fade-in, 3 seconds display, 0.3 seconds fade-out
+- **Implementation**: Use Core Animation for smooth transitions
+
+### Technical Implementation
+```swift
+// Fade in animation
+NSAnimationContext.runAnimationGroup { context in
+    context.duration = 0.3
+    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+    popupWindow.animator().alphaValue = 1.0
+}
+
+// Fade out animation after 3 seconds
+DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+    NSAnimationContext.runAnimationGroup { context in
+        context.duration = 0.3
+        context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        popupWindow.animator().alphaValue = 0.0
+    } completionHandler: {
+        popupWindow.orderOut(nil)
+    }
+}
+```
+
+### Integration Points
+- **Show**: In the initialization process after successful login
+- **Content**: Uses localized string with user name format
+- **Positioning**: Calculated relative to the menu bar icon
