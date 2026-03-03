@@ -99,7 +99,7 @@ class BaseWindow: NSWindow {
         contentView.wantsLayer = true
         
         // Set white background color
-        contentView.layer?.backgroundColor = NSColor.white.cgColor
+        contentView.layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         
         contentView.layer?.cornerRadius = 12
         contentView.layer?.masksToBounds = true
@@ -108,7 +108,7 @@ class BaseWindow: NSWindow {
         
         // Add shadow effect
         let shadow = NSShadow()
-        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.shadowColor = ColorService.shared.shadowColor.withAlphaComponent(0.3)
         shadow.shadowOffset = NSSize(width: 0, height: -3)
         shadow.shadowBlurRadius = 8
         

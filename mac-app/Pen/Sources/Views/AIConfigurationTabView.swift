@@ -35,7 +35,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         super.init(frame: frame)
         
         wantsLayer = true
-        layer?.backgroundColor = NSColor.white.cgColor
+        layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         
         setupUI()
         setupTableView()
@@ -150,7 +150,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
     private func setupTableContainer(windowWidth: CGFloat, windowHeight: CGFloat) {
         tableContainer.frame = NSRect(x: 20, y: 50, width: windowWidth - 40, height: windowHeight - 166)
         tableContainer.wantsLayer = true
-        tableContainer.layer?.backgroundColor = NSColor.white.cgColor
+        tableContainer.layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         tableContainer.layer?.borderWidth = 1.0
         tableContainer.layer?.borderColor = NSColor.lightGray.withAlphaComponent(0.5).cgColor
         tableContainer.layer?.cornerRadius = 8.0
@@ -641,13 +641,13 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         // Create content view
         let contentView = NSView(frame: NSRect(x: 0, y: 0, width: dialogWidth, height: dialogHeight))
         contentView.wantsLayer = true
-        contentView.layer?.backgroundColor = NSColor.white.cgColor
+        contentView.layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         contentView.layer?.cornerRadius = 12
         contentView.layer?.masksToBounds = true
         
         // Add shadow
         let shadow = NSShadow()
-        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.shadowColor = ColorService.shared.shadowColor.withAlphaComponent(0.3)
         shadow.shadowOffset = NSSize(width: 0, height: -3)
         shadow.shadowBlurRadius = 8
         

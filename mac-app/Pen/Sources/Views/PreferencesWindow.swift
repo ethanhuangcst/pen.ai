@@ -76,7 +76,7 @@ class PreferencesWindow: BaseWindow {
         // Add user_settings frame
         let userSettingsFrame = NSView(frame: NSRect(x: 20, y: 20, width: windowWidth - 40, height: windowHeight - 120)) // Space from header
         userSettingsFrame.wantsLayer = true
-        userSettingsFrame.layer?.backgroundColor = NSColor.white.cgColor
+        userSettingsFrame.layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         
         // Add tab view to user_settings frame
         let tabView = NSTabView(frame: NSRect(x: 0, y: 0, width: userSettingsFrame.frame.width, height: userSettingsFrame.frame.height))
@@ -103,7 +103,7 @@ class PreferencesWindow: BaseWindow {
         // Create tab content view
         let tabContentView = NSView(frame: NSRect(origin: .zero, size: tabView.frame.size))
         tabContentView.wantsLayer = true
-        tabContentView.layer?.backgroundColor = NSColor.white.cgColor
+        tabContentView.layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         
         // Add content based on tab title
         if title == LocalizationService.shared.localizedString(for: "account") {

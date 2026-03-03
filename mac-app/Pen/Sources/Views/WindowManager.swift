@@ -117,7 +117,7 @@ class WindowManager {
             
             // Add shadow effect
             let shadow = NSShadow()
-            shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+            shadow.shadowColor = ColorService.shared.shadowColor.withAlphaComponent(0.3)
             shadow.shadowOffset = NSSize(width: 0, height: -2)
             shadow.shadowBlurRadius = 6
             containerView.shadow = shadow

@@ -117,7 +117,31 @@ class ContentHistoryModel {
             processedString = processedString.prefix(upTo: openParen.lowerBound).trimmingCharacters(in: .whitespaces)
         }
         
+        // Handle format with space before timezone offset (e.g., "2026-03-03 14:50:15 +0000")
+        // Remove the space before the timezone offset to make it parseable
+        // Use regex to find and fix the pattern: space followed by +/- and 4 digits
+        if let range = processedString.range(of: " [+-]\\d{4}$", options: .regularExpression) {
+            let substring = processedString[range]
+            let fixed = substring.dropFirst()
+            processedString.replaceSubrange(range, with: fixed)
+        }
+        
         print("[ContentHistoryModel] Processing date string: \(processedString)")
+        
+        // Try format with timezone offset (e.g., "2026-03-03 13:33:26+0000")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ssZ"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        if let date = formatter.date(from: processedString) {
+            print("[ContentHistoryModel] Successfully parsed with 'yyyy-MM-dd HH:mm:ssZ' format: \(date)")
+            return date
+        }
+        
+        // Try format with space before timezone (e.g., "2026-03-03 13:33:26 +0000")
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
+        if let date = formatter.date(from: processedString) {
+            print("[ContentHistoryModel] Successfully parsed with 'yyyy-MM-dd HH:mm:ss Z' format: \(date)")
+            return date
+        }
         
         // Try format with GMT timezone offset (e.g., "GMT+0800")
         formatter.dateFormat = "EEE MMM dd yyyy HH:mm:ss 'GMT'Z"

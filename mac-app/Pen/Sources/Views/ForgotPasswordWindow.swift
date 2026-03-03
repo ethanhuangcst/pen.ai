@@ -32,7 +32,7 @@ class ForgotPasswordWindow: BaseWindow {
         // Create content view
         let contentView = NSView(frame: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight))
         contentView.wantsLayer = true
-        contentView.layer?.backgroundColor = NSColor.white.cgColor
+        contentView.layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         contentView.layer?.cornerRadius = 12
         contentView.layer?.masksToBounds = true
         
@@ -42,7 +42,7 @@ class ForgotPasswordWindow: BaseWindow {
         
         // Add shadow (matching delete confirmation dialog style)
         let shadow = NSShadow()
-        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.shadowColor = ColorService.shared.shadowColor.withAlphaComponent(0.3)
         shadow.shadowOffset = NSSize(width: 0, height: -3)
         shadow.shadowBlurRadius = 8
         

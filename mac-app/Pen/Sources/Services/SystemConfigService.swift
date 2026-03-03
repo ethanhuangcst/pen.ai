@@ -1,5 +1,6 @@
 import Foundation
 import MySQLKit
+import AppKit
 
 class SystemConfigService {
     static let shared = SystemConfigService()
@@ -15,6 +16,45 @@ class SystemConfigService {
     
     // Default prompt constant
     static let DEFAULT_PROMPT_FLAG = 1 // Value for is_default column
+    
+    // Appearance preferences
+    private let autoSwitchAppearanceKey = "autoSwitchAppearance"
+    private let manualAppearanceKey = "manualAppearance"
+    
+    var autoSwitchAppearance: Bool {
+        get {
+            return UserDefaults.standard.bool(forKey: autoSwitchAppearanceKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: autoSwitchAppearanceKey)
+        }
+    }
+    
+    var manualAppearance: NSAppearance.Name? {
+        get {
+            let rawValue = UserDefaults.standard.string(forKey: manualAppearanceKey)
+            switch rawValue {
+            case "dark":
+                return .darkAqua
+            case "light":
+                return .aqua
+            default:
+                return nil
+            }
+        }
+        set {
+            let rawValue: String?
+            switch newValue {
+            case .darkAqua:
+                rawValue = "dark"
+            case .aqua:
+                rawValue = "light"
+            default:
+                rawValue = nil
+            }
+            UserDefaults.standard.set(rawValue, forKey: manualAppearanceKey)
+        }
+    }
     
     // Configuration loading state
     private var isConfigLoaded = false

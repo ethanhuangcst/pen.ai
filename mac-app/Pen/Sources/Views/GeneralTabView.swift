@@ -19,7 +19,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         super.init(frame: frame)
         
         wantsLayer = true
-        layer?.backgroundColor = NSColor.white.cgColor
+        layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         
         // Load saved shortcut from UserDefaults
         loadSavedShortcut()

@@ -26,7 +26,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         super.init(frame: frame)
         
         wantsLayer = true
-        layer?.backgroundColor = NSColor.white.cgColor
+        layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         
         setupAccountTab()
     }
@@ -175,7 +175,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         passwordField = NSSecureTextField(frame: NSRect(x: 120, y: 80, width: 200, height: 24))
         passwordField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
-        passwordField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
+        passwordField.backgroundColor = ColorService.shared.textBackgroundColor
         passwordField.tag = 102 // Tag for password field
         passwordSection.addSubview(passwordField)
         
@@ -183,7 +183,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         plainPasswordField = NSTextField(frame: NSRect(x: 120, y: 80, width: 200, height: 24))
         plainPasswordField.placeholderString = LocalizationService.shared.localizedString(for: "new_password")
         plainPasswordField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
-        plainPasswordField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
+        plainPasswordField.backgroundColor = ColorService.shared.textBackgroundColor
         plainPasswordField.isHidden = true
         plainPasswordField.tag = 104 // Tag for plain password field
         passwordSection.addSubview(plainPasswordField)
@@ -219,7 +219,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         confirmField = NSSecureTextField(frame: NSRect(x: 120, y: 40, width: 200, height: 24))
         confirmField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
-        confirmField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
+        confirmField.backgroundColor = ColorService.shared.textBackgroundColor
         confirmField.tag = 103 // Tag for confirm password field
         passwordSection.addSubview(confirmField)
         
@@ -227,7 +227,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         plainConfirmField = NSTextField(frame: NSRect(x: 120, y: 40, width: 200, height: 24))
         plainConfirmField.placeholderString = LocalizationService.shared.localizedString(for: "confirm_password")
         plainConfirmField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
-        plainConfirmField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
+        plainConfirmField.backgroundColor = ColorService.shared.textBackgroundColor
         plainConfirmField.isHidden = true
         plainConfirmField.tag = 105 // Tag for plain confirm password field
         passwordSection.addSubview(plainConfirmField)

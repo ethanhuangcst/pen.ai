@@ -532,7 +532,376 @@
 - **Accessibility**: All accessibility tests pass
 - **Adoption**: High usage of auto-switch feature
 
-## 7. Other Details
+## 7. Language Switching Design (i18n)
+
+### 7.1 Overview
+
+The General tab in Preferences window provides a dropdown list for users to switch between supported languages. This section describes the implementation design for runtime language switching based on the existing i18n infrastructure.
+
+### 7.2 Current Implementation Status
+
+#### Existing Components
+- **LocalizationService.swift**: Loads localized strings from `.lproj/Localizable.strings` files
+- **Localization Files**: 
+  - `Resources/en.lproj/Localizable.strings` (English)
+  - `Resources/zh-Hans.lproj/Localizable.strings` (Chinese Simplified)
+- **GeneralTabView.swift**: Contains language dropdown UI (partially implemented)
+- **All UI Files**: Already use `LocalizationService.shared.localizedString(for: "key")` for i18n
+
+#### Current Limitations
+- Language is determined by system preference at app launch
+- No runtime language switching support
+- User language preference is not persisted
+- UI does not refresh when language changes
+
+### 7.3 Design Requirements
+
+#### Functional Requirements
+1. User can select language from dropdown in General tab
+2. Language preference is persisted across app restarts
+3. All UI text updates immediately when language changes
+4. Supported languages: English (en), Chinese Simplified (zh-Hans)
+
+#### Non-Functional Requirements
+1. Language switch should be instantaneous (< 100ms)
+2. No app restart required
+3. All windows and views should update consistently
+4. Memory efficient (no duplicate string loading)
+
+### 7.4 Technical Design
+
+#### 7.4.1 Data Model
+
+**Language Enumeration**
+```swift
+enum AppLanguage: String, CaseIterable {
+    case english = "en"
+    case chineseSimplified = "zh-Hans"
+    
+    var displayName: String {
+        switch self {
+        case .english: return "English"
+        case .chineseSimplified: return "简体中文"
+        }
+    }
+    
+    var lprojName: String {
+        switch self {
+        case .english: return "en.lproj"
+        case .chineseSimplified: return "zh-Hans.lproj"
+        }
+    }
+}
+```
+
+**User Preferences Storage**
+- Storage: `UserDefaults`
+- Key: `pen.userLanguage`
+- Value: Language raw value (e.g., "en", "zh-Hans")
+- Default: System preferred language or English
+
+#### 7.4.2 LocalizationService Enhancement
+
+**New Properties and Methods**
+```swift
+class LocalizationService {
+    static let shared = LocalizationService()
+    private var strings: [String: String] = [:]
+    private var currentLanguage: AppLanguage = .english
+    
+    // Notification name for language change
+    static let languageDidChangeNotification = Notification.Name("LanguageDidChangeNotification")
+    
+    // Current language property
+    var language: AppLanguage {
+        return currentLanguage
+    }
+    
+    // Initialize with saved preference or system language
+    private init() {
+        loadSavedLanguagePreference()
+        loadStrings()
+    }
+    
+    // Load saved language from UserDefaults
+    private func loadSavedLanguagePreference() {
+        if let savedCode = UserDefaults.standard.string(forKey: "pen.userLanguage"),
+           let language = AppLanguage(rawValue: savedCode) {
+            currentLanguage = language
+        } else {
+            // Fallback to system preference
+            let preferredLanguage = Locale.preferredLanguages.first ?? "en"
+            if preferredLanguage.hasPrefix("zh") {
+                currentLanguage = .chineseSimplified
+            } else {
+                currentLanguage = .english
+            }
+        }
+    }
+    
+    // Switch to a new language
+    func setLanguage(_ language: AppLanguage) {
+        guard language != currentLanguage else { return }
+        
+        currentLanguage = language
+        
+        // Save preference
+        UserDefaults.standard.set(language.rawValue, forKey: "pen.userLanguage")
+        
+        // Reload strings
+        reloadStrings()
+        
+        // Post notification for UI updates
+        NotificationCenter.default.post(name: Self.languageDidChangeNotification, object: nil)
+    }
+    
+    // Modified loadStrings to use currentLanguage
+    private func loadStrings() {
+        let lprojName = currentLanguage.lprojName
+        
+        let possiblePaths = [
+            // Development path
+            "\(FileManager.default.currentDirectoryPath)/Resources/\(lprojName)/Localizable.strings",
+            // Build path
+            Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: lprojName),
+            // Alternative build path
+            Bundle.main.path(forResource: "Localizable", ofType: "strings")
+        ]
+        
+        for path in possiblePaths {
+            if let path = path, FileManager.default.fileExists(atPath: path) {
+                if let dict = NSDictionary(contentsOfFile: path) as? [String: String] {
+                    strings = dict
+                    return
+                }
+            }
+        }
+        
+        print("LocalizationService: Failed to load Localizable.strings for \(lprojName)")
+    }
+}
+```
+
+#### 7.4.3 UI Update Mechanism
+
+**Notification-Based Updates**
+
+Each view that displays localized text should observe the language change notification:
+
+```swift
+// In view initialization
+NotificationCenter.default.addObserver(
+    self,
+    selector: #selector(languageDidChange),
+    name: LocalizationService.languageDidChangeNotification,
+    object: nil
+)
+
+// Handler method
+@objc private func languageDidChange() {
+    // Update all localized UI elements
+    titleLabel.stringValue = LocalizationService.shared.localizedString(for: "title_key")
+    button.title = LocalizationService.shared.localizedString(for: "button_key")
+    // ... update other UI elements
+}
+
+// Clean up in deinit
+deinit {
+    NotificationCenter.default.removeObserver(self)
+}
+```
+
+**BaseWindow Enhancement**
+
+Add a common method in `BaseWindow` to handle language changes:
+
+```swift
+class BaseWindow: NSWindow {
+    // ... existing code ...
+    
+    func setupLanguageObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(languageDidChange),
+            name: LocalizationService.languageDidChangeNotification,
+            object: nil
+        )
+    }
+    
+    @objc func languageDidChange() {
+        // Override in subclasses to update UI
+    }
+}
+```
+
+#### 7.4.4 GeneralTabView Implementation
+
+**Language Dropdown Handler**
+```swift
+@objc private func languageSelected(_ sender: NSPopUpButton) {
+    let selectedIndex = sender.indexOfSelectedItem
+    
+    let selectedLanguage: AppLanguage
+    switch selectedIndex {
+    case 0:
+        selectedLanguage = .english
+    case 1:
+        selectedLanguage = .chineseSimplified
+    default:
+        selectedLanguage = .english
+    }
+    
+    // Update localization service
+    LocalizationService.shared.setLanguage(selectedLanguage)
+    
+    // Update dropdown items with new language
+    updateLanguageDropdownItems()
+    
+    // Show confirmation message
+    if let parentWindow = self.parentWindow as? BaseWindow {
+        parentWindow.displayPopupMessage(
+            LocalizationService.shared.localizedString(for: "language_changed_successfully")
+        )
+    }
+}
+
+private func updateLanguageDropdownItems() {
+    languagePopup.removeAllItems()
+    languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "english_language"))
+    languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "chinese_language"))
+    languagePopup.selectItem(at: LocalizationService.shared.language == .english ? 0 : 1)
+}
+```
+
+**Initialization with Saved Preference**
+```swift
+private func setupLanguageSection(_ section: NSView) {
+    // ... existing UI setup code ...
+    
+    // Set initial selection based on current language
+    languagePopup.selectItem(at: LocalizationService.shared.language == .english ? 0 : 1)
+}
+```
+
+### 7.5 Implementation Plan
+
+#### Phase 1: Core Infrastructure (1 day)
+1. Create `AppLanguage` enum
+2. Enhance `LocalizationService` with language switching
+3. Add UserDefaults persistence
+4. Add notification system
+
+#### Phase 2: UI Updates (2 days)
+1. Update `BaseWindow` with language observer
+2. Update all view files to observe language changes:
+   - `LoginWindow.swift`
+   - `RegistrationWindow.swift`
+   - `AccountTabView.swift`
+   - `PreferencesWindow.swift`
+   - `GeneralTabView.swift`
+   - `PromptsTabView.swift`
+   - `HistoryTabView.swift`
+   - `AIConfigurationTabView.swift`
+   - `ForgotPasswordWindow.swift`
+   - `MainMenu.swift`
+3. Implement `languageDidChange()` in each view
+
+#### Phase 3: General Tab Integration (0.5 day)
+1. Implement language dropdown handler
+2. Add success message localization
+3. Test language switching
+
+#### Phase 4: Testing (1 day)
+1. Test all views update correctly
+2. Test persistence across app restarts
+3. Test edge cases (no internet, corrupted preferences)
+4. Test with both languages
+
+### 7.6 Files to Modify
+
+| File | Changes |
+|------|---------|
+| `LocalizationService.swift` | Add language switching support |
+| `GeneralTabView.swift` | Implement dropdown handler |
+| `BaseWindow.swift` | Add language change observer |
+| `LoginWindow.swift` | Add `languageDidChange()` handler |
+| `RegistrationWindow.swift` | Add `languageDidChange()` handler |
+| `AccountTabView.swift` | Add `languageDidChange()` handler |
+| `PreferencesWindow.swift` | Add `languageDidChange()` handler |
+| `PromptsTabView.swift` | Add `languageDidChange()` handler |
+| `HistoryTabView.swift` | Add `languageDidChange()` handler |
+| `AIConfigurationTabView.swift` | Add `languageDidChange()` handler |
+| `ForgotPasswordWindow.swift` | Add `languageDidChange()` handler |
+| `MainMenu.swift` | Add `languageDidChange()` handler |
+| `en.lproj/Localizable.strings` | Add `language_changed_successfully` |
+| `zh-Hans.lproj/Localizable.strings` | Add `language_changed_successfully` |
+
+### 7.7 New Localization Keys
+
+**English (en.lproj/Localizable.strings)**
+```
+"language_changed_successfully" = "Language changed successfully. The interface has been updated.";
+```
+
+**Chinese (zh-Hans.lproj/Localizable.strings)**
+```
+"language_changed_successfully" = "语言已更改。界面已更新。";
+```
+
+### 7.8 Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     User Selects Language                        │
+│                    (GeneralTabView Dropdown)                     │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              GeneralTabView.languageSelected()                   │
+│                           ↓                                      │
+│         LocalizationService.shared.setLanguage()                 │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+          ┌───────────────┼───────────────┐
+          ▼               ▼               ▼
+┌─────────────────┐ ┌─────────────┐ ┌─────────────────┐
+│ Save to         │ │ Reload      │ │ Post            │
+│ UserDefaults    │ │ Strings     │ │ Notification    │
+└─────────────────┘ └─────────────┘ └────────┬────────┘
+                                               │
+                          ┌────────────────────┼────────────────────┐
+                          ▼                    ▼                    ▼
+                   ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+                   │ LoginWindow │      │ AccountTab  │      │ All Other   │
+                   │             │      │ View        │      │ Views       │
+                   └──────┬──────┘      └──────┬──────┘      └──────┬──────┘
+                          │                    │                    │
+                          ▼                    ▼                    ▼
+                   ┌─────────────────────────────────────────────────────┐
+                   │          Update All Localized UI Elements           │
+                   │   (labels, buttons, tooltips, placeholders, etc.)   │
+                   └─────────────────────────────────────────────────────┘
+```
+
+### 7.9 Best Practices
+
+1. **Always use LocalizationService**: Never hardcode UI strings
+2. **Observe notifications**: All views with text should observe language changes
+3. **Clean up observers**: Remove observers in `deinit` to prevent memory leaks
+4. **Test both languages**: Verify all UI elements in both English and Chinese
+5. **Handle missing keys**: Provide fallback keys for missing translations
+6. **Keep keys organized**: Use consistent naming conventions for localization keys
+
+### 7.10 Future Enhancements
+
+1. **More Languages**: Add support for additional languages (Japanese, Korean, etc.)
+2. **Language Pack Downloads**: Allow users to download additional language packs
+3. **Custom Translations**: Allow users to customize translations
+4. **Pluralization Support**: Add proper plural form handling
+5. **RTL Support**: Add right-to-left language support for Arabic, Hebrew, etc.
+
+## 8. Other Details
 
 ### 6.1 Accessibility Considerations
 - **Contrast Ratios**: Ensure minimum 4.5:1 contrast for text

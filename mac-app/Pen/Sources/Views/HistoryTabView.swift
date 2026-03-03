@@ -36,7 +36,7 @@ class HistoryTabView: NSView {
         let windowHeight = frame.height
         tableContainer.frame = NSRect(x: 20, y: 50, width: windowWidth - 40, height: windowHeight - 136)
         tableContainer.wantsLayer = true
-        tableContainer.layer?.backgroundColor = NSColor.white.cgColor
+        tableContainer.layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         tableContainer.layer?.borderWidth = 1.0
         tableContainer.layer?.borderColor = NSColor.lightGray.withAlphaComponent(0.5).cgColor
         tableContainer.layer?.cornerRadius = 8.0

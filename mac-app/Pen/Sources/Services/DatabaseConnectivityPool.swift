@@ -92,20 +92,39 @@ class MySQLConnection: DatabaseConnection {
             // Execute the query
             let rows = try await connection.query(query, parameters).get()
             
+            print("[MySQLConnection] Query returned \(rows.count) rows")
+            fflush(stdout)
+            
             // Process the result
             var resultRows: [[String: Any]] = []
             
-            for row in rows {
+            for (rowIndex, row) in rows.enumerated() {
                 var rowData: [String: Any] = [:]
                 
-                // Debug: Print all column names
-                print("[MySQLConnection] Debug: Row columns:")
-                // Try to print actual column names by checking common possibilities
-                let commonColumns = ["id", "user_id", "prompt_name", "prompt_text", "created_datetime", "updated_datetime", "system_flag", "name", "email", "password", "profileImage", "createdAt", "updatedAt", "apiKey", "apiProvider"]
-                for columnName in commonColumns {
-                    if let _ = row.column(columnName) {
-                        print("[MySQLConnection] Debug: Column found: \(columnName)")
+                // Debug: Print ALL column names for the first row of content_history queries
+                if query.contains("content_history") && rowIndex == 0 {
+                    print("[MySQLConnection] ========== CONTENT_HISTORY QUERY DEBUG ==========")
+                    print("[MySQLConnection] Query: \(query)")
+                    print("[MySQLConnection] Row \(rowIndex) - Checking ALL possible columns:")
+                    
+                    // List all columns that might be in content_history table
+                    let contentHistoryColumns = ["id", "uuid", "user_id", "enhance_datetime", "original_content", "enhanced_content", "prompt_text", "ai_provider", "created_at", "updated_at"]
+                    for columnName in contentHistoryColumns {
+                        if let columnData = row.column(columnName) {
+                            print("[MySQLConnection]   Column '\(columnName)' EXISTS - type: \(type(of: columnData))")
+                            if let str = columnData.string {
+                                print("[MySQLConnection]     string value: \(str.prefix(100))")
+                            } else if let int = columnData.int {
+                                print("[MySQLConnection]     int value: \(int)")
+                            } else {
+                                print("[MySQLConnection]     description: \(columnData.description.prefix(100))")
+                            }
+                        } else {
+                            print("[MySQLConnection]   Column '\(columnName)' NOT FOUND")
+                        }
                     }
+                    print("[MySQLConnection] ================================================")
+                    fflush(stdout)
                 }
                 
                 // Process all columns dynamically
