@@ -16,18 +16,16 @@ class ContentHistoryService {
         defer { DatabaseConnectivityPool.shared.returnConnection(connection) }
         
         do {
-            let query = "SELECT COUNT(*) as count FROM content_history WHERE user_id = ?"
-            let parameters: [MySQLData] = [MySQLData(int: userID)]
+            // Use a different approach - get all records and count them
+            let query = "SELECT uuid FROM content_history WHERE user_id = ?"
+            let parameters: [MySQLData] = [MySQLData(string: "\(userID)")] // Convert to string to match table schema
             
             let result = try await connection.execute(query: query, parameters: parameters)
             
-            if let firstRow = result.first, let count = firstRow["count"] as? Int {
-                print("ContentHistoryService: History count for user \(userID): \(count)")
-                return .success(count)
-            } else {
-                print("ContentHistoryService: No history count found for user \(userID), returning 0")
-                return .success(0)
-            }
+            // Count the number of rows returned
+            let count = result.count
+            print("ContentHistoryService: History count for user \(userID): \(count)")
+            return .success(count)
         } catch {
             print("ContentHistoryService: Error getting history count: \(error)")
             return .failure(error)
@@ -43,7 +41,7 @@ class ContentHistoryService {
         
         do {
             let query = "SELECT * FROM content_history WHERE user_id = ? ORDER BY enhance_datetime DESC, created_at DESC LIMIT ?"
-            let parameters: [MySQLData] = [MySQLData(int: userID), MySQLData(int: count)]
+            let parameters: [MySQLData] = [MySQLData(string: "\(userID)"), MySQLData(int: count)] // Convert to string to match table schema
             
             let result = try await connection.execute(query: query, parameters: parameters)
             
@@ -70,7 +68,7 @@ class ContentHistoryService {
             
             let parameters: [MySQLData] = [
                 MySQLData(string: history.uuid.uuidString),
-                MySQLData(int: userID),
+                MySQLData(string: "\(userID)"), // Convert to string to match table schema
                 MySQLData(string: ContentHistoryModel.isoStringFromDate(history.enhanceDateTime)),
                 MySQLData(string: history.originalContent),
                 MySQLData(string: history.enhancedContent),
@@ -147,7 +145,7 @@ class ContentHistoryService {
                 """
                 
                 let parameters: [MySQLData] = [
-                    MySQLData(int: userID),
+                    MySQLData(string: "\(userID)"), // Convert to string to match table schema
                     MySQLData(int: recordsToDelete)
                 ]
                 
@@ -182,5 +180,17 @@ class ContentHistoryService {
     
     // MARK: - Helper Methods
     
+    /// Test method to verify readHistoryCount works correctly
+    public func testReadHistoryCount(userID: Int) async {
+        print("\n=== Testing readHistoryCount for user \(userID) ===")
+        let result = await readHistoryCount(userID: userID)
+        switch result {
+        case .success(let count):
+            print("Test result: Success, count = \(count)")
+        case .failure(let error):
+            print("Test result: Failure, error = \(error)")
+        }
+        print("=====================================\n")
+    }
 
 }

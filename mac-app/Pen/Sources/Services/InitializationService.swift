@@ -40,6 +40,12 @@ class InitializationService {
         print("InitializationService: Initialization process completed successfully")
         print("InitializationService: App is ready for use")
         
+        // Test history count functionality
+        Task {
+            print("InitializationService: Testing history count functionality")
+            await ContentHistoryService.shared.testReadHistoryCount(userID: 4)
+        }
+        
         // Load menu bar icon and its behaviors as online-logout mode if needed
         if needsOnlineLogoutMode {
             print("InitializationService: Loading menu bar icon as online-logout mode")

@@ -49,8 +49,11 @@
 "forgot_password" = "Forgot Password?";
 "forgot_password_window_title" = "Forgot Password";
 "send_reset_link_button" = "Send Reset Link";
+"send_button" = "Send";
 "reset_link_sent_success" = "Password reset link sent successfully! Check your email.";
+"reset_password_email_sent" = "Reset password email sent.";
 "reset_link_sent_failure" = "Failed to send reset link. Please check your email and try again.";
+"failed_to_send_reset_password_email" = "Failed to send reset password email, please try again later.";
 "invalid_email_error" = "Please enter a valid email address.";
 "success_title" = "Success";
 "error_title" = "Error";
@@ -204,6 +207,8 @@
 "clipboard_non_text_message" = "The text content in your clipboard will be automatically retrieved here";
 "clipboard_access_error" = "Unable to access clipboard. Please try again.";
 "text_copied_to_clipboard" = "Text copied to clipboard";
+"content_copied_to_clipboard" = "Content copied to clipboard.";
+"failed_to_copy_to_clipboard" = "Failed to copy to clipboard,\nplease try again";
 
 /* Pen window */
 "pen_load_login_error" = "Pen cannot load your login information.\nPlease log in and try again.";

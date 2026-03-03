@@ -56,6 +56,9 @@
 "error_title" = "错误";
 "ok_button" = "确定";
 "cancel_button" = "取消";
+"send_button" = "发送";
+"reset_password_email_sent" = "重置密码邮件已发送。";
+"failed_to_send_reset_password_email" = "发送重置密码邮件失败，请稍后再试。";
 
 /* General tab */
 "keyboard_shortcut_title" = "切换 Pen 窗口的键盘快捷键";

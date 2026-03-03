@@ -155,7 +155,7 @@ class ForgotPasswordWindow: BaseWindow {
             if await authService.sendPasswordResetEmail(email: email) {
                 // Show success message
                 DispatchQueue.main.async {
-                    self.showSuccessMessage(LocalizationService.shared.localizedString(for: "reset_link_sent_success"))
+                    self.showSuccessMessage(LocalizationService.shared.localizedString(for: "reset_password_email_sent"))
                     
                     // Close forgot password window
                     self.orderOut(nil)
@@ -163,7 +163,7 @@ class ForgotPasswordWindow: BaseWindow {
             } else {
                 // Show error message
                 DispatchQueue.main.async {
-                    self.showErrorMessage(LocalizationService.shared.localizedString(for: "reset_link_failed_error"))
+                    self.showErrorMessage(LocalizationService.shared.localizedString(for: "failed_to_send_reset_password_email"))
                 }
             }
         }

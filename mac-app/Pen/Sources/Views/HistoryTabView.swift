@@ -270,16 +270,16 @@ class HistoryTabView: NSView {
     private func copyContentToClipboard(_ content: String) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setString(content, forType: .string)
+        let success = pasteboard.setString(content, forType: .string)
         
-        // Show confirmation message
-        showConfirmationMessage()
-    }
-    
-    // MARK: - Show Confirmation Message
-    private func showConfirmationMessage() {
-        // Use the standard popup message used in other features
-        WindowManager.shared.displayPopupMessage("Content copied to clipboard")
+        // Show appropriate message based on success
+        if success {
+            let successMessage = LocalizationService.shared.localizedString(for: "content_copied_to_clipboard")
+            WindowManager.shared.displayPopupMessage(successMessage)
+        } else {
+            let errorMessage = LocalizationService.shared.localizedString(for: "failed_to_copy_to_clipboard")
+            WindowManager.shared.displayPopupMessage(errorMessage)
+        }
     }
 }
 
