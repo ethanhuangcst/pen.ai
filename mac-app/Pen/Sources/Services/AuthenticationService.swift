@@ -49,7 +49,7 @@ class AuthenticationService {
         
         do {
             // Query the database for the user
-            let query = "SELECT id, name, email, password, profileImage, createdAt, system_flag FROM users WHERE email = ?"
+            let query = "SELECT id, name, email, password, profileImage, createdAt, system_flag, pen_content_history FROM users WHERE email = ?"
             let parameters: [MySQLData] = [MySQLData(string: email)]
             
             print("[AuthenticationService] Executing query: \(query)")

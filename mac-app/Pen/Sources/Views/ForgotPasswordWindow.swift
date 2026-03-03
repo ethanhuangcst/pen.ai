@@ -2,37 +2,56 @@ import Cocoa
 
 class ForgotPasswordWindow: BaseWindow {
     // MARK: - Properties
-    private let windowWidth: CGFloat = 400
-    private let windowHeight: CGFloat = 200
+    private let windowWidth: CGFloat = 300
+    private let windowHeight: CGFloat = 180
     private weak var penDelegate: PenDelegate?
     
     // UI Elements
     private var emailField: NSTextField!
-    private var sendResetLinkButton: FocusableButton!
-    private var cancelButton: FocusableButton!
+    private var sendResetLinkButton: NSButton!
+    private var cancelButton: NSButton!
     
     // MARK: - Initialization
-    init(penDelegate: PenDelegate) {
+    init(penDelegate: PenDelegate, loginWindow: NSWindow) {
         self.penDelegate = penDelegate
-        super.init(contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight), styleMask: [.titled, .closable])
         
-        // Set window properties
-        title = LocalizationService.shared.localizedString(for: "forgot_password_window_title")
-        isReleasedWhenClosed = false
-        center()
-        setContentSize(NSSize(width: windowWidth, height: windowHeight))
-        hasShadow = true
+        // Calculate login window center
+        let loginWindowFrame = loginWindow.frame
+        let loginWindowCenterX = loginWindowFrame.origin.x + loginWindowFrame.size.width / 2
+        let loginWindowCenterY = loginWindowFrame.origin.y + loginWindowFrame.size.height / 2
+        
+        // Calculate forgot password window origin to center it on login window
+        let originX = loginWindowCenterX - windowWidth / 2
+        let originY = loginWindowCenterY - windowHeight / 2
+        
+        super.init(
+            contentRect: NSRect(x: originX, y: originY, width: windowWidth, height: windowHeight),
+            styleMask: [.borderless]
+        )
         
         // Create content view
         let contentView = NSView(frame: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight))
         contentView.wantsLayer = true
-        contentView.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        contentView.layer?.backgroundColor = NSColor.white.cgColor
+        contentView.layer?.cornerRadius = 12
+        contentView.layer?.masksToBounds = true
+        
+        // Add shadow
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.shadowOffset = NSSize(width: 0, height: -3)
+        shadow.shadowBlurRadius = 8
         
         // Add UI elements
         setupUI(in: contentView)
         
         // Set content view
         self.contentView = contentView
+        
+        // No need for screen clamping since we're centering on the login window
+        
+        // Set initial first responder to email field
+        self.customInitialFirstResponder = emailField
         
         // Recalculate key view loop for proper tab navigation
         recalculateKeyViewLoop()
@@ -44,8 +63,19 @@ class ForgotPasswordWindow: BaseWindow {
     
     // MARK: - UI Setup
     private func setupUI(in contentView: NSView) {
+        // Add title label
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: windowHeight - 40, width: windowWidth - 40, height: 20))
+        titleLabel.stringValue = LocalizationService.shared.localizedString(for: "forgot_password_window_title")
+        titleLabel.isBezeled = false
+        titleLabel.drawsBackground = false
+        titleLabel.isEditable = false
+        titleLabel.isSelectable = false
+        titleLabel.font = NSFont.boldSystemFont(ofSize: 16)
+        titleLabel.alignment = .center
+        contentView.addSubview(titleLabel)
+        
         // Add email label
-        let emailLabel = NSTextField(frame: NSRect(x: 40, y: windowHeight - 80, width: 100, height: 20))
+        let emailLabel = NSTextField(frame: NSRect(x: 20, y: windowHeight - 80, width: 80, height: 20))
         emailLabel.stringValue = LocalizationService.shared.localizedString(for: "email_label")
         emailLabel.isBezeled = false
         emailLabel.drawsBackground = false
@@ -54,23 +84,29 @@ class ForgotPasswordWindow: BaseWindow {
         contentView.addSubview(emailLabel)
         
         // Add email field
-        emailField = NSTextField(frame: NSRect(x: 140, y: windowHeight - 80, width: 220, height: 25))
+        emailField = NSTextField(frame: NSRect(x: 100, y: windowHeight - 80, width: 180, height: 25))
         emailField.placeholderString = LocalizationService.shared.localizedString(for: "enter_email_placeholder")
         emailField.backgroundColor = NSColor.textBackgroundColor
         contentView.addSubview(emailField)
         
         // Add send reset link button
-        sendResetLinkButton = FocusableButton(frame: NSRect(x: 100, y: 40, width: 120, height: 30))
+        sendResetLinkButton = NSButton(frame: NSRect(x: 40, y: 30, width: 100, height: 32))
         sendResetLinkButton.title = LocalizationService.shared.localizedString(for: "send_reset_link_button")
         sendResetLinkButton.bezelStyle = .rounded
+        sendResetLinkButton.layer?.borderWidth = 1.0
+        sendResetLinkButton.layer?.borderColor = NSColor.systemGreen.cgColor
+        sendResetLinkButton.layer?.cornerRadius = 6.0
         sendResetLinkButton.target = self
         sendResetLinkButton.action = #selector(sendResetLink)
         contentView.addSubview(sendResetLinkButton)
         
         // Add cancel button
-        cancelButton = FocusableButton(frame: NSRect(x: 220, y: 40, width: 80, height: 30))
+        cancelButton = NSButton(frame: NSRect(x: 160, y: 30, width: 100, height: 32))
         cancelButton.title = LocalizationService.shared.localizedString(for: "cancel_button")
         cancelButton.bezelStyle = .rounded
+        cancelButton.layer?.borderWidth = 1.0
+        cancelButton.layer?.borderColor = NSColor.systemGray.cgColor
+        cancelButton.layer?.cornerRadius = 6.0
         cancelButton.target = self
         cancelButton.action = #selector(cancel)
         contentView.addSubview(cancelButton)
@@ -79,9 +115,6 @@ class ForgotPasswordWindow: BaseWindow {
         emailField.nextKeyView = sendResetLinkButton
         sendResetLinkButton.nextKeyView = cancelButton
         cancelButton.nextKeyView = emailField
-        
-        // Add standard close button
-        addStandardCloseButton(to: contentView, windowWidth: windowWidth, windowHeight: windowHeight)
     }
     
     // MARK: - Actions
@@ -105,12 +138,6 @@ class ForgotPasswordWindow: BaseWindow {
                     
                     // Close forgot password window
                     self.orderOut(nil)
-                    
-                    // Open login window
-                    if let penDelegate = self.penDelegate {
-                        let loginWindow = LoginWindow(penDelegate: penDelegate)
-                        loginWindow.showAndFocus()
-                    }
                 }
             } else {
                 // Show error message
@@ -149,4 +176,6 @@ class ForgotPasswordWindow: BaseWindow {
         alert.addButton(withTitle: LocalizationService.shared.localizedString(for: "ok_button"))
         alert.beginSheetModal(for: self) { _ in }
     }
+    
+
 }

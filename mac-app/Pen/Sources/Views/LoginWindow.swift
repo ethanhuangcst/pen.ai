@@ -207,6 +207,9 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
         // Set content view
         self.contentView = contentView
         
+        // Set initial first responder to email field
+        self.customInitialFirstResponder = emailField
+        
         // Recalculate key view loop for proper tab navigation
         self.recalculateKeyViewLoop()
     }
@@ -345,9 +348,8 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
     @objc private func forgotPassword() {
         // Handle forgot password logic
         print("Forgot password link clicked")
-        // Open forgot password window
-        orderOut(nil)
-        let forgotPasswordWindow = ForgotPasswordWindow(penDelegate: penDelegate!)
+        // Open forgot password window as a pop-up in front of login window
+        let forgotPasswordWindow = ForgotPasswordWindow(penDelegate: penDelegate!, loginWindow: self)
         forgotPasswordWindow.showAndFocus()
     }
     

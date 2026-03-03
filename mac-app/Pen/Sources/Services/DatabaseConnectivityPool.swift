@@ -184,6 +184,9 @@ class MySQLConnection: DatabaseConnection {
                 if let userIdData = row.column("user_id"), let userId = userIdData.int {
                     rowData["user_id"] = userId
                 }
+                if let penContentHistoryData = row.column("pen_content_history"), let penContentHistory = penContentHistoryData.int {
+                    rowData["pen_content_history"] = penContentHistory
+                }
                 
                 // Add AI connection specific columns
                 if let apiKeyData = row.column("apiKey"), let apiKey = apiKeyData.string {

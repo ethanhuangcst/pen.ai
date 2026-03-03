@@ -8,6 +8,7 @@ import Foundation
 class BaseWindow: NSWindow {
     // MARK: - Properties
     private let defaultMainWindowWidth: CGFloat = 600
+    var customInitialFirstResponder: NSResponder? = nil
     
     // MARK: - Initialization
     init(contentRect: NSRect, styleMask: NSWindow.StyleMask = .borderless) {
@@ -250,7 +251,11 @@ class BaseWindow: NSWindow {
         
         // Delay setting first responder to ensure window is fully ready
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.setFirstResponderToFirstFocusableElement()
+            if let customInitialFirstResponder = self.customInitialFirstResponder {
+                self.makeFirstResponder(customInitialFirstResponder)
+            } else {
+                self.setFirstResponderToFirstFocusableElement()
+            }
         }
     }
     
@@ -606,7 +611,7 @@ class BaseWindow: NSWindow {
         button2.nextKeyView = textField1
         
         // Set initial first responder for borderless window
-        window.initialFirstResponder = textField1
+        window.customInitialFirstResponder = textField1
         
         // Add standard close button
         window.addStandardCloseButton(to: contentView, windowWidth: windowWidth, windowHeight: windowHeight)

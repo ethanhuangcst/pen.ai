@@ -109,6 +109,10 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
                 let updatedUser = User(id: user.id, name: user.name, email: user.email, profileImage: user.profileImage, createdAt: user.createdAt, systemFlag: user.systemFlag, penContentHistory: selectedHistoryCount)
                 UserService.shared.currentUser = updatedUser
                 
+                // Update the local selectedHistoryCount and radio buttons
+                self.selectedHistoryCount = selectedHistoryCount
+                self.updateRadioButtons()
+                
                 // Show pop-up message "General settings saved"
                 if let parentWindow = self.parentWindow as? BaseWindow {
                     parentWindow.displayPopupMessage(LocalizationService.shared.localizedString(for: "general_settings_saved"))
@@ -118,6 +122,33 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
                 statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_save_error")
                 statusLabel.textColor = .systemRed
             }
+        }
+    }
+    
+    /// Called when the view is about to be displayed
+    override func viewWillDraw() {
+        super.viewWillDraw()
+        // Reload the saved history count every time the view is drawn
+        loadSavedHistoryCount()
+        // Update the radio buttons based on the loaded value
+        updateRadioButtons()
+    }
+    
+    /// Updates the radio buttons based on the selectedHistoryCount
+    private func updateRadioButtons() {
+        // Get history count values from config service
+        let configService = SystemConfigService.shared
+        let lowValue = configService.CONTENT_HISTORY_LOW
+        let mediumValue = configService.CONTENT_HISTORY_MEDIUM
+        let highValue = configService.CONTENT_HISTORY_HIGH
+        
+        // Set the correct radio button based on the user's saved history count
+        if selectedHistoryCount == lowValue {
+            historyCountLow.state = .on
+        } else if selectedHistoryCount == mediumValue {
+            historyCountMedium.state = .on
+        } else if selectedHistoryCount == highValue {
+            historyCountHigh.state = .on
         }
     }
     
@@ -143,6 +174,10 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     private func loadSavedHistoryCount() {
         if let user = UserService.shared.currentUser {
             selectedHistoryCount = user.penContentHistory
+            print("GeneralTabView: Loaded saved history count: \(selectedHistoryCount) from user: \(user.name)")
+            print("GeneralTabView: User penContentHistory: \(user.penContentHistory)")
+        } else {
+            print("GeneralTabView: No user logged in, using default history count: \(selectedHistoryCount)")
         }
     }
     

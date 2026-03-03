@@ -5,7 +5,6 @@ class HistoryTabView: NSView {
     // Associated object key for storing row index
     private static var rowKey = "rowKey"
     // MARK: - Properties
-    private let user: User?
     private let parentWindow: NSWindow
     private var historyItems: [ContentHistoryModel] = []
     private let tableView = NSTableView()
@@ -16,7 +15,6 @@ class HistoryTabView: NSView {
     
     // MARK: - Initialization
     init(frame: CGRect, user: User?, parentWindow: NSWindow) {
-        self.user = user
         self.parentWindow = parentWindow
         super.init(frame: frame)
         setupView()
@@ -162,26 +160,30 @@ class HistoryTabView: NSView {
     // MARK: - Load History
     private func loadHistory() {
         print("HistoryTabView: loadHistory called")
-        guard let userID = user?.id else { 
-            print("HistoryTabView: No user ID available")
+        guard let user = UserService.shared.currentUser else { 
+            print("HistoryTabView: No user available")
             updateStatusIndicator(count: 0, limit: 0)
             return 
         }
+        let userID = user.id
         
         print("HistoryTabView: Loading history for user ID: \(userID)")
         
         Task {
             do {
-                // Load history items
-                print("HistoryTabView: Calling ContentHistoryService.loadHistoryByUserID")
-                let historyResult = await ContentHistoryService.shared.loadHistoryByUserID(userID: userID, count: 100) // Load up to 100 items
+                // Get history limit first
+                print("HistoryTabView: Getting history limit")
+                let limit = try await ContentHistoryService.shared.getUserHistoryLimit(userID: userID)
+                print("HistoryTabView: History limit: \(limit)")
                 
-                // Get history count and limit in parallel
-                print("HistoryTabView: Getting history count and limit")
-                async let countResult = ContentHistoryService.shared.readHistoryCount(userID: userID)
-                async let limitResult = ContentHistoryService.shared.getUserHistoryLimit(userID: userID)
+                // Load history items with the limit
+                print("HistoryTabView: Calling ContentHistoryService.loadHistoryByUserID with limit: \(limit)")
+                let historyResult = await ContentHistoryService.shared.loadHistoryByUserID(userID: userID, count: limit) // Load exactly the limit number of items
                 
-                let (count, limit) = try await (countResult.get(), limitResult)
+                // Get history count
+                print("HistoryTabView: Getting history count")
+                let countResult = await ContentHistoryService.shared.readHistoryCount(userID: userID)
+                let count = try countResult.get()
                 print("HistoryTabView: History count: \(count), limit: \(limit)")
                 
                 await MainActor.run {
@@ -222,6 +224,13 @@ class HistoryTabView: NSView {
                 }
             }
         }
+    }
+    
+    /// Called when the view is about to be displayed
+    override func viewWillDraw() {
+        super.viewWillDraw()
+        // Reload history every time the view is drawn to get the latest limit
+        loadHistory()
     }
     
     // MARK: - Update Status Indicator
