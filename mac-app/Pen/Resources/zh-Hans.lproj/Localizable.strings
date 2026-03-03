@@ -77,6 +77,7 @@
 "save_button" = "保存";
 "settings_saved_successfully" = "设置保存成功";
 "settings_save_error" = "保存设置失败，请重试。";
+"general_settings_saved" = "通用设置已保存";
 
 /* AI Connections tab */
 "ai_connections_for" = "AI连接 - %@";

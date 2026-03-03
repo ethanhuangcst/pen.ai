@@ -121,6 +121,59 @@ class RegistrationWindow: BaseWindow {
     override func showAndFocus() {
         // Use the BaseWindow's showAndFocus method
         super.showAndFocus()
+        
+        // Print coordinates of registration_form and register button
+        printCoordinates()
+    }
+    
+    /// Prints the coordinates of registration_form and register button
+    private func printCoordinates() {
+        // Get registration_form container
+        if let registrationForm = findViewWithIdentifier(accountTabView, identifier: "registration_form") {
+            let formFrame = registrationForm.frame
+            print("Registration Form Coordinates:")
+            print("  X: \(formFrame.origin.x)")
+            print("  Y: \(formFrame.origin.y)")
+            print("  Width: \(formFrame.size.width)")
+            print("  Height: \(formFrame.size.height)")
+        } else {
+            print("Registration Form not found")
+        }
+        
+        // Get register button
+        if let registerButton = findRegisterButton() {
+            let buttonFrame = registerButton.frame
+            print("Register Button Coordinates:")
+            print("  X: \(buttonFrame.origin.x)")
+            print("  Y: \(buttonFrame.origin.y)")
+            print("  Width: \(buttonFrame.size.width)")
+            print("  Height: \(buttonFrame.size.height)")
+        } else {
+            print("Register Button not found")
+        }
+    }
+    
+    /// Finds a view with the given identifier
+    private func findViewWithIdentifier(_ view: NSView, identifier: String) -> NSView? {
+        if view.identifier?.rawValue == identifier {
+            return view
+        }
+        for subview in view.subviews {
+            if let foundView = findViewWithIdentifier(subview, identifier: identifier) {
+                return foundView
+            }
+        }
+        return nil
+    }
+    
+    /// Finds the register button
+    private func findRegisterButton() -> NSButton? {
+        for subview in accountTabView.subviews {
+            if let button = subview as? NSButton, button.title == LocalizationService.shared.localizedString(for: "register") {
+                return button
+            }
+        }
+        return nil
     }
     
     // MARK: - Key Event Handling

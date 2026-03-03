@@ -205,7 +205,7 @@ class AuthenticationService {
             
             if let penContentHistory = penContentHistory {
                 query += ", pen_content_history = ?"
-                parameters.append(MySQLData(string: String(penContentHistory)))
+                parameters.append(MySQLData(int: penContentHistory))
             }
             
             query += " WHERE id = ?"

@@ -32,16 +32,21 @@ class HistoryTabView: NSView {
         self.wantsLayer = true
         self.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         
-        // Add table container with border and corner radius
+        // Add table container with border and corner radius to match Prompts tab
         let windowWidth = frame.width
         let windowHeight = frame.height
-        tableContainer.frame = NSRect(x: 20, y: 50, width: windowWidth - 40, height: windowHeight - 166)
+        tableContainer.frame = NSRect(x: 20, y: 50, width: windowWidth - 40, height: windowHeight - 136)
         tableContainer.wantsLayer = true
         tableContainer.layer?.backgroundColor = NSColor.white.cgColor
         tableContainer.layer?.borderWidth = 1.0
         tableContainer.layer?.borderColor = NSColor.lightGray.withAlphaComponent(0.5).cgColor
         tableContainer.layer?.cornerRadius = 8.0
         self.addSubview(tableContainer)
+        
+        // Add visible border inside the table to match Prompts tab
+        tableView.wantsLayer = true
+        tableView.layer?.borderWidth = 1.0
+        tableView.layer?.borderColor = NSColor.lightGray.withAlphaComponent(0.3).cgColor
         
         // Add scroll view for history items
         scrollView.frame = tableContainer.bounds
@@ -53,7 +58,7 @@ class HistoryTabView: NSView {
         tableView.frame = scrollView.bounds
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.rowHeight = 70 // Height for each history item
+        tableView.rowHeight = 20 // Height for each history item
         tableView.allowsColumnResizing = false
         tableView.allowsColumnReordering = false
         tableView.allowsEmptySelection = true
@@ -69,16 +74,16 @@ class HistoryTabView: NSView {
         
         let contentColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("content"))
         contentColumn.title = "Content enhanced:"
-        contentColumn.width = 200
-        contentColumn.minWidth = 200
-        contentColumn.maxWidth = 200
+        contentColumn.width = 310
+        contentColumn.minWidth = 310
+        contentColumn.maxWidth = 310
         tableView.addTableColumn(contentColumn)
         
         let dateColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("date"))
         dateColumn.title = "Enhanced at:"
-        dateColumn.width = 160
-        dateColumn.minWidth = 160
-        dateColumn.maxWidth = 160
+        dateColumn.width = 100
+        dateColumn.minWidth = 100
+        dateColumn.maxWidth = 100
         tableView.addTableColumn(dateColumn)
         
         scrollView.documentView = tableView
@@ -118,8 +123,11 @@ class HistoryTabView: NSView {
     
     // MARK: - Update Frames
     private func updateFrames() {
-        // Fixed table container size and position
-        tableContainer.frame = NSRect(x: 20, y: 63, width: 470, height: 352)
+        let windowWidth = frame.width
+        let windowHeight = frame.height
+        
+        // Table container size and position to match Prompts tab
+        tableContainer.frame = NSRect(x: 20, y: 50, width: windowWidth - 40, height: windowHeight - 136)
         
         // Update scroll view frame
         scrollView.frame = tableContainer.bounds
@@ -134,21 +142,21 @@ class HistoryTabView: NSView {
             numberColumn.maxWidth = 30
         }
         if let contentColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "content" }) {
-            contentColumn.width = 200
-            contentColumn.minWidth = 200
-            contentColumn.maxWidth = 200
+            contentColumn.width = 310
+            contentColumn.minWidth = 310
+            contentColumn.maxWidth = 310
         }
         if let dateColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "date" }) {
-            dateColumn.width = 160
-            dateColumn.minWidth = 160
-            dateColumn.maxWidth = 160
+            dateColumn.width = 100
+            dateColumn.minWidth = 100
+            dateColumn.maxWidth = 100
         }
         
         // Update empty state label frame
         emptyStateLabel.frame = NSRect(x: 0, y: tableContainer.frame.height / 2 - 50, width: tableContainer.frame.width, height: 100)
         
         // Update status indicator label frame
-        statusIndicatorLabel.frame = NSRect(x: 20, y: 10, width: 470, height: 20)
+        statusIndicatorLabel.frame = NSRect(x: 20, y: 10, width: windowWidth - 40, height: 20)
     }
     
     // MARK: - Load History
@@ -316,28 +324,28 @@ extension HistoryTabView: NSTableViewDelegate {
     }
     
     private func createNumberTextField(row: Int) -> NSTextField {
-        let textField = NSTextField(frame: NSRect(x: 5, y: 5, width: 20, height: 60))
+        let textField = NSTextField(frame: NSRect(x: 5, y: 2, width: 20, height: 16))
         textField.stringValue = "\(row + 1)"
         textField.isBezeled = false
         textField.drawsBackground = false
         textField.isEditable = false
         textField.isSelectable = false
-        textField.font = NSFont.systemFont(ofSize: 14)
+        textField.font = NSFont.systemFont(ofSize: 12)
         textField.alignment = .center
         return textField
     }
     
     private func createContentTextField(historyItem: ContentHistoryModel) -> NSTextField {
-        let textField = NSTextField(frame: NSRect(x: 5, y: 5, width: 190, height: 60))
+        let textField = NSTextField(frame: NSRect(x: 5, y: 2, width: 300, height: 16))
         textField.stringValue = historyItem.enhancedContent
         textField.isBezeled = false
         textField.drawsBackground = false
         textField.isEditable = false
         textField.isSelectable = false
-        textField.font = NSFont.systemFont(ofSize: 13)
+        textField.font = NSFont.systemFont(ofSize: 12)
         // NSTextField doesn't have numberOfLines, use cell's wraps property
         if let cell = textField.cell as? NSTextFieldCell {
-            cell.wraps = true
+            cell.wraps = false
         }
         textField.lineBreakMode = .byTruncatingTail
         
@@ -356,13 +364,13 @@ extension HistoryTabView: NSTableViewDelegate {
         dateFormatter.timeStyle = .short
         let dateString = dateFormatter.string(from: historyItem.createdAt)
         
-        let textField = NSTextField(frame: NSRect(x: 5, y: 5, width: 150, height: 60))
+        let textField = NSTextField(frame: NSRect(x: 5, y: 2, width: 90, height: 16))
         textField.stringValue = dateString
         textField.isBezeled = false
         textField.drawsBackground = false
         textField.isEditable = false
         textField.isSelectable = false
-        textField.font = NSFont.systemFont(ofSize: 12)
+        textField.font = NSFont.systemFont(ofSize: 11)
         textField.textColor = NSColor.secondaryLabelColor
         textField.alignment = .center
         return textField
@@ -372,7 +380,7 @@ extension HistoryTabView: NSTableViewDelegate {
         let rowView = NSTableRowView()
         
         // Add clickable area
-        let clickableArea = NSView(frame: rowView.bounds)
+        let clickableArea = NSView(frame: NSRect(x: 0, y: 0, width: rowView.frame.width, height: 20))
         clickableArea.wantsLayer = true
         clickableArea.layer?.backgroundColor = NSColor.clear.cgColor
         

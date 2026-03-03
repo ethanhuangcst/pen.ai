@@ -43,17 +43,17 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         let contentHeight = frame.height
         
         // Create registration_form container view
-        let registrationForm = NSView(frame: NSRect(x: 0, y: -30, width: contentWidth, height: 270))
+        let registrationForm = NSView(frame: NSRect(x: 30, y: 40, width: contentWidth, height: 270))
         registrationForm.identifier = NSUserInterfaceItemIdentifier("registration_form")
         
         // Profile section (image + user info)
-        let profileSection = NSView(frame: NSRect(x: 20, y: 150, width: contentWidth - 40, height: 120))
+        let profileSection = NSView(frame: NSRect(x: 20, y: 144, width: contentWidth - 40, height: 120))
         
         // Profile image
         let profileImageSize: CGFloat = 80
         
         // Create a container view for the profile image (moved up 20px)
-        let profileImageContainer = NSView(frame: NSRect(x: 0, y: 50, width: profileImageSize, height: profileImageSize))
+        let profileImageContainer = NSView(frame: NSRect(x: 0, y: 44, width: profileImageSize, height: profileImageSize))
         profileImageContainer.wantsLayer = true
         profileImageContainer.layer?.cornerRadius = profileImageSize / 2
         profileImageContainer.layer?.masksToBounds = true
@@ -130,10 +130,10 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         profileSection.addSubview(sizeLabel)
         
         // User info fields (moved up 20px and right 20px)
-        let infoContainer = NSView(frame: NSRect(x: profileImageSize + 40, y: 40, width: contentWidth - profileImageSize - 80, height: 100))
+        let infoContainer = NSView(frame: NSRect(x: profileImageSize + 40, y: 34, width: contentWidth - profileImageSize - 80, height: 100))
         
         // Name field
-        let nameLabel = NSTextField(frame: NSRect(x: 0, y: 60, width: 100, height: 20))
+        let nameLabel = NSTextField(frame: NSRect(x: 0, y: 54, width: 100, height: 20))
         nameLabel.stringValue = LocalizationService.shared.localizedString(for: "name")
         nameLabel.isBezeled = false
         nameLabel.drawsBackground = false
@@ -141,13 +141,13 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         nameLabel.isSelectable = false
         infoContainer.addSubview(nameLabel)
         
-        nameField = NSTextField(frame: NSRect(x: 80, y: 60, width: 200, height: 24))
+        nameField = NSTextField(frame: NSRect(x: 80, y: 54, width: 200, height: 24))
         nameField.stringValue = user?.name ?? "Ethan Huang" // Use user data or sample
         nameField.tag = 100 // Tag for name field
         infoContainer.addSubview(nameField)
         
         // Email field
-        let emailLabel = NSTextField(frame: NSRect(x: 0, y: 20, width: 100, height: 20))
+        let emailLabel = NSTextField(frame: NSRect(x: 0, y: 14, width: 100, height: 20))
         emailLabel.stringValue = LocalizationService.shared.localizedString(for: "email")
         emailLabel.isBezeled = false
         emailLabel.drawsBackground = false
@@ -155,7 +155,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         emailLabel.isSelectable = false
         infoContainer.addSubview(emailLabel)
         
-        emailField = NSTextField(frame: NSRect(x: 80, y: 20, width: 200, height: 24))
+        emailField = NSTextField(frame: NSRect(x: 80, y: 14, width: 200, height: 24))
         emailField.stringValue = user?.email ?? "me@ethanhuang.com" // Use user data or sample
         emailField.tag = 101 // Tag for email field
         infoContainer.addSubview(emailField)
@@ -276,8 +276,8 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         registrationForm.addSubview(passwordSection)
         
-        // Password instruction label (moved to 20px from left, 58px from bottom)
-        let passwordInstructionLabel = NSTextField(frame: NSRect(x: 20, y: 88, width: 325, height: 12))
+        // Password instruction label
+        let passwordInstructionLabel = NSTextField(frame: NSRect(x: 20, y: 110, width: 325, height: 12))
         passwordInstructionLabel.stringValue = "Leave password fields empty to keep your current password"
         passwordInstructionLabel.isBezeled = false
         passwordInstructionLabel.drawsBackground = false
@@ -292,14 +292,14 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         addSubview(registrationForm)
         
         // Action buttons
-        let saveButton = FocusableButton(frame: NSRect(x: contentWidth - 220, y: 20, width: 100, height: 32))
+        let saveButton = FocusableButton(frame: NSRect(x: contentWidth - 205, y: 14, width: 100, height: 32))
         saveButton.title = LocalizationService.shared.localizedString(for: "save_changes")
         saveButton.bezelStyle = .rounded
         saveButton.target = self
         saveButton.action = #selector(saveChanges)
         addSubview(saveButton)
         
-        let logoutButton = FocusableButton(frame: NSRect(x: contentWidth - 110, y: 20, width: 90, height: 32))
+        let logoutButton = FocusableButton(frame: NSRect(x: contentWidth - 95, y: 14, width: 90, height: 32))
         logoutButton.title = LocalizationService.shared.localizedString(for: "logout")
         logoutButton.bezelStyle = .rounded
         logoutButton.target = self

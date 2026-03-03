@@ -24,6 +24,9 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         // Load saved shortcut from UserDefaults
         loadSavedShortcut()
         
+        // Load user's saved history count
+        loadSavedHistoryCount()
+        
         setupGeneralTab()
     }
     
@@ -101,6 +104,15 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
                 print("User updated successfully")
                 statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_saved_successfully")
                 statusLabel.textColor = .systemGreen
+                
+                // Update the global user object with the new history count
+                let updatedUser = User(id: user.id, name: user.name, email: user.email, profileImage: user.profileImage, createdAt: user.createdAt, systemFlag: user.systemFlag, penContentHistory: selectedHistoryCount)
+                UserService.shared.currentUser = updatedUser
+                
+                // Show pop-up message "General settings saved"
+                if let parentWindow = self.parentWindow as? BaseWindow {
+                    parentWindow.displayPopupMessage(LocalizationService.shared.localizedString(for: "general_settings_saved"))
+                }
             } else {
                 print("Failed to update user")
                 statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_save_error")
@@ -126,6 +138,13 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     private var mouseEventMonitor: Any? = nil
     private var previousShortcut: String = "Command+Option+P" // Default shortcut
     private var selectedHistoryCount: Int = 10 // Default value
+    
+    /// Loads the user's saved history count
+    private func loadSavedHistoryCount() {
+        if let user = UserService.shared.currentUser {
+            selectedHistoryCount = user.penContentHistory
+        }
+    }
     
     // UserDefaults key for shortcut storage
     private let shortcutKeyDefaultsKey = "pen.shortcutKey"
@@ -255,7 +274,6 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         let optionSpacing: CGFloat = 10
         
         historyCountLow = createHistoryOptionButton(title: "\(lowValue)", x: 220, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
-        historyCountLow.state = .on // Default selected
         section.addSubview(historyCountLow)
         
         historyCountMedium = createHistoryOptionButton(title: "\(mediumValue)", x: 220 + optionWidth + optionSpacing, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
@@ -268,6 +286,15 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         historyCountLow.setButtonType(.radio)
         historyCountMedium.setButtonType(.radio)
         historyCountHigh.setButtonType(.radio)
+        
+        // Set the correct radio button based on the user's saved history count
+        if selectedHistoryCount == lowValue {
+            historyCountLow.state = .on
+        } else if selectedHistoryCount == mediumValue {
+            historyCountMedium.state = .on
+        } else if selectedHistoryCount == highValue {
+            historyCountHigh.state = .on
+        }
     }
     
     /// Creates a history option button
