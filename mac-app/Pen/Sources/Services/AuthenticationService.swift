@@ -245,12 +245,13 @@ class AuthenticationService {
             }
             
             // Insert new user
-            let query = "INSERT INTO users (name, email, password, profileImage, createdAt) VALUES (?, ?, ?, ?, NOW())"
+            let query = "INSERT INTO users (name, email, password, profileImage, pen_content_history, createdAt) VALUES (?, ?, ?, ?, ?, NOW())"
             let parameters: [MySQLData] = [
                 MySQLData(string: name),
                 MySQLData(string: email),
                 MySQLData(string: hashPassword(password)),
-                MySQLData(string: profileImage ?? "")
+                MySQLData(string: profileImage ?? ""),
+                MySQLData(int: 40) // Default content history limit
             ]
             
             print("[AuthenticationService] Executing insert query: \(query)")

@@ -238,6 +238,7 @@ Scenario: Add content history when history count is below maximum
 Scenario: Add content history when history count is at maximum
   Given I am logged in to the Pen app
   And the current content history items count is equal to the global system constant maximum_content_history_count (default 40)
+  OR the current content history items count is greater than the global system constant maximum_content_history_count (default 40)
   And I have text in the original text field
   When I receive new enhanced content from AI
   Then a new content history item should be added to the database

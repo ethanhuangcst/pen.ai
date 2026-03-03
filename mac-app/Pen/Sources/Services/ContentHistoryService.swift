@@ -22,11 +22,14 @@ class ContentHistoryService {
             let result = try await connection.execute(query: query, parameters: parameters)
             
             if let firstRow = result.first, let count = firstRow["count"] as? Int {
+                print("ContentHistoryService: History count for user \(userID): \(count)")
                 return .success(count)
             } else {
+                print("ContentHistoryService: No history count found for user \(userID), returning 0")
                 return .success(0)
             }
         } catch {
+            print("ContentHistoryService: Error getting history count: \(error)")
             return .failure(error)
         }
     }
@@ -59,6 +62,7 @@ class ContentHistoryService {
         defer { DatabaseConnectivityPool.shared.returnConnection(connection) }
         
         do {
+            print("ContentHistoryService: Adding new history item for user \(userID)")
             let query = """
             INSERT INTO content_history (uuid, user_id, enhance_datetime, original_content, enhanced_content, prompt_text, ai_provider, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -77,12 +81,16 @@ class ContentHistoryService {
             ]
             
             _ = try await connection.execute(query: query, parameters: parameters)
+            print("ContentHistoryService: Added new history item")
             
             // After adding, check if we need to trim old records
-            try await trimHistoryIfNeeded(userID: userID)
+            print("ContentHistoryService: Calling trimHistoryIfNeeded")
+            await trimHistoryIfNeeded(userID: userID)
+            print("ContentHistoryService: trimHistoryIfNeeded completed")
             
             return .success(true)
         } catch {
+            print("ContentHistoryService: Error adding history item: \(error)")
             return .failure(error)
         }
     }
@@ -108,40 +116,46 @@ class ContentHistoryService {
     // MARK: - Private Methods
     
     /// Trim old history records if the count exceeds the user's limit
-    private func trimHistoryIfNeeded(userID: Int) async throws {
-        // Get user's history limit from preferences
-        let historyLimit = try await getUserHistoryLimit(userID: userID)
-        
-        // Get current history count
-        let currentCountResult = await readHistoryCount(userID: userID)
-        guard case .success(let currentCount) = currentCountResult else {
-            if case .failure(let error) = currentCountResult {
-                throw error
+    private func trimHistoryIfNeeded(userID: Int) async {
+        do {
+            // Get user's history limit from preferences
+            let historyLimit = try await getUserHistoryLimit(userID: userID)
+            
+            // Get current history count
+            let currentCountResult = await readHistoryCount(userID: userID)
+            guard case .success(let currentCount) = currentCountResult else {
+                if case .failure(let error) = currentCountResult {
+                    print("ContentHistoryService: Error getting history count: \(error)")
+                }
+                return
             }
-            throw NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get history count"])
-        }
-        
-        if currentCount > historyLimit {
-            // Get oldest records to delete
-            guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
-                throw NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"])
+            
+            if currentCount > historyLimit {
+                // Get oldest records to delete
+                guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
+                    print("ContentHistoryService: Failed to get database connection for trimming")
+                    return
+                }
+                defer { DatabaseConnectivityPool.shared.returnConnection(connection) }
+                
+                let recordsToDelete = currentCount - historyLimit
+                let query = """
+                DELETE FROM content_history
+                WHERE user_id = ?
+                ORDER BY enhance_datetime ASC, created_at ASC
+                LIMIT ?
+                """
+                
+                let parameters: [MySQLData] = [
+                    MySQLData(int: userID),
+                    MySQLData(int: recordsToDelete)
+                ]
+                
+                _ = try await connection.execute(query: query, parameters: parameters)
+                print("ContentHistoryService: Trimmed \(recordsToDelete) records for user \(userID)")
             }
-            defer { DatabaseConnectivityPool.shared.returnConnection(connection) }
-            
-            let recordsToDelete = currentCount - historyLimit
-            let query = """
-            DELETE FROM content_history
-            WHERE user_id = ?
-            ORDER BY enhance_datetime ASC, created_at ASC
-            LIMIT ?
-            """
-            
-            let parameters: [MySQLData] = [
-                MySQLData(int: userID),
-                MySQLData(int: recordsToDelete)
-            ]
-            
-            _ = try await connection.execute(query: query, parameters: parameters)
+        } catch {
+            print("ContentHistoryService: Error in trimHistoryIfNeeded: \(error)")
         }
     }
     
@@ -158,9 +172,11 @@ class ContentHistoryService {
         let result = try await connection.execute(query: query, parameters: parameters)
         
         if let firstRow = result.first, let limit = firstRow["pen_content_history"] as? Int {
+            print("ContentHistoryService: Found history limit \(limit) for user \(userID)")
             return limit
         } else {
-            return 10 // Default limit
+            print("ContentHistoryService: No history limit found for user \(userID), using default 40")
+            return 40 // Default limit
         }
     }
     

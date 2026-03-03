@@ -18,7 +18,7 @@ class User {
     static let SYSTEM_FLAG_WINGMAN = "WINGMAN" // created by Wingman app
     static let SYSTEM_FLAG_PEN = "PEN" // created by PEN app
     
-    init(id: Int, name: String, email: String, password: String = "", profileImage: String?, createdAt: Date, systemFlag: String = "PEN", penContentHistory: Int = 10) {
+    init(id: Int, name: String, email: String, password: String = "", profileImage: String?, createdAt: Date, systemFlag: String = "PEN", penContentHistory: Int = 40) {
         self.id = id
         self.name = name
         self.email = email
@@ -100,7 +100,7 @@ class User {
             penContentHistory = historyInt
             print("[User] pen_content_history (from string): \(penContentHistory)")
         } else {
-            penContentHistory = 10 // Default value
+            penContentHistory = 40 // Default value
             print("[User] pen_content_history not found, using default: \(penContentHistory)")
         }
         

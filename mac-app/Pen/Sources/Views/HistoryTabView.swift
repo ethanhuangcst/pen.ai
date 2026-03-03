@@ -11,10 +11,11 @@ class HistoryTabView: NSView {
     private let scrollView = NSScrollView()
     private let emptyStateLabel = NSTextField()
     private let statusIndicatorLabel = NSTextField()
+    private let clickToCopyLabel = NSTextField()
     private let tableContainer = NSView()
     
     // MARK: - Initialization
-    init(frame: CGRect, user: User?, parentWindow: NSWindow) {
+    init(frame: CGRect, parentWindow: NSWindow) {
         self.parentWindow = parentWindow
         super.init(frame: frame)
         setupView()
@@ -109,6 +110,17 @@ class HistoryTabView: NSView {
         statusIndicatorLabel.stringValue = "Loading history..."
         self.addSubview(statusIndicatorLabel)
         
+        // Add "Click to copy" label
+        clickToCopyLabel.isBezeled = false
+        clickToCopyLabel.drawsBackground = false
+        clickToCopyLabel.isEditable = false
+        clickToCopyLabel.isSelectable = false
+        clickToCopyLabel.alignment = .left
+        clickToCopyLabel.font = NSFont.systemFont(ofSize: 11)
+        clickToCopyLabel.textColor = NSColor.secondaryLabelColor
+        clickToCopyLabel.stringValue = "Click to copy"
+        self.addSubview(clickToCopyLabel)
+        
         // Update frames
         updateFrames()
     }
@@ -155,6 +167,9 @@ class HistoryTabView: NSView {
         
         // Update status indicator label frame
         statusIndicatorLabel.frame = NSRect(x: 20, y: 10, width: windowWidth - 40, height: 20)
+        
+        // Update "Click to copy" label frame
+        clickToCopyLabel.frame = NSRect(x: 20, y: tableContainer.frame.maxY + 10, width: 100, height: 20)
     }
     
     // MARK: - Load History

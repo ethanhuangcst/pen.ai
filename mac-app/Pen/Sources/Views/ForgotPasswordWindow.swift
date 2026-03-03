@@ -2,8 +2,8 @@ import Cocoa
 
 class ForgotPasswordWindow: BaseWindow {
     // MARK: - Properties
-    private let windowWidth: CGFloat = 300
-    private let windowHeight: CGFloat = 180
+    private let windowWidth: CGFloat = 258
+    private let windowHeight: CGFloat = 160
     private weak var penDelegate: PenDelegate?
     
     // UI Elements
@@ -36,11 +36,15 @@ class ForgotPasswordWindow: BaseWindow {
         contentView.layer?.cornerRadius = 12
         contentView.layer?.masksToBounds = true
         
+        // Add border
+        contentView.layer?.borderWidth = 1.0
+        contentView.layer?.borderColor = NSColor.separatorColor.cgColor
+        
         // Add shadow
-        let shadow = NSShadow()
-        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
-        shadow.shadowOffset = NSSize(width: 0, height: -3)
-        shadow.shadowBlurRadius = 8
+        contentView.layer?.shadowColor = NSColor.black.withAlphaComponent(0.3).cgColor
+        contentView.layer?.shadowOffset = CGSize(width: 0, height: -3)
+        contentView.layer?.shadowRadius = 8
+        contentView.layer?.shadowOpacity = 1.0
         
         // Add UI elements
         setupUI(in: contentView)
@@ -48,7 +52,33 @@ class ForgotPasswordWindow: BaseWindow {
         // Set content view
         self.contentView = contentView
         
-        // No need for screen clamping since we're centering on the login window
+        // Get mouse location for positioning
+        let currentMouseLocation = NSEvent.mouseLocation
+        
+        // Clamp window to screen bounds
+        if let screen = NSScreen.screens.first(where: { $0.frame.contains(currentMouseLocation) }) ?? NSScreen.main {
+            let visibleFrame = screen.visibleFrame
+            var frame = self.frame
+            
+            // Clamp horizontally
+            if frame.maxX > visibleFrame.maxX {
+                frame.origin.x = visibleFrame.maxX - frame.width
+            }
+            if frame.minX < visibleFrame.minX {
+                frame.origin.x = visibleFrame.minX
+            }
+            
+            // Clamp vertically
+            if frame.minY < visibleFrame.minY {
+                frame.origin.y = visibleFrame.minY
+            }
+            if frame.maxY > visibleFrame.maxY {
+                frame.origin.y = visibleFrame.maxY - frame.height
+            }
+            
+            // Apply the clamped position
+            setFrame(frame, display: false)
+        }
         
         // Set initial first responder to email field
         self.customInitialFirstResponder = emailField
@@ -74,24 +104,15 @@ class ForgotPasswordWindow: BaseWindow {
         titleLabel.alignment = .center
         contentView.addSubview(titleLabel)
         
-        // Add email label
-        let emailLabel = NSTextField(frame: NSRect(x: 20, y: windowHeight - 80, width: 80, height: 20))
-        emailLabel.stringValue = LocalizationService.shared.localizedString(for: "email_label")
-        emailLabel.isBezeled = false
-        emailLabel.drawsBackground = false
-        emailLabel.isEditable = false
-        emailLabel.isSelectable = false
-        contentView.addSubview(emailLabel)
-        
         // Add email field
-        emailField = NSTextField(frame: NSRect(x: 100, y: windowHeight - 80, width: 180, height: 25))
+        emailField = NSTextField(frame: NSRect(x: 20, y: windowHeight - 80, width: windowWidth - 40, height: 25))
         emailField.placeholderString = LocalizationService.shared.localizedString(for: "enter_email_placeholder")
         emailField.backgroundColor = NSColor.textBackgroundColor
         contentView.addSubview(emailField)
         
-        // Add send reset link button
-        sendResetLinkButton = NSButton(frame: NSRect(x: 40, y: 30, width: 100, height: 32))
-        sendResetLinkButton.title = LocalizationService.shared.localizedString(for: "send_reset_link_button")
+        // Add send button (now on the left)
+        sendResetLinkButton = NSButton(frame: NSRect(x: 41, y: 30, width: 80, height: 32))
+        sendResetLinkButton.title = LocalizationService.shared.localizedString(for: "send_button")
         sendResetLinkButton.bezelStyle = .rounded
         sendResetLinkButton.layer?.borderWidth = 1.0
         sendResetLinkButton.layer?.borderColor = NSColor.systemGreen.cgColor
@@ -101,7 +122,7 @@ class ForgotPasswordWindow: BaseWindow {
         contentView.addSubview(sendResetLinkButton)
         
         // Add cancel button
-        cancelButton = NSButton(frame: NSRect(x: 160, y: 30, width: 100, height: 32))
+        cancelButton = NSButton(frame: NSRect(x: 131, y: 30, width: 80, height: 32))
         cancelButton.title = LocalizationService.shared.localizedString(for: "cancel_button")
         cancelButton.bezelStyle = .rounded
         cancelButton.layer?.borderWidth = 1.0
