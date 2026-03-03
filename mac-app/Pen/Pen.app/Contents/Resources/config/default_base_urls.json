@@ -1,0 +1,18 @@
+{
+  "defaultBaseURLs": {
+    "deepseek3.2": {
+      "completion": "https://api.deepseek.com/v1/chat/completions"
+    },
+    "gpt-4o-mini": {
+      "completion": "https://api.openai.com/v1/chat/completions",
+      "embedding": "https://api.openai.com/v1/embeddings",
+      "image": "https://api.openai.com/v1/images/generations"
+    },
+    "qwen-plus": {
+      "completion": "https://api.baichuan-ai.com/v1/chat/completions"
+    },
+    "default": {
+      "completion": "https://api.openai.com/v1/chat/completions"
+    }
+  }
+}
