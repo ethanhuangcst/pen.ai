@@ -6,7 +6,9 @@ class PreferencesWindow: BaseWindow {
     private let mouseOffset: CGFloat = 6
     private var user: User?
     
-
+    private var titleLabel: NSTextField!
+    private var userNameLabel: NSTextField!
+    private var tabView: NSTabView!
     
     // MARK: - Initialization
     init(user: User? = nil) {
@@ -31,6 +33,60 @@ class PreferencesWindow: BaseWindow {
         self.level = .floating
     }
     
+    // MARK: - Language Change
+    override func languageDidChange() {
+        super.languageDidChange()
+        
+        // Update title
+        titleLabel?.stringValue = LocalizationService.shared.localizedString(for: "pen_ai_preferences")
+        
+        // Update user name label
+        userNameLabel?.stringValue = user?.name ?? LocalizationService.shared.localizedString(for: "no_user")
+        
+        // Update tab labels
+        updateTabLabels()
+        
+        // Refresh all tab views
+        refreshTabViews()
+        
+        print("PreferencesWindow: Language changed, UI updated")
+    }
+    
+    private func updateTabLabels() {
+        guard let tabView = tabView else { return }
+        
+        let tabKeys = ["account", "general", "ai_connections", "prompts", "history"]
+        for (index, key) in tabKeys.enumerated() {
+            if index < tabView.numberOfTabViewItems {
+                let tabItem = tabView.tabViewItem(at: index)
+                tabItem.label = LocalizationService.shared.localizedString(for: key)
+            }
+        }
+    }
+    
+    private func refreshTabViews() {
+        guard let tabView = tabView else { return }
+        
+        for i in 0..<tabView.numberOfTabViewItems {
+            if let tabItem = tabView.tabViewItem(at: i) as? NSTabViewItem,
+               let tabContentView = tabItem.view {
+                for subview in tabContentView.subviews {
+                    if let accountTab = subview as? AccountTabView {
+                        accountTab.languageDidChange()
+                    } else if let generalTab = subview as? GeneralTabView {
+                        generalTab.languageDidChange()
+                    } else if let aiConfigTab = subview as? AIConfigurationTabView {
+                        aiConfigTab.languageDidChange()
+                    } else if let promptsTab = subview as? PromptsTabView {
+                        promptsTab.languageDidChange()
+                    } else if let historyTab = subview as? HistoryTabView {
+                        historyTab.languageDidChange()
+                    }
+                }
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     
     /// Sets up the content view with logo and tabs
@@ -52,7 +108,7 @@ class PreferencesWindow: BaseWindow {
         addPenAILogo(to: contentView, windowHeight: windowHeight)
         
         // Add title
-        let titleLabel = NSTextField(frame: NSRect(x: 70, y: windowHeight - 55, width: 200, height: 30))
+        titleLabel = NSTextField(frame: NSRect(x: 70, y: windowHeight - 55, width: 200, height: 30))
         titleLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_ai_preferences")
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
@@ -62,7 +118,7 @@ class PreferencesWindow: BaseWindow {
         contentView.addSubview(titleLabel)
         
         // Add user name label
-        let userNameLabel = NSTextField(frame: NSRect(x: 370, y: windowHeight - 55, width: 180, height: 30))
+        userNameLabel = NSTextField(frame: NSRect(x: 370, y: windowHeight - 55, width: 180, height: 30))
         userNameLabel.identifier = NSUserInterfaceItemIdentifier("preference_user_name")
         userNameLabel.stringValue = user?.name ?? LocalizationService.shared.localizedString(for: "no_user")
         userNameLabel.isBezeled = false
@@ -79,7 +135,7 @@ class PreferencesWindow: BaseWindow {
         userSettingsFrame.layer?.backgroundColor = ColorService.shared.backgroundColorCGColor
         
         // Add tab view to user_settings frame
-        let tabView = NSTabView(frame: NSRect(x: 0, y: 0, width: userSettingsFrame.frame.width, height: userSettingsFrame.frame.height))
+        tabView = NSTabView(frame: NSRect(x: 0, y: 0, width: userSettingsFrame.frame.width, height: userSettingsFrame.frame.height))
         
         // Create tabs
         addTab(to: tabView, title: LocalizationService.shared.localizedString(for: "account"), iconPath: "\(FileManager.default.currentDirectoryPath)/Resources/Assets/account.png")

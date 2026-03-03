@@ -3,17 +3,9 @@
 
 /* Greeting message when user is not logged in */
 "hello_guest" = "Hello, I'm Pen, your AI writing assistent. Please login to continue";
-
-/* Message when internet connection fails */
 "internet_failure" = "You don't seem to have an internet connection, please check your network settings";
-
-/* Message when database connection fails */
 "database_failure" = "Oops, something went wrong with our service, please try again later...";
-
-/* Message when selected file is too large */
 "file_too_large" = "Please choose an image file smaller than 1MB.";
-
-/* Test pop-up message */
 "test_popup_message" = "Test Pop up message";
 
 /* Menu bar tooltips */
@@ -73,9 +65,9 @@
 "shortcut_recorded_successfully" = "Shortcut key recorded successfully";
 "shortcut_conflict" = "Shortcut Conflict: %@ conflicts with an existing system or application shortcut. Please choose a different combination.";
 "custom_shortcut_set" = "Custom shortcut set: %@";
-"history_settings_title" = "History Settings";
+"history_settings_title" = "Maximum content history:";
 "content_history_to_save" = "Content history to save:";
-"language_title" = "Language";
+"language_title" = "Select language";
 "select_language" = "Select language:";
 "english_language" = "English";
 "chinese_language" = "简体中文 (Simplified Chinese)";
@@ -98,7 +90,6 @@
 "connections_saved_successfully" = "Connections saved successfully";
 "delete_ai_connection" = "Delete AI Connection";
 "delete_confirmation" = "Are you sure you want to delete the %@ connection?";
-"cancel_button" = "Cancel";
 "only_non_duplicate_connections_saved" = "Duplicated AI Connections are not saved!";
 "only_valid_api_key_connections_saved" = "Only AI Connections with valid API Key are saved!";
 "only_valid_no_duplicate_connections_saved" = "Only AI Connections with valid API Key and no duplicates are saved!";
@@ -130,22 +121,14 @@
 "save_button_accessibility" = "Save";
 "close_button_accessibility" = "Close";
 
-/* UI Controls Test */
-"ui_controls_test" = "UI Controls Test";
-
 /* Main window */
 "pen_ai_title" = "Pen AI";
 "hello_world" = "Hello World!";
-
-/* AI Configurations */
 "no_ai_configuration" = "No AI Configuration set up yet.\nGo to Preference → AI Configuration to set up.";
-
-/* User status */
 "no_user" = "No User";
 
 /* Menu items */
 "preferences" = "Preferences";
-"logout" = "Logout";
 "login" = "Login";
 "reload" = "Reload";
 "exit" = "Exit";
@@ -178,7 +161,6 @@
 "prompt_name_column" = "Name";
 "prompt_text_column" = "Prompt - hover over to view the full content";
 "edit_button" = "Edit";
-"delete_button" = "Delete";
 "delete_prompt_title" = "Delete Prompt";
 "delete_prompt_confirmation" = "Are you sure you want to delete this prompt?";
 "prompt_deleted_successfully" = "Prompt deleted successfully";
@@ -191,8 +173,6 @@
 "all_fields_required" = "All fields are required";
 "name_label" = "Name:";
 "prompt_label" = "Prompt:";
-"save_button" = "Save";
-"cancel_button" = "Cancel";
 "prompt_updated_successfully" = "Prompt updated successfully";
 "prompt_created_successfully" = "Prompt created successfully";
 "create_new_prompt_canceled" = "Create new prompt canceled, all changes discarded";
@@ -285,6 +265,7 @@
 "menu_find" = "Find...";
 "menu_find_next" = "Find Next";
 "menu_find_previous" = "Find Previous";
+
 /* Appearance Section */
 "appearance_title" = "Appearance";
 "auto_switch_appearance" = "Auto-switch appearance";

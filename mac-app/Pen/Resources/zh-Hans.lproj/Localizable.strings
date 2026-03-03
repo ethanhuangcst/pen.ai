@@ -3,17 +3,9 @@
 
 /* Greeting message when user is not logged in */
 "hello_guest" = "你好，我是 Pen，你的 AI 写作助手。请登录继续";
-
-/* Message when internet connection fails */
-"internet_failure" = "您似乎没有互联网连接，请检查您的网络设置";
-
-/* Message when database connection fails */
+"internet_failure" = "网络好像出错了，请检查您的网络设置";
 "database_failure" = "抱歉，我们的服务出现了问题，请稍后再试...";
-
-/* Message when selected file is too large */
 "file_too_large" = "请选择小于 1MB 的图像文件。";
-
-/* Test pop-up message */
 "test_popup_message" = "测试弹出消息";
 
 /* Menu bar tooltips */
@@ -49,17 +41,17 @@
 "forgot_password" = "忘记密码？";
 "forgot_password_window_title" = "忘记密码";
 "send_reset_link_button" = "发送重置链接";
+"send_button" = "发送";
+"sending_button" = "发送中...";
 "reset_link_sent_success" = "密码重置链接已成功发送！请检查您的邮箱。";
+"reset_password_email_sent" = "重置密码邮件已发送。";
 "reset_link_sent_failure" = "发送重置链接失败。请检查您的邮箱并重试。";
+"failed_to_send_reset_password_email" = "发送重置密码邮件失败，请稍后再试。";
 "invalid_email_error" = "请输入有效的邮箱地址。";
 "success_title" = "成功";
 "error_title" = "错误";
 "ok_button" = "确定";
 "cancel_button" = "取消";
-"send_button" = "发送";
-"sending_button" = "发送中...";
-"reset_password_email_sent" = "重置密码邮件已发送。";
-"failed_to_send_reset_password_email" = "发送重置密码邮件失败，请稍后再试。";
 
 /* General tab */
 "keyboard_shortcut_title" = "切换 Pen 窗口的键盘快捷键";
@@ -71,11 +63,11 @@
 "accessibility_permission_note" = "注意：您可能需要为全局键盘监控授予辅助功能权限";
 "accessibility_permission_required" = "请在系统偏好设置中授予辅助功能权限";
 "shortcut_recorded_successfully" = "快捷键记录成功";
-"shortcut_conflict" = "快捷键冲突：%@ 与现有的快捷键冲突。请重试。";
+"shortcut_conflict" = "%@ 与现有的快捷键冲突。请重试。";
 "custom_shortcut_set" = "自定义快捷键已设置：%@";
-"history_settings_title" = "历史记录设置";
+"history_settings_title" = "最大内容历史记录：";
 "content_history_to_save" = "要保存的内容历史记录：";
-"language_title" = "语言";
+"language_title" = "选择语言";
 "select_language" = "选择语言：";
 "english_language" = "English";
 "chinese_language" = "简体中文";
@@ -98,7 +90,6 @@
 "connections_saved_successfully" = "连接保存成功";
 "delete_ai_connection" = "删除 AI 连接";
 "delete_confirmation" = "确定要删除 %@ 连接吗？";
-"cancel_button" = "取消";
 "only_non_duplicate_connections_saved" = "重复的 AI 连接未保存！";
 "only_valid_api_key_connections_saved" = "只保存具有有效 API 密钥的 AI 连接！";
 "only_valid_no_duplicate_connections_saved" = "只保存具有有效 API 密钥且非重复的 AI 连接！";
@@ -130,8 +121,39 @@
 "save_button_accessibility" = "保存";
 "close_button_accessibility" = "关闭";
 
-/* UI Controls Test */
-"ui_controls_test" = "UI 控件测试";
+/* Main window */
+"pen_ai_title" = "Pen AI";
+"hello_world" = "Hello World!";
+"no_ai_configuration" = "尚未设置 AI 配置。\n前往偏好设置 → AI 配置进行设置。";
+"no_user" = "无用户";
+
+/* Menu items */
+"preferences" = "偏好设置";
+"login" = "登录";
+"reload" = "重新加载";
+"exit" = "退出";
+
+/* Menu bar fallback titles */
+"pen_menu_title" = "Pen";
+"pen_menu_title_offline" = "Pen（离线）";
+
+/* Footer text */
+"pen_footer_text" = "Pen - AI 写作助手";
+"pen_footer_shortcut" = " Pen ";
+"pen_footer_label" = " Pen ";
+"pen_footer_instruction" = "热键：%@ .";
+"paste_from_clipboard" = "从剪贴板粘贴，或按 %@";
+"paste_from_clipboard_simple" = "从剪贴板粘贴";
+
+/* Login window */
+"pen_ai_login" = "Pen - 登录";
+"email_label" = "邮箱：";
+"enter_email_placeholder" = "输入您的邮箱";
+"password_label" = "密码：";
+"enter_password_placeholder" = "输入您的密码";
+"remember_me" = "记住我";
+"login_button" = "登录";
+"invalid_credentials" = "邮箱或密码无效";
 
 /* Prompts tab */
 "prompts_title" = "提示词";
@@ -139,7 +161,6 @@
 "prompt_name_column" = "名称";
 "prompt_text_column" = "提示词";
 "edit_button" = "编辑";
-"delete_button" = "删除";
 "delete_prompt_title" = "删除提示词";
 "delete_prompt_confirmation" = "确定要删除这个提示词吗？";
 "prompt_deleted_successfully" = "提示词删除成功";
@@ -152,8 +173,6 @@
 "all_fields_required" = "所有字段都是必填项";
 "name_label" = "名称：";
 "prompt_label" = "提示词：";
-"save_button" = "保存";
-"cancel_button" = "取消";
 "prompt_updated_successfully" = "提示词更新成功";
 "prompt_created_successfully" = "提示词创建成功";
 "create_new_prompt_canceled" = "新建提示词已取消，所有更改已丢弃";
@@ -165,25 +184,18 @@
 "no_prompts_saved_yet" = "暂无保存的提示词";
 "set_as_default_prompt" = "设为默认提示词";
 
-/* Footer text */
-"pen_footer_label" = " Pen ";
-"pen_footer_instruction" = "热键： %@ ";
-"paste_from_clipboard" = "从剪贴板粘贴，或按 %@";
-"paste_from_clipboard_simple" = "从剪贴板粘贴";
-
 /* Clipboard messages */
 "clipboard_empty_message" = "剪贴板为空。复制文本并点击粘贴按钮，或使用热键进行处理。";
 "clipboard_non_text_message" = "您剪贴板中的文本内容将自动显示在这里";
 "clipboard_access_error" = "无法访问剪贴板。请重试。";
 "text_copied_to_clipboard" = "文本已复制到剪贴板";
-
-/* User status */
-"no_user" = "无用户";
+"content_copied_to_clipboard" = "内容已复制到剪贴板。";
+"failed_to_copy_to_clipboard" = "复制到剪贴板失败，\n请重试";
 
 /* Pen window */
-"pen_load_login_error" = "Pen 无法加载您的登录信息。\n请登录后重试。";
+"pen_load_login_error" = "Pen 无法加载您的信息。\n请登录后重试。";
 "pen_not_logged_in_error" = "Pen 无法在您未登录时提供服务。\n请登录后重试。";
-"pen_no_ai_connections" = "您还没有可用的 AI 连接，请前往偏好设置 - AI 连接设置新连接。";
+"pen_no_ai_connections" = "您还没有可用的 AI 连接，\n请前往偏好设置 - AI 连接设置新连接。";
 "pen_ai_configuration_failure" = "无法加载您的 AI 连接。\n请稍后重试。";
 "pen_enhanced_text_placeholder" = "增强文本将显示在这里";
 "pen_original_text_placeholder" = "原始文本将显示在这里";
@@ -191,6 +203,7 @@
 "pen_select_provider" = "选择提供商";
 "pen_no_providers_available" = "没有可用的 AI 提供商";
 "pen_no_prompts_available" = "没有可用的提示词";
+"pen_enhance_error" = "增强文本失败。请稍后重试。";
 "pen_refining_content" = "优化中...";
 
 /* Registration success message */
@@ -214,7 +227,7 @@
 "update_button" = "更新";
 "maximum_file_size_ratio" = "最大文件大小：1M，建议 1:1 比例";
 "passwords_dont_match" = "密码不匹配";
-"leave_password_empty_current" = "留空密码字段以保持当前密码";
+"leave_password_empty_current" = "密码输入框留空将保留当前密码";
 "failed_to_load_image" = "加载图片失败";
 "passwords_dont_match_retry" = "密码不匹配。请重试。";
 "changes_saved_successfully" = "更改保存成功！";
@@ -232,8 +245,8 @@
 
 /* History tab */
 "column_number" = "序号";
-"column_content_enhanced" = "增强内容：";
-"column_enhanced_at" = "增强时间：";
+"column_content_enhanced" = "优化内容：";
+"column_enhanced_at" = "优化时间：";
 "column_copy" = "复制";
 "no_history_available" = "暂无历史记录。开始增强内容以建立您的历史记录。";
 "loading_history" = "加载历史记录中...";
@@ -252,6 +265,7 @@
 "menu_find" = "查找...";
 "menu_find_next" = "查找下一个";
 "menu_find_previous" = "查找上一个";
+
 /* Appearance Section */
 "appearance_title" = "外观";
 "auto_switch_appearance" = "自动切换外观";

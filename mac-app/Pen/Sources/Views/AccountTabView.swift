@@ -19,6 +19,16 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
     private var isPasswordSecure: Bool = true
     private var isConfirmPasswordSecure: Bool = true
     
+    // Labels for language change updates
+    private var sizeLabel: NSTextField!
+    private var nameLabel: NSTextField!
+    private var emailLabel: NSTextField!
+    private var passwordLabel: NSTextField!
+    private var confirmLabel: NSTextField!
+    private var passwordInstructionLabel: NSTextField!
+    private var uploadButton: FocusableButton!
+    private var saveButton: FocusableButton!
+    
     // MARK: - Initialization
     init(frame: CGRect, user: User?, parentWindow: NSWindow) {
         self.user = user
@@ -33,6 +43,23 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    // MARK: - Language Change
+    @objc func languageDidChange() {
+        // Update all labels with localized strings
+        sizeLabel?.stringValue = LocalizationService.shared.localizedString(for: "maximum_file_size_ratio")
+        nameLabel?.stringValue = LocalizationService.shared.localizedString(for: "name")
+        emailLabel?.stringValue = LocalizationService.shared.localizedString(for: "email")
+        passwordLabel?.stringValue = LocalizationService.shared.localizedString(for: "new_password")
+        confirmLabel?.stringValue = LocalizationService.shared.localizedString(for: "confirm_password")
+        passwordInstructionLabel?.stringValue = LocalizationService.shared.localizedString(for: "leave_password_empty_current")
+        passwordMismatchLabel?.stringValue = LocalizationService.shared.localizedString(for: "passwords_dont_match")
+        uploadButton?.title = LocalizationService.shared.localizedString(for: "update_button")
+        saveButton?.title = LocalizationService.shared.localizedString(for: "save_changes")
+        
+        needsDisplay = true
+        print("AccountTabView: Language changed, UI updated")
     }
     
     // MARK: - Private Methods
@@ -106,7 +133,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         profileImageContainer.addSubview(profileImageView)
         profileSection.addSubview(profileImageContainer)
         
-        let uploadButton = FocusableButton(frame: NSRect(x: 0, y: 0, width: profileImageSize, height: 20))
+        uploadButton = FocusableButton(frame: NSRect(x: 0, y: 0, width: profileImageSize, height: 20))
         uploadButton.title = LocalizationService.shared.localizedString(for: "update_button")
         uploadButton.bezelStyle = .rounded
         uploadButton.target = self
@@ -114,7 +141,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         uploadButton.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_image")
         profileSection.addSubview(uploadButton)
         
-        let sizeLabel = NSTextField(frame: NSRect(x: profileImageSize + 40, y: -3, width: 250, height: 20))
+        sizeLabel = NSTextField(frame: NSRect(x: profileImageSize + 40, y: -3, width: 250, height: 20))
         sizeLabel.stringValue = LocalizationService.shared.localizedString(for: "maximum_file_size_ratio")
         sizeLabel.isBezeled = false
         sizeLabel.drawsBackground = false
@@ -131,7 +158,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         let infoContainer = NSView(frame: NSRect(x: profileImageSize + 40, y: 34, width: contentWidth - profileImageSize - 80, height: 100))
         
         // Name field
-        let nameLabel = NSTextField(frame: NSRect(x: 0, y: 54, width: 100, height: 20))
+        nameLabel = NSTextField(frame: NSRect(x: 0, y: 54, width: 100, height: 20))
         nameLabel.stringValue = LocalizationService.shared.localizedString(for: "name")
         nameLabel.isBezeled = false
         nameLabel.drawsBackground = false
@@ -145,7 +172,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         infoContainer.addSubview(nameField)
         
         // Email field
-        let emailLabel = NSTextField(frame: NSRect(x: 0, y: 14, width: 100, height: 20))
+        emailLabel = NSTextField(frame: NSRect(x: 0, y: 14, width: 100, height: 20))
         emailLabel.stringValue = LocalizationService.shared.localizedString(for: "email")
         emailLabel.isBezeled = false
         emailLabel.drawsBackground = false
@@ -165,7 +192,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         let passwordSection = NSView(frame: NSRect(x: 20, y: 0, width: contentWidth - 40, height: 120))
         
         // New password field
-        let passwordLabel = NSTextField(frame: NSRect(x: 0, y: 80, width: 120, height: 20))
+        passwordLabel = NSTextField(frame: NSRect(x: 0, y: 80, width: 120, height: 20))
         passwordLabel.stringValue = LocalizationService.shared.localizedString(for: "new_password")
         passwordLabel.isBezeled = false
         passwordLabel.drawsBackground = false
@@ -209,7 +236,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         passwordSection.addSubview(passwordToggleButton)
         
         // Confirm password field
-        let confirmLabel = NSTextField(frame: NSRect(x: 0, y: 40, width: 120, height: 20))
+        confirmLabel = NSTextField(frame: NSRect(x: 0, y: 40, width: 120, height: 20))
         confirmLabel.stringValue = LocalizationService.shared.localizedString(for: "confirm_password")
         confirmLabel.isBezeled = false
         confirmLabel.drawsBackground = false
@@ -273,7 +300,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         registrationForm.addSubview(passwordSection)
         
-        let passwordInstructionLabel = NSTextField(frame: NSRect(x: 20, y: 110, width: 325, height: 12))
+        passwordInstructionLabel = NSTextField(frame: NSRect(x: 20, y: 110, width: 325, height: 12))
         passwordInstructionLabel.stringValue = LocalizationService.shared.localizedString(for: "leave_password_empty_current")
         passwordInstructionLabel.isBezeled = false
         passwordInstructionLabel.drawsBackground = false
@@ -288,7 +315,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         addSubview(registrationForm)
         
         // Action buttons
-        let saveButton = FocusableButton(frame: NSRect(x: 49, y: 22, width: 100, height: 32))
+        saveButton = FocusableButton(frame: NSRect(x: 49, y: 22, width: 100, height: 32))
         saveButton.title = LocalizationService.shared.localizedString(for: "save_changes")
         saveButton.bezelStyle = .rounded
         saveButton.target = self

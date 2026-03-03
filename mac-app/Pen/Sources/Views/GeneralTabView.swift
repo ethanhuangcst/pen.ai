@@ -6,16 +6,19 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     private weak var parentWindow: NSWindow?
     
     // UI Elements
-    
-    private var historyCountLow: FocusableButton!
-    private var historyCountMedium: FocusableButton!
-    private var historyCountHigh: FocusableButton!
-    
+    private var generalForm: NSView!
+    private var historyCountPopup: NSPopUpButton!
     private var languagePopup: NSPopUpButton!
     
     // Appearance section properties
     private var autoSwitchButton: NSSwitch!
     private var appearancePopup: NSPopUpButton!
+    
+    // Labels for language change updates
+    private var shortcutLabel: NSTextField!
+    private var historyLabel: NSTextField!
+    private var languageLabel: NSTextField!
+    private var saveButton: FocusableButton!
     
     // MARK: - Initialization
     init(frame: CGRect, parentWindow: NSWindow) {
@@ -38,6 +41,22 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Language Change
+    @objc func languageDidChange() {
+        // Update all UI elements with localized strings
+        shortcutLabel?.stringValue = LocalizationService.shared.localizedString(for: "toggle_pen_shortcut_title")
+        historyLabel?.stringValue = LocalizationService.shared.localizedString(for: "history_settings_title")
+        languageLabel?.stringValue = LocalizationService.shared.localizedString(for: "language_title")
+        saveButton?.title = LocalizationService.shared.localizedString(for: "save_button")
+        
+        // Update language popup items
+        languagePopup?.item(at: 0)?.title = LocalizationService.shared.localizedString(for: "english_language")
+        languagePopup?.item(at: 1)?.title = LocalizationService.shared.localizedString(for: "chinese_language")
+        
+        needsDisplay = true
+        print("GeneralTabView: Language changed, UI updated")
+    }
+    
     // MARK: - Private Methods
     
     /// Sets up the General tab with all three features
@@ -45,51 +64,116 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         let contentWidth = frame.width
         let contentHeight = frame.height
         
-        // Section spacing
-        let sectionHeight: CGFloat = 100
-        let sectionSpacing: CGFloat = 20
+        // Create container view for form elements
+        generalForm = NSView(frame: NSRect(x: 0, y: 0, width: contentWidth, height: contentHeight))
+        addSubview(generalForm)
         
-        // Shortcut key section
-        let shortcutSection = createSectionView(x: 20, y: contentHeight - sectionHeight - 70, width: contentWidth - 40, height: sectionHeight)
-        setupShortcutKeySection(shortcutSection)
-        addSubview(shortcutSection)
+        // "Toggle Pen with shortcut:" label
+        shortcutLabel = NSTextField(frame: NSRect(x: 40, y: 290, width: 250, height: 25))
+        shortcutLabel.stringValue = LocalizationService.shared.localizedString(for: "toggle_pen_shortcut_title")
+        shortcutLabel.isBezeled = false
+        shortcutLabel.drawsBackground = false
+        shortcutLabel.isEditable = false
+        shortcutLabel.isSelectable = false
+        shortcutLabel.font = NSFont.boldSystemFont(ofSize: 14)
+        generalForm.addSubview(shortcutLabel)
         
-        // History count section - fixed top edge and increased height by 10px
-        let historySection = createSectionView(x: 20, y: contentHeight - (sectionHeight * 2) - sectionSpacing - 32, width: contentWidth - 40, height: sectionHeight - 28)
-        setupHistoryCountSection(historySection)
-        addSubview(historySection)
+        // Shortcut recording field
+        shortcutKeyField = ClickableTextField(frame: NSRect(x: 320, y: 290, width: 200, height: 25))
+        shortcutKeyField.stringValue = previousShortcut
+        shortcutKeyField.isEditable = false
+        shortcutKeyField.isSelectable = true
+        shortcutKeyField.isBezeled = true
+        shortcutKeyField.delegate = self
+        shortcutKeyField.clickAction = {
+            [weak self] in
+            print("[GeneralTabView] Click action called")
+            self?.startRecording()
+        }
+        generalForm.addSubview(shortcutKeyField)
         
-        // Language section - moved 18px down
-        let languageSection = createSectionView(x: 20, y: contentHeight - 342, width: contentWidth - 40, height: sectionHeight - 20)
-        setupLanguageSection(languageSection)
-        addSubview(languageSection)
+        // Create key capture view
+        keyCaptureView = KeyCaptureView(frame: shortcutKeyField.bounds)
+        keyCaptureView.autoresizingMask = [.width, .height]
+        keyCaptureView.wantsLayer = true
+        keyCaptureView.layer?.backgroundColor = NSColor.clear.cgColor
+        keyCaptureView.onKeyDown = { [weak self] event in
+            self?.handleKeyEvent(event)
+        }
+        shortcutKeyField.addSubview(keyCaptureView)
         
-        // Appearance section - DISABLED for now, always use light mode
-        // let appearanceSection = createSectionView(x: 20, y: contentHeight - 442, width: contentWidth - 40, height: sectionHeight + 10)
-        // setupAppearanceSection(appearanceSection)
-        // addSubview(appearanceSection)
+        // "Maximum content history:" label
+        historyLabel = NSTextField(frame: NSRect(x: 40, y: 235, width: 250, height: 25))
+        historyLabel.stringValue = LocalizationService.shared.localizedString(for: "history_settings_title")
+        historyLabel.isBezeled = false
+        historyLabel.drawsBackground = false
+        historyLabel.isEditable = false
+        historyLabel.isSelectable = false
+        historyLabel.font = NSFont.boldSystemFont(ofSize: 14)
+        generalForm.addSubview(historyLabel)
+        
+        // History count dropdown
+        let configService = SystemConfigService.shared
+        let lowValue = configService.CONTENT_HISTORY_LOW
+        let mediumValue = configService.CONTENT_HISTORY_MEDIUM
+        let highValue = configService.CONTENT_HISTORY_HIGH
+        
+        historyCountPopup = NSPopUpButton(frame: NSRect(x: 320, y: 235, width: 80, height: 25))
+        historyCountPopup.addItem(withTitle: "\(lowValue)")
+        historyCountPopup.addItem(withTitle: "\(mediumValue)")
+        historyCountPopup.addItem(withTitle: "\(highValue)")
+        
+        if selectedHistoryCount == lowValue {
+            historyCountPopup.selectItem(at: 0)
+        } else if selectedHistoryCount == mediumValue {
+            historyCountPopup.selectItem(at: 1)
+        } else if selectedHistoryCount == highValue {
+            historyCountPopup.selectItem(at: 2)
+        }
+        
+        historyCountPopup.target = self
+        historyCountPopup.action = #selector(historyCountSelected)
+        generalForm.addSubview(historyCountPopup)
+        
+        // "Select language" label
+        languageLabel = NSTextField(frame: NSRect(x: 40, y: 180, width: 250, height: 25))
+        languageLabel.stringValue = LocalizationService.shared.localizedString(for: "language_title")
+        languageLabel.isBezeled = false
+        languageLabel.drawsBackground = false
+        languageLabel.isEditable = false
+        languageLabel.isSelectable = false
+        languageLabel.font = NSFont.boldSystemFont(ofSize: 14)
+        generalForm.addSubview(languageLabel)
+        
+        // Language dropdown
+        languagePopup = NSPopUpButton(frame: NSRect(x: 320, y: 180, width: 200, height: 25))
+        languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "english_language"))
+        languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "chinese_language"))
+        
+        let currentLanguage = LocalizationService.shared.language
+        languagePopup.selectItem(at: currentLanguage == .english ? 0 : 1)
+        
+        languagePopup.target = self
+        languagePopup.action = #selector(languageSelected)
+        generalForm.addSubview(languagePopup)
         
         // Set tab order explicitly
-        historyCountLow.nextKeyView = historyCountMedium
-        historyCountMedium.nextKeyView = historyCountHigh
-        historyCountHigh.nextKeyView = languagePopup
-        // languagePopup.nextKeyView = autoSwitchButton
-        // autoSwitchButton.nextKeyView = appearancePopup
-        // appearancePopup.nextKeyView = historyCountLow
-        languagePopup.nextKeyView = historyCountLow
+        shortcutKeyField.nextKeyView = historyCountPopup
+        historyCountPopup.nextKeyView = languagePopup
+        languagePopup.nextKeyView = shortcutKeyField
         
-        // Add save button at the bottom right
+        // Add save button
         addSaveButton()
     }
     
     /// Adds a save button at the bottom right of the view
     private func addSaveButton() {
-        let saveButton = FocusableButton(frame: NSRect(x: 20, y: 15, width: 80, height: 32))
+        saveButton = FocusableButton(frame: NSRect(x: 40, y: 40, width: 80, height: 32))
         saveButton.title = LocalizationService.shared.localizedString(for: "save_button")
         saveButton.bezelStyle = .rounded
         saveButton.target = self
         saveButton.action = #selector(saveButtonClicked)
-        addSubview(saveButton)
+        generalForm.addSubview(saveButton)
     }
     
     @objc private func saveButtonClicked() {
@@ -98,10 +182,12 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         // Get current user
         guard let user = UserService.shared.currentUser else {
             print("No user logged in")
-            statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_save_error")
-            statusLabel.textColor = .systemRed
             return
         }
+        
+        // Get selected language
+        let selectedLanguageIndex = languagePopup.indexOfSelectedItem
+        let selectedLanguage: AppLanguage = selectedLanguageIndex == 0 ? .english : .chineseSimplified
         
         // Update user with selected history count
         Task {
@@ -114,8 +200,12 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
             
             if success {
                 print("User updated successfully")
-                statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_saved_successfully")
-                statusLabel.textColor = .systemGreen
+                
+                // Switch language if changed
+                if LocalizationService.shared.language != selectedLanguage {
+                    LocalizationService.shared.setLanguage(selectedLanguage)
+                    print("Language switched to: \(selectedLanguage.displayName)")
+                }
                 
                 // Update the global user object with the new history count
                 let updatedUser = User(id: user.id, name: user.name, email: user.email, profileImage: user.profileImage, createdAt: user.createdAt, systemFlag: user.systemFlag, penContentHistory: selectedHistoryCount)
@@ -129,10 +219,6 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
                 if let parentWindow = self.parentWindow as? BaseWindow {
                     parentWindow.displayPopupMessage(LocalizationService.shared.localizedString(for: "general_settings_saved"))
                 }
-            } else {
-                print("Failed to update user")
-                statusLabel.stringValue = LocalizationService.shared.localizedString(for: "settings_save_error")
-                statusLabel.textColor = .systemRed
             }
         }
     }
@@ -154,13 +240,13 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         let mediumValue = configService.CONTENT_HISTORY_MEDIUM
         let highValue = configService.CONTENT_HISTORY_HIGH
         
-        // Set the correct radio button based on the user's saved history count
+        // Set initial selection based on the user's saved history count
         if selectedHistoryCount == lowValue {
-            historyCountLow.state = .on
+            historyCountPopup.selectItem(at: 0)
         } else if selectedHistoryCount == mediumValue {
-            historyCountMedium.state = .on
+            historyCountPopup.selectItem(at: 1)
         } else if selectedHistoryCount == highValue {
-            historyCountHigh.state = .on
+            historyCountPopup.selectItem(at: 2)
         }
     }
     
@@ -168,15 +254,13 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     private func createSectionView(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat) -> NSView {
         let section = NSView(frame: NSRect(x: x, y: y, width: width, height: height))
         section.wantsLayer = true
-        section.layer?.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0).cgColor
-        section.layer?.cornerRadius = 8
+        section.layer?.backgroundColor = NSColor.clear.cgColor
         return section
     }
     
     // UI Elements
     private var shortcutKeyField: ClickableTextField!
     private var keyCaptureView: KeyCaptureView!
-    private var statusLabel: NSTextField!
     private var isRecording: Bool = false
     private var mouseEventMonitor: Any? = nil
     private var previousShortcut: String = "Command+Option+P" // Default shortcut
@@ -217,7 +301,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         let sectionHeight = section.frame.height
         
         // Section title
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 30, width: 250, height: 20))
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 36, width: 250, height: 20))
         titleLabel.stringValue = LocalizationService.shared.localizedString(for: "toggle_pen_shortcut_title")
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
@@ -227,14 +311,12 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         section.addSubview(titleLabel)
         
         // Shortcut key display field
-        shortcutKeyField = ClickableTextField(frame: NSRect(x: 280, y: sectionHeight - 28, width: 238, height: 27))
+        shortcutKeyField = ClickableTextField(frame: NSRect(x: 280, y: sectionHeight - 38, width: 250, height: 25))
         shortcutKeyField.stringValue = previousShortcut // Use the loaded shortcut
         shortcutKeyField.isEditable = false
         shortcutKeyField.isSelectable = true
-        shortcutKeyField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
-        shortcutKeyField.layer?.cornerRadius = 4
-        shortcutKeyField.layer?.borderWidth = 1
-        shortcutKeyField.layer?.borderColor = NSColor.separatorColor.cgColor
+        shortcutKeyField.backgroundColor = NSColor.textBackgroundColor
+        shortcutKeyField.isBezeled = true
         shortcutKeyField.clickAction = {
             [weak self] in
             print("[GeneralTabView] Click action called")
@@ -251,28 +333,6 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
             self?.handleKeyEvent(event)
         }
         shortcutKeyField.addSubview(keyCaptureView)
-        
-        // Status label - moved 30px down
-        statusLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 168, width: 380, height: 20))
-        statusLabel.stringValue = LocalizationService.shared.localizedString(for: "record_shortcut_prompt")
-        statusLabel.isBezeled = false
-        statusLabel.drawsBackground = false
-        statusLabel.isEditable = false
-        statusLabel.isSelectable = false
-        statusLabel.textColor = .systemGray
-        statusLabel.font = NSFont.systemFont(ofSize: 12)
-        section.addSubview(statusLabel)
-        
-        // Permission info label - moved 30px down
-        let permissionLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 188, width: 380, height: 20))
-        permissionLabel.stringValue = LocalizationService.shared.localizedString(for: "accessibility_permission_note")
-        permissionLabel.isBezeled = false
-        permissionLabel.drawsBackground = false
-        permissionLabel.isEditable = false
-        permissionLabel.isSelectable = false
-        permissionLabel.textColor = .systemGray
-        permissionLabel.font = NSFont.systemFont(ofSize: 11)
-        section.addSubview(permissionLabel)
     }
     
     /// Sets up the history count section
@@ -281,7 +341,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         let sectionHeight = section.frame.height
         
         // Section title
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 30, width: 200, height: 20))
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 30, width: 250, height: 25))
         titleLabel.stringValue = LocalizationService.shared.localizedString(for: "history_settings_title")
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
@@ -290,58 +350,30 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         titleLabel.font = NSFont.boldSystemFont(ofSize: 14)
         section.addSubview(titleLabel)
         
-        // History count label
-        let historyLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 60, width: 200, height: 20))
-        historyLabel.stringValue = LocalizationService.shared.localizedString(for: "content_history_to_save")
-        historyLabel.isBezeled = false
-        historyLabel.drawsBackground = false
-        historyLabel.isEditable = false
-        historyLabel.isSelectable = false
-        section.addSubview(historyLabel)
-        
         // Get history count values from config service
         let configService = SystemConfigService.shared
         let lowValue = configService.CONTENT_HISTORY_LOW
         let mediumValue = configService.CONTENT_HISTORY_MEDIUM
         let highValue = configService.CONTENT_HISTORY_HIGH
         
-        // History count options
-        let optionWidth: CGFloat = 80
-        let optionHeight: CGFloat = 28
-        let optionSpacing: CGFloat = 10
+        // History count dropdown
+        historyCountPopup = NSPopUpButton(frame: NSRect(x: 280, y: sectionHeight - 32, width: 80, height: 25))
+        historyCountPopup.addItem(withTitle: "\(lowValue)")
+        historyCountPopup.addItem(withTitle: "\(mediumValue)")
+        historyCountPopup.addItem(withTitle: "\(highValue)")
         
-        historyCountLow = createHistoryOptionButton(title: "\(lowValue)", x: 220, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
-        section.addSubview(historyCountLow)
-        
-        historyCountMedium = createHistoryOptionButton(title: "\(mediumValue)", x: 220 + optionWidth + optionSpacing, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
-        section.addSubview(historyCountMedium)
-        
-        historyCountHigh = createHistoryOptionButton(title: "\(highValue)", x: 220 + (optionWidth + optionSpacing) * 2, y: sectionHeight - 60, width: optionWidth, height: optionHeight)
-        section.addSubview(historyCountHigh)
-        
-        // Group the radio buttons
-        historyCountLow.setButtonType(.radio)
-        historyCountMedium.setButtonType(.radio)
-        historyCountHigh.setButtonType(.radio)
-        
-        // Set the correct radio button based on the user's saved history count
+        // Set initial selection based on the user's saved history count
         if selectedHistoryCount == lowValue {
-            historyCountLow.state = .on
+            historyCountPopup.selectItem(at: 0)
         } else if selectedHistoryCount == mediumValue {
-            historyCountMedium.state = .on
+            historyCountPopup.selectItem(at: 1)
         } else if selectedHistoryCount == highValue {
-            historyCountHigh.state = .on
+            historyCountPopup.selectItem(at: 2)
         }
-    }
-    
-    /// Creates a history option button
-    private func createHistoryOptionButton(title: String, x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat) -> FocusableButton {
-        let button = FocusableButton(frame: NSRect(x: x, y: y, width: width, height: height))
-        button.title = title
-        button.bezelStyle = .rounded
-        button.target = self
-        button.action = #selector(historyCountSelected)
-        return button
+        
+        historyCountPopup.target = self
+        historyCountPopup.action = #selector(historyCountSelected)
+        section.addSubview(historyCountPopup)
     }
     
     /// Sets up the language section
@@ -350,7 +382,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         let sectionHeight = section.frame.height
         
         // Section title
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 28, width: 200, height: 20))
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 28, width: 250, height: 25))
         titleLabel.stringValue = LocalizationService.shared.localizedString(for: "language_title")
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
@@ -359,20 +391,15 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         titleLabel.font = NSFont.boldSystemFont(ofSize: 14)
         section.addSubview(titleLabel)
         
-        // Language label
-        let languageLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 58, width: 150, height: 20))
-        languageLabel.stringValue = LocalizationService.shared.localizedString(for: "select_language")
-        languageLabel.isBezeled = false
-        languageLabel.drawsBackground = false
-        languageLabel.isEditable = false
-        languageLabel.isSelectable = false
-        section.addSubview(languageLabel)
-        
         // Language popup button
-        languagePopup = NSPopUpButton(frame: NSRect(x: 170, y: sectionHeight - 63, width: 200, height: 28))
+        languagePopup = NSPopUpButton(frame: NSRect(x: 280, y: sectionHeight - 30, width: 250, height: 25))
         languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "english_language"))
         languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "chinese_language"))
-        languagePopup.selectItem(at: 0) // Default to English
+        
+        // Set initial selection based on current language
+        let currentLanguage = LocalizationService.shared.language
+        languagePopup.selectItem(at: currentLanguage == .english ? 0 : 1)
+        
         languagePopup.target = self
         languagePopup.action = #selector(languageSelected)
         section.addSubview(languagePopup)
@@ -462,12 +489,15 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         }
         
         // Request permissions first
-        let shortcutService = ShortcutService()
+        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate,
+              let shortcutService = appDelegate.shortcutService else {
+            print("[GeneralTabView] Failed to get ShortcutService from app delegate")
+            return
+        }
+        
         let hasPermission = shortcutService.checkPermissions()
         
         if !hasPermission {
-            statusLabel.stringValue = LocalizationService.shared.localizedString(for: "accessibility_permission_required")
-            statusLabel.textColor = .systemRed
             print("[GeneralTabView] No accessibility permissions")
             return
         }
@@ -478,12 +508,13 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         isRecording = true
         shortcutKeyField.stringValue = LocalizationService.shared.localizedString(for: "press_key_combination")
         shortcutKeyField.textColor = .systemBlue
-        statusLabel.stringValue = LocalizationService.shared.localizedString(for: "press_key_combination_instruction")
-        statusLabel.textColor = .systemBlue
         
         // Keep text field non-editable but make it selectable to receive events
         shortcutKeyField.isEditable = false
         shortcutKeyField.isSelectable = true
+        
+        // Make the key capture view the first responder
+        parentWindow?.makeFirstResponder(keyCaptureView)
         
         // Add mouse down monitor to detect clicks outside the text field
         mouseEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] (event) in
@@ -550,8 +581,6 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
                 // Update the display
                 self.shortcutKeyField.stringValue = shortcutString
                 self.shortcutKeyField.textColor = .textColor
-                self.statusLabel.stringValue = LocalizationService.shared.localizedString(for: "shortcut_recorded_successfully")
-                self.statusLabel.textColor = .systemGreen
                 
                 // Show success message using generic pop-up
                 if let parentWindow = self.parentWindow as? BaseWindow {
@@ -577,8 +606,6 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
             // Update the display
             self.shortcutKeyField.stringValue = shortcutString
             self.shortcutKeyField.textColor = .textColor
-            self.statusLabel.stringValue = LocalizationService.shared.localizedString(for: "shortcut_recorded_successfully")
-            self.statusLabel.textColor = .systemGreen
             
             // Register the new shortcut
             self.registerNewShortcut(keyCode: keyCode, modifiers: modifiers)
@@ -599,25 +626,22 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     }
     
     private func stopRecording(resetStatus: Bool = true) {
-        print("[GeneralTabView] stopRecording called, resetStatus=\(resetStatus)")
+        print("[GeneralTabView] stopRecording called. resetStatus=\(resetStatus)")
         isRecording = false
         
-        // Reset status label only if requested
+        // Reset shortcut field only if requested
         if resetStatus {
-            statusLabel.stringValue = LocalizationService.shared.localizedString(for: "record_shortcut_prompt")
-            statusLabel.textColor = .systemGray
-            
             // Restore the previous shortcut
             shortcutKeyField.stringValue = previousShortcut
             shortcutKeyField.textColor = .textColor
         }
         
-        // Resign first responder to allow the text field to receive mouse events again
-        _ = shortcutKeyField.resignFirstResponder()
-        
         // Reset text field to non-editable but keep it selectable to receive mouse events
         shortcutKeyField.isEditable = false
         shortcutKeyField.isSelectable = true
+        
+        // Make the shortcut field the first responder so it can receive clicks again
+        parentWindow?.makeFirstResponder(shortcutKeyField)
         
         // Remove the mouse event monitor
         if let monitor = mouseEventMonitor {
@@ -720,23 +744,36 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         }
         
         // Register the shortcut
-        let shortcutService = ShortcutService()
+        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate,
+              let shortcutService = appDelegate.shortcutService else {
+            print("[GeneralTabView] Failed to get ShortcutService from app delegate for registration")
+            return
+        }
         shortcutService.registerShortcut(keyCode: UInt32(keyCode), modifiers: carbonModifiers)
     }
 
-    @objc private func historyCountSelected(_ sender: FocusableButton) {
-        // Save selected history count
-        if let count = Int(sender.title) {
-            selectedHistoryCount = count
-            print("History count selected: \(selectedHistoryCount)")
+    @objc private func historyCountSelected(_ sender: NSPopUpButton) {
+        let selectedIndex = sender.indexOfSelectedItem
+        let configService = SystemConfigService.shared
+        
+        switch selectedIndex {
+        case 0:
+            selectedHistoryCount = configService.CONTENT_HISTORY_LOW
+        case 1:
+            selectedHistoryCount = configService.CONTENT_HISTORY_MEDIUM
+        case 2:
+            selectedHistoryCount = configService.CONTENT_HISTORY_HIGH
+        default:
+            selectedHistoryCount = configService.CONTENT_HISTORY_LOW
         }
+        
+        print("History count selected: \(selectedHistoryCount)")
     }
     
     @objc private func languageSelected(_ sender: NSPopUpButton) {
-        // TODO: Save selected language to preferences
-        if let selectedItem = sender.selectedItem {
-            print("Language selected: \(selectedItem.title)")
-        }
+        let selectedIndex = sender.indexOfSelectedItem
+        let selectedLanguage: AppLanguage = selectedIndex == 0 ? .english : .chineseSimplified
+        print("Language selected: \(selectedLanguage.displayName)")
     }
     
     @objc private func autoSwitchChanged(_ sender: NSSwitch) {

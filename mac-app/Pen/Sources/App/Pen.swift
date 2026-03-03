@@ -17,7 +17,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private var preferencesWindow: PreferencesWindow?
     private var newOrEditPromptWindow: NewOrEditPrompt?
     private var penWindowService: PenWindowService?
-    private var shortcutService: ShortcutService?
+    var shortcutService: ShortcutService?
     private var windowManager: WindowManager = WindowManager.shared
 
     private let windowWidth: CGFloat = 378

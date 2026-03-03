@@ -46,6 +46,40 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Language Change
+    @objc func languageDidChange() {
+        // Update all labels with localized strings
+        if let userName = user?.name {
+            userLabel.stringValue = LocalizationService.shared.localizedString(for: "ai_connections_for", withFormat: userName)
+        } else {
+            userLabel.stringValue = LocalizationService.shared.localizedString(for: "ai_connections_for", withFormat: "[User Name]")
+        }
+        defaultLabel.stringValue = LocalizationService.shared.localizedString(for: "first_connection_default")
+        addButton.title = LocalizationService.shared.localizedString(for: "new_button")
+        
+        // Update table column headers
+        if let tableColumns = configurationsTable.tableColumns as? [NSTableColumn] {
+            for column in tableColumns {
+                switch column.identifier.rawValue {
+                case "provider":
+                    column.title = LocalizationService.shared.localizedString(for: "provider_column")
+                case "apiKey":
+                    column.title = LocalizationService.shared.localizedString(for: "api_key")
+                case "delete":
+                    column.title = LocalizationService.shared.localizedString(for: "delete_column")
+                case "test":
+                    column.title = LocalizationService.shared.localizedString(for: "test_column")
+                default:
+                    break
+                }
+            }
+        }
+        
+        configurationsTable.reloadData()
+        needsDisplay = true
+        print("AIConfigurationTabView: Language changed, UI updated")
+    }
+    
     static func createAIConfigurationTab(user: User?, databasePool: DatabaseConnectivityPool, parentWindow: NSWindow? = nil) -> AIConfigurationTabView {
         let frame = CGRect(x: 0, y: 0, width: 680, height: 520)
         return AIConfigurationTabView(frame: frame, user: user, databasePool: databasePool, parentWindow: parentWindow)

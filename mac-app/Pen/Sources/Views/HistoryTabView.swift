@@ -26,6 +26,35 @@ class HistoryTabView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Language Change
+    @objc func languageDidChange() {
+        // Update all labels with localized strings
+        emptyStateLabel.stringValue = LocalizationService.shared.localizedString(for: "no_history_available")
+        clickToCopyLabel.stringValue = LocalizationService.shared.localizedString(for: "click_to_copy")
+        
+        // Update table column headers
+        if let tableColumns = tableView.tableColumns as? [NSTableColumn] {
+            for column in tableColumns {
+                switch column.identifier.rawValue {
+                case "number":
+                    column.title = LocalizationService.shared.localizedString(for: "column_number")
+                case "content":
+                    column.title = LocalizationService.shared.localizedString(for: "column_content_enhanced")
+                case "date":
+                    column.title = LocalizationService.shared.localizedString(for: "column_enhanced_at")
+                case "copy":
+                    column.title = LocalizationService.shared.localizedString(for: "column_copy")
+                default:
+                    break
+                }
+            }
+        }
+        
+        tableView.reloadData()
+        needsDisplay = true
+        print("HistoryTabView: Language changed, UI updated")
+    }
+    
     // MARK: - Setup
     private func setupView() {
         self.wantsLayer = true

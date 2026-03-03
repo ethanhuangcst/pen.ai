@@ -37,6 +37,41 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         setupView()
     }
     
+    // MARK: - Language Change
+    @objc func languageDidChange() {
+        // Update all labels with localized strings
+        if let userName = user?.name {
+            userLabel.stringValue = LocalizationService.shared.localizedString(for: "predefined_prompts_for", withFormat: userName)
+        } else {
+            userLabel.stringValue = LocalizationService.shared.localizedString(for: "predefined_prompts_for", withFormat: "[User Name]")
+        }
+        defaultLabel.stringValue = LocalizationService.shared.localizedString(for: "first_prompt_default")
+        addButton.title = LocalizationService.shared.localizedString(for: "new_button")
+        emptyStateLabel.stringValue = LocalizationService.shared.localizedString(for: "no_prompts_saved_yet")
+        
+        // Update table column headers
+        if let tableColumns = tableView.tableColumns as? [NSTableColumn] {
+            for column in tableColumns {
+                switch column.identifier.rawValue {
+                case "name":
+                    column.title = LocalizationService.shared.localizedString(for: "prompt_name_column")
+                case "prompt":
+                    column.title = LocalizationService.shared.localizedString(for: "prompt_text_column")
+                case "edit":
+                    column.title = LocalizationService.shared.localizedString(for: "edit_button")
+                case "delete":
+                    column.title = LocalizationService.shared.localizedString(for: "delete_button")
+                default:
+                    break
+                }
+            }
+        }
+        
+        tableView.reloadData()
+        needsDisplay = true
+        print("PromptsTabView: Language changed, UI updated")
+    }
+    
     private func setupView() {
         // Set background color
         wantsLayer = true

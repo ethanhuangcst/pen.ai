@@ -9,6 +9,7 @@ class BaseWindow: NSWindow {
     // MARK: - Properties
     private let defaultMainWindowWidth: CGFloat = 600
     var customInitialFirstResponder: NSResponder? = nil
+    private var languageChangeObserver: Any? = nil
     
     // MARK: - Initialization
     init(contentRect: NSRect, styleMask: NSWindow.StyleMask = .borderless) {
@@ -22,6 +23,9 @@ class BaseWindow: NSWindow {
         
         // Configure window properties for keyboard input
         configureWindowProperties()
+        
+        // Set up language change observer
+        setupLanguageChangeObserver()
     }
     
     /// Convenience initializer to create a window with a specific size
@@ -36,6 +40,29 @@ class BaseWindow: NSWindow {
         
         // Configure window properties for keyboard input
         configureWindowProperties()
+        
+        // Set up language change observer
+        setupLanguageChangeObserver()
+    }
+    
+    deinit {
+        if let observer = languageChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+    
+    private func setupLanguageChangeObserver() {
+        languageChangeObserver = NotificationCenter.default.addObserver(
+            forName: LocalizationService.languageDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.languageDidChange()
+        }
+    }
+    
+    @objc func languageDidChange() {
+        // Override in subclasses to update UI when language changes
     }
     
     /// Creates a standard window with all common UI behaviors
