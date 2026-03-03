@@ -12,13 +12,15 @@ let package = Package(
         .executable(name: "check-user-preferences", targets: ["check-user-preferences"])
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/mysql-kit.git", exact: "4.10.1")
+        .package(url: "https://github.com/vapor/mysql-kit.git", exact: "4.10.1"),
+        .package(url: "https://github.com/IBM-Swift/Swift-SMTP.git", from: "5.0.0")
     ],
     targets: [
         .executableTarget(
             name: "Pen",
             dependencies: [
-                .product(name: "MySQLKit", package: "mysql-kit")
+                .product(name: "MySQLKit", package: "mysql-kit"),
+                .product(name: "SwiftSMTP", package: "Swift-SMTP")
             ],
             path: "Sources",
             sources: ["App", "Models", "Services", "Views"],

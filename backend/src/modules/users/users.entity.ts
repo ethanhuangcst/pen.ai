@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { PasswordResetToken } from '../auth/password-reset-token.entity';
 
 @Entity('users')
 export class User {
@@ -26,4 +27,7 @@ export class User {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updated_at: Date;
+
+  @OneToMany(() => PasswordResetToken, (token) => token.user)
+  passwordResetTokens: PasswordResetToken[];
 }

@@ -1,0 +1,8 @@
+{
+  "smtpServer": "smtp.mail.me.com",
+  "smtpPort": 587,
+  "smtpUsername": "oncadence@icloud.com",
+  "smtpPassword": "xdbt-nunn-yfyp-wsrw",
+  "fromEmail": "oncadence@icloud.com",
+  "fromName": "Pen AI"
+}

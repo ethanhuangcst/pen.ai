@@ -3,7 +3,7 @@ import Cocoa
 class ForgotPasswordWindow: BaseWindow {
     // MARK: - Properties
     private let windowWidth: CGFloat = 258
-    private let windowHeight: CGFloat = 160
+    private let windowHeight: CGFloat = 130
     private weak var penDelegate: PenDelegate?
     
     // UI Elements
@@ -40,11 +40,14 @@ class ForgotPasswordWindow: BaseWindow {
         contentView.layer?.borderWidth = 1.0
         contentView.layer?.borderColor = NSColor.separatorColor.cgColor
         
-        // Add shadow
-        contentView.layer?.shadowColor = NSColor.black.withAlphaComponent(0.3).cgColor
-        contentView.layer?.shadowOffset = CGSize(width: 0, height: -3)
-        contentView.layer?.shadowRadius = 8
-        contentView.layer?.shadowOpacity = 1.0
+        // Add shadow (matching delete confirmation dialog style)
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+        shadow.shadowOffset = NSSize(width: 0, height: -3)
+        shadow.shadowBlurRadius = 8
+        
+        // Apply shadow to window
+        hasShadow = true
         
         // Add UI elements
         setupUI(in: contentView)
@@ -94,7 +97,7 @@ class ForgotPasswordWindow: BaseWindow {
     // MARK: - UI Setup
     private func setupUI(in contentView: NSView) {
         // Add title label
-        let titleLabel = NSTextField(frame: NSRect(x: 20, y: windowHeight - 40, width: windowWidth - 40, height: 20))
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: windowHeight - 30, width: windowWidth - 40, height: 20))
         titleLabel.stringValue = LocalizationService.shared.localizedString(for: "forgot_password_window_title")
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
@@ -105,13 +108,13 @@ class ForgotPasswordWindow: BaseWindow {
         contentView.addSubview(titleLabel)
         
         // Add email field
-        emailField = NSTextField(frame: NSRect(x: 20, y: windowHeight - 80, width: windowWidth - 40, height: 25))
+        emailField = NSTextField(frame: NSRect(x: 20, y: windowHeight - 75, width: windowWidth - 40, height: 25))
         emailField.placeholderString = LocalizationService.shared.localizedString(for: "enter_email_placeholder")
         emailField.backgroundColor = NSColor.textBackgroundColor
         contentView.addSubview(emailField)
         
         // Add send button (now on the left)
-        sendResetLinkButton = NSButton(frame: NSRect(x: 41, y: 30, width: 80, height: 32))
+        sendResetLinkButton = NSButton(frame: NSRect(x: 26, y: 10, width: 90, height: 32))
         sendResetLinkButton.title = LocalizationService.shared.localizedString(for: "send_button")
         sendResetLinkButton.bezelStyle = .rounded
         sendResetLinkButton.layer?.borderWidth = 1.0
@@ -122,7 +125,7 @@ class ForgotPasswordWindow: BaseWindow {
         contentView.addSubview(sendResetLinkButton)
         
         // Add cancel button
-        cancelButton = NSButton(frame: NSRect(x: 131, y: 30, width: 80, height: 32))
+        cancelButton = NSButton(frame: NSRect(x: 142, y: 10, width: 90, height: 32))
         cancelButton.title = LocalizationService.shared.localizedString(for: "cancel_button")
         cancelButton.bezelStyle = .rounded
         cancelButton.layer?.borderWidth = 1.0
@@ -148,22 +151,36 @@ class ForgotPasswordWindow: BaseWindow {
             return
         }
         
+        // Disable buttons and show sending state
+        DispatchQueue.main.async {
+            self.sendResetLinkButton.isEnabled = false
+            self.sendResetLinkButton.title = LocalizationService.shared.localizedString(for: "sending_button")
+            self.cancelButton.isEnabled = false
+        }
+        
         // Send reset link
         let authService = AuthenticationService.shared
         
         Task {
-            if await authService.sendPasswordResetEmail(email: email) {
-                // Show success message
-                DispatchQueue.main.async {
-                    self.showSuccessMessage(LocalizationService.shared.localizedString(for: "reset_password_email_sent"))
+            let result = await authService.sendPasswordResetEmail(email: email)
+            
+            // Re-enable buttons
+            DispatchQueue.main.async {
+                self.sendResetLinkButton.isEnabled = true
+                self.sendResetLinkButton.title = LocalizationService.shared.localizedString(for: "send_button")
+                self.cancelButton.isEnabled = true
+                
+                if result {
+                    // Show success message using standard pop-up
+                    self.displayPopupMessage(LocalizationService.shared.localizedString(for: "reset_password_email_sent"))
                     
-                    // Close forgot password window
-                    self.orderOut(nil)
-                }
-            } else {
-                // Show error message
-                DispatchQueue.main.async {
-                    self.showErrorMessage(LocalizationService.shared.localizedString(for: "failed_to_send_reset_password_email"))
+                    // Close forgot password window after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        self.orderOut(nil)
+                    }
+                } else {
+                    // Show error message using standard pop-up
+                    self.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_send_reset_password_email"))
                 }
             }
         }

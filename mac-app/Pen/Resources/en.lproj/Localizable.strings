@@ -50,6 +50,7 @@
 "forgot_password_window_title" = "Forgot Password";
 "send_reset_link_button" = "Send Reset Link";
 "send_button" = "Send";
+"sending_button" = "Sending...";
 "reset_link_sent_success" = "Password reset link sent successfully! Check your email.";
 "reset_password_email_sent" = "Reset password email sent.";
 "reset_link_sent_failure" = "Failed to send reset link. Please check your email and try again.";

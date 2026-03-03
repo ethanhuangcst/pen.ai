@@ -301,11 +301,9 @@ class AuthenticationService {
         print("[AuthenticationService] Generated reset token: \(resetToken)")
         print("[AuthenticationService] Reset link: https://pen.ai/reset-password?token=\(resetToken)")
         
-        // Simulate sending email
-        print("[AuthenticationService] Sending reset email to: \(email)")
-        print("[AuthenticationService] Email sent successfully")
-        
-        return true
+        // Send email using EmailService
+        let emailService = EmailService.shared
+        return await emailService.sendPasswordResetEmail(to: email, resetToken: resetToken)
     }
     
     /// Generates a random reset token

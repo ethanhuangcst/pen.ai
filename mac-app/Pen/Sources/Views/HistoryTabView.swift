@@ -66,16 +66,16 @@ class HistoryTabView: NSView {
         // Add columns with fixed widths
         let numberColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("number"))
         numberColumn.title = "No."
-        numberColumn.width = 30
-        numberColumn.minWidth = 30
-        numberColumn.maxWidth = 30
+        numberColumn.width = 26
+        numberColumn.minWidth = 26
+        numberColumn.maxWidth = 26
         tableView.addTableColumn(numberColumn)
         
         let contentColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("content"))
         contentColumn.title = "Content enhanced:"
-        contentColumn.width = 310
-        contentColumn.minWidth = 310
-        contentColumn.maxWidth = 310
+        contentColumn.width = 294
+        contentColumn.minWidth = 294
+        contentColumn.maxWidth = 294
         tableView.addTableColumn(contentColumn)
         
         let dateColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("date"))
@@ -84,6 +84,13 @@ class HistoryTabView: NSView {
         dateColumn.minWidth = 100
         dateColumn.maxWidth = 100
         tableView.addTableColumn(dateColumn)
+        
+        let copyColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("copy"))
+        copyColumn.title = "copy"
+        copyColumn.width = 30
+        copyColumn.minWidth = 30
+        copyColumn.maxWidth = 30
+        tableView.addTableColumn(copyColumn)
         
         scrollView.documentView = tableView
         
@@ -147,19 +154,24 @@ class HistoryTabView: NSView {
         
         // Fix column widths to specified values
         if let numberColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "number" }) {
-            numberColumn.width = 30
-            numberColumn.minWidth = 30
-            numberColumn.maxWidth = 30
+            numberColumn.width = 26
+            numberColumn.minWidth = 26
+            numberColumn.maxWidth = 26
         }
         if let contentColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "content" }) {
-            contentColumn.width = 310
-            contentColumn.minWidth = 310
-            contentColumn.maxWidth = 310
+            contentColumn.width = 294
+            contentColumn.minWidth = 294
+            contentColumn.maxWidth = 294
         }
         if let dateColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "date" }) {
             dateColumn.width = 100
             dateColumn.minWidth = 100
             dateColumn.maxWidth = 100
+        }
+        if let copyColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "copy" }) {
+            copyColumn.width = 30
+            copyColumn.minWidth = 30
+            copyColumn.maxWidth = 30
         }
         
         // Update empty state label frame
@@ -342,6 +354,8 @@ extension HistoryTabView: NSTableViewDelegate {
             return createContentTextField(historyItem: historyItem)
         case "date":
             return createDateTextField(historyItem: historyItem)
+        case "copy":
+            return createCopyButton(historyItem: historyItem)
         default:
             return nil
         }
@@ -360,7 +374,7 @@ extension HistoryTabView: NSTableViewDelegate {
     }
     
     private func createContentTextField(historyItem: ContentHistoryModel) -> NSTextField {
-        let textField = NSTextField(frame: NSRect(x: 5, y: 2, width: 300, height: 16))
+        let textField = NSTextField(frame: NSRect(x: 5, y: 2, width: 284, height: 16))
         textField.stringValue = historyItem.enhancedContent
         textField.isBezeled = false
         textField.drawsBackground = false
@@ -380,6 +394,34 @@ extension HistoryTabView: NSTableViewDelegate {
         textField.toolTip = historyItem.enhancedContent
         
         return textField
+    }
+    
+    private func createCopyButton(historyItem: ContentHistoryModel) -> NSButton {
+        let button = NSButton(frame: NSRect(x: 5, y: 0, width: 20, height: 20))
+        button.setButtonType(.momentaryPushIn)
+        button.isBordered = false
+        button.title = "" // Explicitly set empty title to ensure no text is displayed
+        
+        // Load the copy.svg icon
+        let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/copy.svg"
+        print("HistoryTabView: Loading copy.svg from path: \(iconPath)")
+        if let image = NSImage(contentsOfFile: iconPath) {
+            print("HistoryTabView: Image loaded successfully: \(image)")
+            image.size = NSSize(width: 20, height: 20)
+            button.image = image
+            print("HistoryTabView: Button image set successfully")
+        } else {
+            print("HistoryTabView: Error: Could not load copy.svg")
+        }
+        
+        // Set action
+        button.target = self
+        button.action = #selector(copyButtonClicked(_:))
+        
+        // Store the content using associated object
+        objc_setAssociatedObject(button, &Self.rowKey, historyItem.enhancedContent, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        
+        return button
     }
     
     private func createDateTextField(historyItem: ContentHistoryModel) -> NSTextField {
@@ -402,26 +444,12 @@ extension HistoryTabView: NSTableViewDelegate {
     
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
         let rowView = NSTableRowView()
-        
-        // Add clickable area
-        let clickableArea = NSView(frame: NSRect(x: 0, y: 0, width: rowView.frame.width, height: 20))
-        clickableArea.wantsLayer = true
-        clickableArea.layer?.backgroundColor = NSColor.clear.cgColor
-        
-        let clickGesture = NSClickGestureRecognizer(target: self, action: #selector(historyItemClicked(_:)))
-        clickableArea.addGestureRecognizer(clickGesture)
-        rowView.addSubview(clickableArea)
-        
-        // Store the row index using associated object
-        objc_setAssociatedObject(clickGesture, &Self.rowKey, row, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        
         return rowView
     }
     
-    @objc private func historyItemClicked(_ gesture: NSClickGestureRecognizer) {
-        if let row = objc_getAssociatedObject(gesture, &Self.rowKey) as? Int, row < historyItems.count {
-            let historyItem = historyItems[row]
-            copyContentToClipboard(historyItem.enhancedContent)
+    @objc private func copyButtonClicked(_ sender: NSButton) {
+        if let content = objc_getAssociatedObject(sender, &Self.rowKey) as? String {
+            copyContentToClipboard(content)
         }
     }
     
