@@ -75,6 +75,15 @@ let package = Package(
             ],
             path: "Sources",
             sources: ["check-content-history-table.swift"]
-        )
+        ),
+        .executableTarget(
+            name: "SchemaCheckTest",
+            dependencies: [
+                .product(name: "MySQLKit", package: "mysql-kit")
+            ],
+            path: "Sources",
+            sources: ["SchemaCheckTest.swift"]
+        ),
+
     ]
 )

@@ -1,5 +1,17 @@
 import Foundation
 import MySQLKit
+import NIO
+import System
+import Logging
+
+// Database configuration struct for this script
+struct DatabaseConfig {
+    let host: String = "101.132.156.250"
+    let port: Int = 33320
+    let username: String = "wingmandev"
+    let password: String = "Wing123_Man"
+    let databaseName: String = "wingman_db"
+}
 
 // Simple test script to directly query the content_history table
 func testHistoryLoad() async {

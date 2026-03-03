@@ -21,9 +21,9 @@ export class AuthController {
   }) {
     const result = await this.authService.sendPasswordResetEmail(body.email);
     if (result) {
-      return { message: 'Password reset email sent' };
+      return { code: 'PASSWORD_RESET_EMAIL_SENT' };
     } else {
-      return { message: 'User not found' };
+      return { code: 'USER_NOT_FOUND' };
     }
   }
 
@@ -34,6 +34,6 @@ export class AuthController {
     newPassword: string;
   }) {
     const result = await this.authService.resetPassword(body.token, body.newPassword);
-    return { message: 'Password reset successfully' };
+    return { code: 'PASSWORD_RESET_SUCCESS' };
   }
 }

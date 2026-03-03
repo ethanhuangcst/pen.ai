@@ -106,18 +106,16 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         profileImageContainer.addSubview(profileImageView)
         profileSection.addSubview(profileImageContainer)
         
-        // Upload image button (original position)
         let uploadButton = FocusableButton(frame: NSRect(x: 0, y: 0, width: profileImageSize, height: 20))
-        uploadButton.title = "Update"
+        uploadButton.title = LocalizationService.shared.localizedString(for: "update_button")
         uploadButton.bezelStyle = .rounded
         uploadButton.target = self
         uploadButton.action = #selector(uploadProfileImage)
         uploadButton.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_image")
         profileSection.addSubview(uploadButton)
         
-        // Maximum file size label (right side of update button, under Email)
         let sizeLabel = NSTextField(frame: NSRect(x: profileImageSize + 40, y: -3, width: 250, height: 20))
-        sizeLabel.stringValue = "Maximum file size: 1M, recommended 1:1 ratio"
+        sizeLabel.stringValue = LocalizationService.shared.localizedString(for: "maximum_file_size_ratio")
         sizeLabel.isBezeled = false
         sizeLabel.drawsBackground = false
         sizeLabel.isEditable = false
@@ -253,9 +251,8 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         confirmPasswordToggleButton.action = #selector(toggleConfirmPasswordVisibility)
         passwordSection.addSubview(confirmPasswordToggleButton)
         
-        // Password mismatch label
         passwordMismatchLabel = NSTextField(frame: NSRect(x: 120, y: 25, width: 220, height: 12))
-        passwordMismatchLabel.stringValue = "Passwords don't match"
+        passwordMismatchLabel.stringValue = LocalizationService.shared.localizedString(for: "passwords_dont_match")
         passwordMismatchLabel.isBezeled = false
         passwordMismatchLabel.drawsBackground = false
         passwordMismatchLabel.isEditable = false
@@ -276,9 +273,8 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         registrationForm.addSubview(passwordSection)
         
-        // Password instruction label
         let passwordInstructionLabel = NSTextField(frame: NSRect(x: 20, y: 110, width: 325, height: 12))
-        passwordInstructionLabel.stringValue = "Leave password fields empty to keep your current password"
+        passwordInstructionLabel.stringValue = LocalizationService.shared.localizedString(for: "leave_password_empty_current")
         passwordInstructionLabel.isBezeled = false
         passwordInstructionLabel.drawsBackground = false
         passwordInstructionLabel.isEditable = false
@@ -405,9 +401,8 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
                 UserService.shared.currentUser = updatedUser
             }
         } else {
-            // Show error message if image fails to load
             if let appDelegate = NSApplication.shared.delegate as? PenDelegate {
-                appDelegate.displayPopupMessage("Failed to load image")
+                appDelegate.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_load_image"))
             }
         }
     }
@@ -418,9 +413,8 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         // Validate passwords if they're not empty
         if !passwordField.stringValue.isEmpty || !confirmField.stringValue.isEmpty {
             if passwordField.stringValue != confirmField.stringValue {
-                // Show password mismatch error
                 if let appDelegate = NSApplication.shared.delegate as? PenDelegate {
-                    appDelegate.displayPopupMessage("Passwords don't match. Please try again.")
+                    appDelegate.displayPopupMessage(LocalizationService.shared.localizedString(for: "passwords_dont_match_retry"))
                 }
                 return
             }
@@ -517,20 +511,17 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
                         penWindowService.updateUserLabel()
                     }
                     
-                    // Show success message
                     DispatchQueue.main.async {
-                        appDelegate.displayPopupMessage("Changes saved successfully!")
+                        appDelegate.displayPopupMessage(LocalizationService.shared.localizedString(for: "changes_saved_successfully"))
                     }
                 } else {
-                    // Show error message if user reload failed
                     DispatchQueue.main.async {
-                        appDelegate.displayPopupMessage("Failed to reload user data. Please try again.")
+                        appDelegate.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_reload_user_data"))
                     }
                 }
             } else {
-                // Show error message
                 DispatchQueue.main.async {
-                    appDelegate.displayPopupMessage("Failed to save changes. Please try again.")
+                    appDelegate.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_save_changes"))
                 }
             }
         }

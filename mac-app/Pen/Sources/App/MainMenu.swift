@@ -7,7 +7,7 @@ func installMainMenu() {
     let appMenu = NSMenu()  
     
     appMenu.addItem(  
-        withTitle: "Quit",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_quit"),  
         action: #selector(NSApplication.terminate(_:)),  
         keyEquivalent: "q"  
     )  
@@ -16,16 +16,16 @@ func installMainMenu() {
     mainMenu.addItem(appMenuItem)  
     
     let editMenuItem = NSMenuItem()  
-    let editMenu = NSMenu(title: "Edit")  
+    let editMenu = NSMenu(title: LocalizationService.shared.localizedString(for: "menu_edit"))  
     
     editMenu.addItem(  
-        withTitle: "Undo",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_undo"),  
         action: Selector("undo:"),  
         keyEquivalent: "z"  
     )  
     
     editMenu.addItem(  
-        withTitle: "Redo",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_redo"),  
         action: Selector("redo:"),  
         keyEquivalent: "Z"  
     )  
@@ -33,25 +33,25 @@ func installMainMenu() {
     editMenu.addItem(.separator())  
     
     editMenu.addItem(  
-        withTitle: "Cut",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_cut"),  
         action: Selector("cut:"),  
         keyEquivalent: "x"  
     )  
     
     editMenu.addItem(  
-        withTitle: "Copy",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_copy"),  
         action: Selector("copy:"),  
         keyEquivalent: "c"  
     )  
     
     editMenu.addItem(  
-        withTitle: "Paste",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_paste"),  
         action: Selector("paste:"),  
         keyEquivalent: "v"  
     )  
     
     editMenu.addItem(  
-        withTitle: "Select All",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_select_all"),  
         action: Selector("selectAll:"),  
         keyEquivalent: "a"  
     )  
@@ -59,24 +59,22 @@ func installMainMenu() {
     editMenu.addItem(.separator())  
     
     editMenu.addItem(  
-        withTitle: "Find...",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_find"),  
         action: Selector("performFindPanelAction:"),  
         keyEquivalent: "f"  
     )  
     
     editMenu.addItem(  
-        withTitle: "Find Next",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_find_next"),  
         action: Selector("findNext:"),  
         keyEquivalent: "g"  
     )  
     
     editMenu.addItem(  
-        withTitle: "Find Previous",  
+        withTitle: LocalizationService.shared.localizedString(for: "menu_find_previous"),  
         action: Selector("findPrevious:"),  
         keyEquivalent: "G"  
     )  
-    
-      
     
     editMenuItem.submenu = editMenu  
     mainMenu.addItem(editMenuItem)  

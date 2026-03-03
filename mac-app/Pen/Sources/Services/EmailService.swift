@@ -18,33 +18,35 @@ class EmailService {
     // MARK: - Public Methods
     
     /// Sends a password reset email
-    func sendPasswordResetEmail(to email: String, resetToken: String) async -> Bool {
+    func sendPasswordResetEmail(to email: String, temporaryPassword: String) async -> Bool {
         print("[EmailService] Sending password reset email to: \(email)")
         
-        // Construct reset URL
-        let resetURL = "https://pen.ai/reset-password?token=\(resetToken)"
+        // Email content - plain text version with i18n support
+        let subject = LocalizationService.shared.localizedString(for: "password_reset_email_subject")
+        let greeting = LocalizationService.shared.localizedString(for: "password_reset_email_greeting")
+        let body = LocalizationService.shared.localizedString(for: "password_reset_email_body")
+        let temporaryPasswordLine = String(format: LocalizationService.shared.localizedString(for: "password_reset_email_temporary_password"), temporaryPassword)
+        let instruction = LocalizationService.shared.localizedString(for: "password_reset_email_instruction")
+        let footer = LocalizationService.shared.localizedString(for: "password_reset_email_footer")
+        let signature = LocalizationService.shared.localizedString(for: "password_reset_email_signature")
         
-        // Email content - plain text version
-        let subject = "Reset your Pen AI password"
-        let body = """
+        let emailBody = """
 Password Reset Request
 
-Hello,
+\(greeting)
 
-You requested a password reset for your Pen AI account. Please click the link below to reset your password:
+\(body)
 
-\(resetURL)
+\(temporaryPasswordLine)
 
-If you didn't request this, you can safely ignore this email.
+\(instruction)
 
-Best regards,
-The Pen AI Team
+\(footer)
+
+\(signature)
 """
 
-
-
-        
-        return await sendEmail(to: email, subject: subject, body: body, isHTML: false)
+        return await sendEmail(to: email, subject: subject, body: emailBody, isHTML: false)
     }
     
     /// Sends a generic email

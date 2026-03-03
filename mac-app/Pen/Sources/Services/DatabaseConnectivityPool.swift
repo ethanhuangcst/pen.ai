@@ -83,8 +83,10 @@ class MySQLConnection: DatabaseConnection {
             throw NSError(domain: "MySQLConnection", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not connected to database"])
         }
         
+        print("========== MySQLConnection.execute START ==========")
         print("[MySQLConnection] Executing query: \(query)")
         print("[MySQLConnection] Parameters: \(parameters)")
+        fflush(stdout)
         
         do {
             // Execute the query
@@ -254,21 +256,38 @@ class MySQLConnection: DatabaseConnection {
                 // Add content history specific columns
                 if let originalContentData = row.column("original_content"), let originalContent = originalContentData.string {
                     rowData["original_content"] = originalContent
+                    print("[MySQLConnection] Found original_content: \(originalContent.prefix(50))...")
                 }
                 if let enhancedContentData = row.column("enhanced_content"), let enhancedContent = enhancedContentData.string {
                     rowData["enhanced_content"] = enhancedContent
+                    print("[MySQLConnection] Found enhanced_content: \(enhancedContent.prefix(50))...")
                 }
                 if let promptTextData = row.column("prompt_text"), let promptText = promptTextData.string {
                     rowData["prompt_text"] = promptText
+                    print("[MySQLConnection] Found prompt_text: \(promptText)")
                 }
                 if let aiProviderData = row.column("ai_provider"), let aiProvider = aiProviderData.string {
                     rowData["ai_provider"] = aiProvider
+                    print("[MySQLConnection] Found ai_provider: \(aiProvider)")
                 }
-                if let enhanceDatetimeData = row.column("enhance_datetime"), let enhanceDatetime = enhanceDatetimeData.string {
-                    rowData["enhance_datetime"] = enhanceDatetime
+                if let enhanceDatetimeData = row.column("enhance_datetime") {
+                    print("[MySQLConnection] Found enhance_datetime column")
+                    if let enhanceDatetime = enhanceDatetimeData.string {
+                        rowData["enhance_datetime"] = enhanceDatetime
+                        print("[MySQLConnection] enhance_datetime value: \(enhanceDatetime)")
+                    } else {
+                        print("[MySQLConnection] enhance_datetime is not a string, trying other types")
+                        // Try to get the value using description
+                        let description = enhanceDatetimeData.description
+                        print("[MySQLConnection] enhance_datetime description: \(description)")
+                        rowData["enhance_datetime"] = description
+                    }
+                } else {
+                    print("[MySQLConnection] enhance_datetime column NOT found")
                 }
                 if let uuidData = row.column("uuid"), let uuid = uuidData.string {
                     rowData["uuid"] = uuid
+                    print("[MySQLConnection] Found uuid: \(uuid)")
                 }
                 
                 // Try to get all other columns (for JSON columns like base_urls)

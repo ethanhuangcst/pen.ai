@@ -284,26 +284,43 @@ class AuthenticationService {
     }
     
     /// Sends a password reset email
-    func sendPasswordResetEmail(email: String) async -> Bool {
+    func sendPasswordResetEmail(email: String) async -> (Bool, String?) {
         print("[AuthenticationService] Sending password reset email to: \(email)")
         
         // Check if user exists
         guard let user = await getUserByEmail(email: email) else {
             print("[AuthenticationService] User not found: \(email)")
-            return false
+            return (false, "user_not_found")
         }
         
-        // Generate reset token
-        let resetToken = generateResetToken()
+        // Generate temporary 8-digit password
+        let temporaryPassword = generateTemporaryPassword()
         
-        // Store reset token in database (would typically be stored in a password_reset_tokens table)
-        // For now, we'll just print it for demonstration
-        print("[AuthenticationService] Generated reset token: \(resetToken)")
-        print("[AuthenticationService] Reset link: https://pen.ai/reset-password?token=\(resetToken)")
+        // Update user's password in database
+        if await updateUser(id: user.id, name: user.name, email: user.email, password: temporaryPassword) {
+            print("[AuthenticationService] Updated user password with temporary password")
+        } else {
+            print("[AuthenticationService] Failed to update user password")
+            return (false, "password_update_failed")
+        }
         
         // Send email using EmailService
         let emailService = EmailService.shared
-        return await emailService.sendPasswordResetEmail(to: email, resetToken: resetToken)
+        if await emailService.sendPasswordResetEmail(to: email, temporaryPassword: temporaryPassword) {
+            return (true, nil)
+        } else {
+            return (false, "email_send_failed")
+        }
+    }
+    
+    /// Generates a temporary 8-digit password
+    private func generateTemporaryPassword() -> String {
+        let digits = "0123456789"
+        var password = ""
+        for _ in 0..<8 {
+            password.append(digits.randomElement()!)
+        }
+        return password
     }
     
     /// Generates a random reset token

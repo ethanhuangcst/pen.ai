@@ -5,146 +5,118 @@ This document describes the database structure for the Pen AI application. The d
 
 ## Tables
 
-### users
+### _prisma_migrations
 
 | Column | Type | Null | Key | Default | Extra |
 |--------|------|------|-----|---------|-------|
-| id | int | NO | PRI | NULL | auto_increment |
-| name | varchar(191) | NO | | NULL | |
-| email | varchar(191) | NO | UNI | NULL | |
-| password | varchar(191) | NO | | NULL | |
-| profileImage | varchar(191) | YES | | NULL | |
-| createdAt | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-| system_flag | varchar(20) | NO | | WINGMAN | |
-| pen_content_history | int | NO | | 10 | |
-
-**Sample Data:**
-| id | name | email | system_flag |
-|----|------|-------|-------------|
-| 4 | Ethan Huang | me@ethanhuang.com | WINGMAN |
-| 5 | Aidan Huang | aidan@ethanhuang.com | WINGMAN |
-| 6 | Caroline | caroline.ye@me.com | WINGMAN |
-| 456 | Test User | test@example.com | WINGMAN |
-| 458 | User1 | user1@ethanhuang.com | WINGMAN |
+| id | varchar(36) | NO | PRI |  |  |
+| checksum | varchar(64) | NO |  |  |  |
+| finished_at | datetime(3) | YES |  |  |  |
+| migration_name | varchar(255) | NO |  |  |  |
+| logs | text | YES |  |  |  |
+| rolled_back_at | datetime(3) | YES |  |  |  |
+| started_at | datetime(3) | NO |  | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
+| applied_steps_count | int unsigned | NO |  | 0 |  |
 
 ### ai_connections
 
 | Column | Type | Null | Key | Default | Extra |
 |--------|------|------|-----|---------|-------|
-| id | int | NO | PRI | NULL | auto_increment |
-| user_id | int | NO | MUL | NULL | |
-| apiKey | varchar(255) | NO | | NULL | |
-| apiProvider | varchar(50) | NO | | NULL | |
-| createdAt | timestamp | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
-| updatedAt | timestamp | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
-
-**Relationships:**
-- `user_id` references `users.id`
-
-### prompts
-
-| Column | Type | Null | Key | Default | Extra |
-|--------|------|------|-----|---------|-------|
-| id | varchar(255) | NO | PRI | NULL | |
-| user_id | int | NO | MUL | NULL | |
-| prompt_name | varchar(255) | NO | | NULL | |
-| prompt_text | text | NO | | NULL | |
-| created_datetime | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
-| updated_datetime | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
-| system_flag | varchar(20) | NO | | WINGMAN | |
-| is_default | tinyint(1) | NO | | 0 | |
-
-**Relationships:**
-- `user_id` references `users.id`
-
-**Sample Data:**
-| id | user_id | prompt_name | system_flag |
-|----|---------|-------------|-------------|
-| prompt-1771134633231 | 4 | Refine English | WINGMAN |
-| prompt-1771134652677 | 4 | 五种语言互翻 | WINGMAN |
-| prompt-1771134675475 | 4 | Timezone Converter | WINGMAN |
-
-### chats
-
-| Column | Type | Null | Key | Default | Extra |
-|--------|------|------|-----|---------|-------|
-| id | int | NO | PRI | NULL | auto_increment |
-| user_id | int | NO | | NULL | |
-| name | varchar(191) | NO | | NULL | |
-| timestamp | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-| created_at | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-| updated_at | datetime(3) | YES | | NULL | |
-
-**Relationships:**
-- `user_id` references `users.id`
-
-### chat_messages
-
-| Column | Type | Null | Key | Default | Extra |
-|--------|------|------|-----|---------|-------|
-| id | int | NO | PRI | NULL | auto_increment |
-| chat_id | int | NO | | NULL | |
-| content | text | NO | | NULL | |
-| role | varchar(50) | NO | | NULL | |
-| provider | varchar(100) | NO | | NULL | |
-| timestamp | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-| created_at | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-
-**Relationships:**
-- `chat_id` references `chats.id`
+| id | int | NO | PRI |  | auto_increment |
+| user_id | int | NO | MUL |  |  |
+| apiKey | varchar(255) | NO |  |  |  |
+| apiProvider | varchar(50) | NO |  |  |  |
+| createdAt | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updatedAt | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
 
 ### ai_providers
 
 | Column | Type | Null | Key | Default | Extra |
 |--------|------|------|-----|---------|-------|
-| id | int | NO | PRI | NULL | auto_increment |
-| name | varchar(191) | NO | | NULL | |
-| base_urls | json | NO | | NULL | |
-| default_model | varchar(191) | NO | | NULL | |
-| requires_auth | tinyint(1) | NO | | 1 | |
-| auth_header | varchar(191) | NO | | NULL | |
-| created_at | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-| updated_at | datetime(3) | YES | | NULL | |
+| id | varchar(50) | NO | PRI |  |  |
+| name | varchar(100) | NO |  |  |  |
+| base_urls | json | NO |  |  |  |
+| default_model | varchar(100) | NO |  |  |  |
+| requires_auth | tinyint(1) | NO |  | 1 |  |
+| auth_header | varchar(100) | YES |  |  |  |
+| created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updated_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
+
+### chat_messages
+
+| Column | Type | Null | Key | Default | Extra |
+|--------|------|------|-----|---------|-------|
+| id | varchar(255) | NO | PRI |  |  |
+| chat_id | varchar(255) | NO | MUL |  |  |
+| content | text | NO |  |  |  |
+| role | enum('user','assistant') | NO |  |  |  |
+| provider | varchar(50) | YES |  | gpt-5.2-all |  |
+| timestamp | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| created_at | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+
+### chats
+
+| Column | Type | Null | Key | Default | Extra |
+|--------|------|------|-----|---------|-------|
+| id | varchar(255) | NO | PRI |  |  |
+| user_id | int | NO | MUL |  |  |
+| name | varchar(255) | NO |  |  |  |
+| timestamp | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| created_at | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updated_at | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
 
 ### content_history
 
 | Column | Type | Null | Key | Default | Extra |
 |--------|------|------|-----|---------|-------|
-| uuid | varchar(36) | NO | PRI | NULL | |
-| user_id | varchar(36) | YES | | NULL | |
-| enhance_datetime | datetime | NO | | NULL | |
-| original_content | text | NO | | NULL | |
-| enhanced_content | text | NO | | NULL | |
-| prompt_text | text | NO | | NULL | |
-| ai_provider | varchar(255) | NO | | NULL | |
-| is_hidden | tinyint(1) | YES | | 0 | |
-| created_at | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
-| updated_at | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
+| uuid | varchar(36) | NO | PRI |  |  |
+| user_id | varchar(36) | YES |  |  |  |
+| enhance_datetime | datetime | NO |  |  |  |
+| original_content | text | NO |  |  |  |
+| enhanced_content | text | NO |  |  |  |
+| prompt_text | text | NO |  |  |  |
+| ai_provider | varchar(255) | NO |  |  |  |
+| created_at | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updated_at | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
+
+### prompts
+
+| Column | Type | Null | Key | Default | Extra |
+|--------|------|------|-----|---------|-------|
+| id | varchar(255) | NO | PRI |  |  |
+| user_id | int | NO | MUL |  |  |
+| prompt_name | varchar(255) | NO |  |  |  |
+| prompt_text | text | NO |  |  |  |
+| created_datetime | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updated_datetime | datetime | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
+| system_flag | varchar(20) | NO |  | WINGMAN |  |
+| is_default | tinyint(1) | NO |  | 0 |  |
 
 ### system_config
 
 | Column | Type | Null | Key | Default | Extra |
 |--------|------|------|-----|---------|-------|
-| id | int | NO | PRI | NULL | auto_increment |
-| default_prompt_name | varchar(255) | YES | | NULL | |
-| default_prompt_text | text | YES | | NULL | |
-| content_history_count_low | int | NO | | 10 | |
-| content_history_count_medium | int | NO | | 20 | |
-| content_history_count_high | int | NO | | 40 | |
-| created_at | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
-| updated_at | datetime | YES | | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
+| id | int | NO | PRI |  | auto_increment |
+| default_prompt_name | varchar(255) | YES |  |  |  |
+| default_prompt_text | text | YES |  |  |  |
+| content_history_count_low | int | NO |  | 10 |  |
+| content_history_count_medium | int | NO |  | 20 |  |
+| content_history_count_high | int | NO |  | 40 |  |
+| created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| updated_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP |
 
-### _prisma_migrations
+### users
 
 | Column | Type | Null | Key | Default | Extra |
 |--------|------|------|-----|---------|-------|
-| id | varchar(36) | NO | PRI | NULL | |
-| checksum | varchar(64) | NO | | NULL | |
-| finished_at | datetime(3) | YES | | NULL | |
-| migration_name | varchar(255) | NO | | NULL | |
-| rolled_back_at | datetime(3) | YES | | NULL | |
-| started_at | datetime(3) | NO | | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
-| applied_steps_count | int | NO | | 0 | |
+| id | int | NO | PRI |  | auto_increment |
+| name | varchar(191) | NO |  |  |  |
+| email | varchar(191) | NO | UNI |  |  |
+| password | varchar(191) | NO |  |  |  |
+| profileImage | longtext | YES |  |  |  |
+| createdAt | datetime(3) | NO |  | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED |
+| system_flag | varchar(20) | NO |  | WINGMAN |  |
+| pen_content_history | int | NO |  | 10 |  |
 
 ## Relationships
 

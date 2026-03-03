@@ -53,5 +53,9 @@
     "qwen": "通义千问",
     "enterKey": "输入 API 密钥",
     "saveKey": "保存 API 密钥"
+  },
+  "brand": {
+    "name": "Pen AI",
+    "copyright": "© 2026 Pen AI. 保留所有权利。"
   }
 }

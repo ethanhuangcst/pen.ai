@@ -162,7 +162,7 @@ class ForgotPasswordWindow: BaseWindow {
         let authService = AuthenticationService.shared
         
         Task {
-            let result = await authService.sendPasswordResetEmail(email: email)
+            let (result, errorType) = await authService.sendPasswordResetEmail(email: email)
             
             // Re-enable buttons
             DispatchQueue.main.async {
@@ -179,8 +179,23 @@ class ForgotPasswordWindow: BaseWindow {
                         self.orderOut(nil)
                     }
                 } else {
-                    // Show error message using standard pop-up
-                    self.displayPopupMessage(LocalizationService.shared.localizedString(for: "failed_to_send_reset_password_email"))
+                    // Show specific error message based on error type
+                    var errorMessage: String
+                    if let errorType = errorType {
+                        switch errorType {
+                        case "user_not_found":
+                            errorMessage = LocalizationService.shared.localizedString(for: "user_not_found_error")
+                        case "password_update_failed":
+                            errorMessage = LocalizationService.shared.localizedString(for: "password_update_failed_error")
+                        case "email_send_failed":
+                            errorMessage = LocalizationService.shared.localizedString(for: "email_send_failed_error")
+                        default:
+                            errorMessage = LocalizationService.shared.localizedString(for: "failed_to_send_reset_password_email")
+                        }
+                    } else {
+                        errorMessage = LocalizationService.shared.localizedString(for: "failed_to_send_reset_password_email")
+                    }
+                    self.displayPopupMessage(errorMessage)
                 }
             }
         }

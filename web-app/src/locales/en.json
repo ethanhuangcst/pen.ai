@@ -53,5 +53,9 @@
     "qwen": "Qwen",
     "enterKey": "Enter API Key",
     "saveKey": "Save API Key"
+  },
+  "brand": {
+    "name": "Pen AI",
+    "copyright": "© 2026 Pen AI. All rights reserved."
   }
 }

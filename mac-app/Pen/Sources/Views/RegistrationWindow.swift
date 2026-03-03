@@ -104,11 +104,9 @@ class RegistrationWindow: BaseWindow {
         }
     }
     
-    /// Removes the password instruction label
     private func removePasswordInstructionLabel() {
-        // Find and remove the password instruction label
         for subview in accountTabView.subviews {
-            if let label = subview as? NSTextField, label.stringValue == "Leave password fields empty to keep your current password" {
+            if let label = subview as? NSTextField, label.stringValue == LocalizationService.shared.localizedString(for: "leave_password_empty_current") {
                 label.removeFromSuperview()
                 break
             }
@@ -206,14 +204,13 @@ class RegistrationWindow: BaseWindow {
         let password = passwordField.stringValue
         let confirmPassword = confirmField.stringValue
         
-        // Validate inputs
         if name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty {
-            displayPopupMessage("Please fill in all fields")
+            displayPopupMessage(LocalizationService.shared.localizedString(for: "please_fill_in_all_fields"))
             return
         }
         
         if password != confirmPassword {
-            displayPopupMessage("Passwords don't match")
+            displayPopupMessage(LocalizationService.shared.localizedString(for: "passwords_dont_match"))
             return
         }
         
@@ -245,8 +242,7 @@ class RegistrationWindow: BaseWindow {
                         }
                     }
                 } else {
-                    // Show error message
-                    self.displayPopupMessage("Registration failed. Email may already be in use.")
+                    self.displayPopupMessage(LocalizationService.shared.localizedString(for: "registration_failed_email_exists"))
                 }
             }
         }

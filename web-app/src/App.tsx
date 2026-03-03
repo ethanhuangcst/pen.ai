@@ -114,8 +114,8 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="logo">
-          <img src="/logo.png" alt="Pen AI" />
-          <h1>Pen AI</h1>
+          <img src="/logo.png" alt={t('brand.name')} />
+          <h1>{t('brand.name')}</h1>
         </div>
         <div className="language-selector">
           <button onClick={() => changeLanguage('en')}>EN</button>
@@ -152,7 +152,7 @@ function App() {
         {renderPage()}
       </main>
       <footer className="app-footer">
-        <p>© 2026 Pen AI. All rights reserved.</p>
+        <p>{t('brand.copyright')}</p>
       </footer>
     </div>
   )

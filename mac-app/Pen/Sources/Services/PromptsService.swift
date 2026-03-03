@@ -182,11 +182,9 @@ class PromptsService {
         }
     }
     
-    /// Deletes a prompt from the database
     func deletePrompt(id: String) async throws -> Bool {
-        // Check if this is a default prompt
         if let prompt = try await getPromptById(id: id), prompt.isDefault {
-            throw NSError(domain: "PromptsService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Default prompt cannot be deleted"])
+            throw NSError(domain: "PromptsService", code: 2, userInfo: [NSLocalizedDescriptionKey: LocalizationService.shared.localizedString(for: "default_prompt_cannot_be_deleted")])
         }
         
         let query = "DELETE FROM wingman_db.prompts WHERE id = ?"

@@ -110,7 +110,7 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         let windowHeight = frame.height
         
         userLabel.frame = NSRect(x: 20, y: windowHeight - 92, width: windowWidth - 40, height: 24)
-        userLabel.stringValue = "Predefined prompts for \(user?.name ?? "[User Name]")"
+        userLabel.stringValue = LocalizationService.shared.localizedString(for: "predefined_prompts_for", withFormat: user?.name ?? "[User Name]")
         userLabel.isBezeled = false
         userLabel.drawsBackground = false
         userLabel.isEditable = false
@@ -282,9 +282,8 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         switch columnIdentifier.rawValue {
         case "name":
             let textField = createReadonlyTextField(text: prompt.promptName)
-            // Add "(Default)" suffix to default prompt
             if prompt.isDefault {
-                textField.stringValue = "\(prompt.promptName) (Default)"
+                textField.stringValue = "\(prompt.promptName) \(LocalizationService.shared.localizedString(for: "default_suffix"))"
             }
             return textField
         case "prompt":
@@ -293,11 +292,10 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
             return createEditButton(tag: row)
         case "delete":
             let deleteButton = createDeleteButton(tag: row)
-            // Disable delete button for default prompt
             if prompt.isDefault {
                 deleteButton.isEnabled = false
                 deleteButton.contentTintColor = NSColor.secondaryLabelColor
-                deleteButton.toolTip = "Default prompt cannot be deleted"
+                deleteButton.toolTip = LocalizationService.shared.localizedString(for: "default_prompt_cannot_be_deleted")
             }
             return deleteButton
         default:
@@ -452,9 +450,8 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         if row < prompts.count {
             let prompt = prompts[row]
             
-            // Safety check: prevent deletion of default prompt
             if prompt.isDefault {
-                WindowManager.shared.displayPopupMessage("Default prompt cannot be deleted")
+                WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "default_prompt_cannot_be_deleted"))
                 return
             }
             

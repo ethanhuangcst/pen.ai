@@ -227,3 +227,60 @@
 
 /* Registration success message */
 "registration_success" = "New user registration suceeded!\nPlease login to continue.";
+
+/* Password reset email */
+"password_reset_email_subject" = "Reset your Pen AI password";
+"password_reset_email_greeting" = "Hello,";
+"password_reset_email_body" = "You requested a password reset for your Pen AI account.";
+"password_reset_email_temporary_password" = "Your temporary password is: %@";
+"password_reset_email_instruction" = "Please use this temporary password to log in to your Pen AI account. It is highly recommended to change your password after logging in.";
+"password_reset_email_footer" = "If you didn't request this, you can safely ignore this email.";
+"password_reset_email_signature" = "Best regards,\nThe Pen AI Team";
+
+/* Password reset errors */
+"user_not_found_error" = "User not found. Please check your email address.";
+"password_update_failed_error" = "Failed to update password. Please try again later.";
+"email_send_failed_error" = "Failed to send email. Please try again later.";
+
+/* Account tab */
+"update_button" = "Update";
+"maximum_file_size_ratio" = "Maximum file size: 1M, recommended 1:1 ratio";
+"passwords_dont_match" = "Passwords don't match";
+"leave_password_empty_current" = "Leave password fields empty to keep your current password";
+"failed_to_load_image" = "Failed to load image";
+"passwords_dont_match_retry" = "Passwords don't match. Please try again.";
+"changes_saved_successfully" = "Changes saved successfully!";
+"failed_to_reload_user_data" = "Failed to reload user data. Please try again.";
+"failed_to_save_changes" = "Failed to save changes. Please try again.";
+
+/* Registration */
+"please_fill_in_all_fields" = "Please fill in all fields";
+"registration_failed_email_exists" = "Registration failed. Email may already be in use.";
+
+/* Prompts tab */
+"predefined_prompts_for" = "Predefined prompts for %@";
+"default_suffix" = "(Default)";
+"default_prompt_cannot_be_deleted" = "Default prompt cannot be deleted";
+
+/* History tab */
+"column_number" = "No.";
+"column_content_enhanced" = "Content enhanced:";
+"column_enhanced_at" = "Enhanced at:";
+"column_copy" = "copy";
+"no_history_available" = "No history available. Start enhancing content to build your history.";
+"loading_history" = "Loading history...";
+"click_to_copy" = "Click to copy";
+"max_history_record_number" = "Max history record number: %d";
+
+/* Main Menu */
+"menu_quit" = "Quit";
+"menu_edit" = "Edit";
+"menu_undo" = "Undo";
+"menu_redo" = "Redo";
+"menu_cut" = "Cut";
+"menu_copy" = "Copy";
+"menu_paste" = "Paste";
+"menu_select_all" = "Select All";
+"menu_find" = "Find...";
+"menu_find_next" = "Find Next";
+"menu_find_previous" = "Find Previous";

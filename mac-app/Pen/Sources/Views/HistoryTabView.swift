@@ -63,30 +63,29 @@ class HistoryTabView: NSView {
         tableView.allowsEmptySelection = true
         tableView.allowsMultipleSelection = false
         
-        // Add columns with fixed widths
         let numberColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("number"))
-        numberColumn.title = "No."
+        numberColumn.title = LocalizationService.shared.localizedString(for: "column_number")
         numberColumn.width = 26
         numberColumn.minWidth = 26
         numberColumn.maxWidth = 26
         tableView.addTableColumn(numberColumn)
         
         let contentColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("content"))
-        contentColumn.title = "Content enhanced:"
+        contentColumn.title = LocalizationService.shared.localizedString(for: "column_content_enhanced")
         contentColumn.width = 294
         contentColumn.minWidth = 294
         contentColumn.maxWidth = 294
         tableView.addTableColumn(contentColumn)
         
         let dateColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("date"))
-        dateColumn.title = "Enhanced at:"
+        dateColumn.title = LocalizationService.shared.localizedString(for: "column_enhanced_at")
         dateColumn.width = 100
         dateColumn.minWidth = 100
         dateColumn.maxWidth = 100
         tableView.addTableColumn(dateColumn)
         
         let copyColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("copy"))
-        copyColumn.title = "copy"
+        copyColumn.title = LocalizationService.shared.localizedString(for: "column_copy")
         copyColumn.width = 30
         copyColumn.minWidth = 30
         copyColumn.maxWidth = 30
@@ -94,8 +93,7 @@ class HistoryTabView: NSView {
         
         scrollView.documentView = tableView
         
-        // Add empty state label
-        emptyStateLabel.stringValue = "No history available. Start enhancing content to build your history."
+        emptyStateLabel.stringValue = LocalizationService.shared.localizedString(for: "no_history_available")
         emptyStateLabel.isBezeled = false
         emptyStateLabel.drawsBackground = false
         emptyStateLabel.isEditable = false
@@ -114,7 +112,7 @@ class HistoryTabView: NSView {
         statusIndicatorLabel.alignment = .right
         statusIndicatorLabel.font = NSFont.systemFont(ofSize: 11)
         statusIndicatorLabel.textColor = NSColor.secondaryLabelColor
-        statusIndicatorLabel.stringValue = "Loading history..."
+        statusIndicatorLabel.stringValue = LocalizationService.shared.localizedString(for: "loading_history")
         self.addSubview(statusIndicatorLabel)
         
         // Add "Click to copy" label
@@ -125,7 +123,7 @@ class HistoryTabView: NSView {
         clickToCopyLabel.alignment = .left
         clickToCopyLabel.font = NSFont.systemFont(ofSize: 11)
         clickToCopyLabel.textColor = NSColor.secondaryLabelColor
-        clickToCopyLabel.stringValue = "Click to copy"
+        clickToCopyLabel.stringValue = LocalizationService.shared.localizedString(for: "click_to_copy")
         self.addSubview(clickToCopyLabel)
         
         // Update frames
@@ -260,9 +258,8 @@ class HistoryTabView: NSView {
         loadHistory()
     }
     
-    // MARK: - Update Status Indicator
     private func updateStatusIndicator(count: Int, limit: Int) {
-        statusIndicatorLabel.stringValue = "Max history record number: \(limit)"
+        statusIndicatorLabel.stringValue = LocalizationService.shared.localizedString(for: "max_history_record_number", withFormat: limit)
     }
     
     // MARK: - Update Empty State
@@ -428,7 +425,10 @@ extension HistoryTabView: NSTableViewDelegate {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .short
         dateFormatter.timeStyle = .short
-        let dateString = dateFormatter.string(from: historyItem.createdAt)
+        print("[HistoryTabView] enhanceDateTime: \(historyItem.enhanceDateTime)")
+        print("[HistoryTabView] createdAt: \(historyItem.createdAt)")
+        let dateString = dateFormatter.string(from: historyItem.enhanceDateTime)
+        print("[HistoryTabView] Date string: \(dateString)")
         
         let textField = NSTextField(frame: NSRect(x: 5, y: 2, width: 90, height: 16))
         textField.stringValue = dateString

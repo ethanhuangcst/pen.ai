@@ -309,16 +309,14 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
                     }
                 } else {
                     print("Login failed: Invalid password")
-                    // Show error message on main thread
                     DispatchQueue.main.async {
-                        self.showErrorMessage("Invalid email or password")
+                        self.showErrorMessage(LocalizationService.shared.localizedString(for: "invalid_credentials"))
                     }
                 }
             } else {
                 print("Login failed: Invalid credentials")
-                // Show error message on main thread
                 DispatchQueue.main.async {
-                    self.showErrorMessage("Invalid email or password")
+                    self.showErrorMessage(LocalizationService.shared.localizedString(for: "invalid_credentials"))
                 }
             }
         }

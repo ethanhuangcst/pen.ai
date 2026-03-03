@@ -194,3 +194,60 @@
 
 /* Registration success message */
 "registration_success" = "新用户注册成功！\n请登录继续。";
+
+/* Password reset email */
+"password_reset_email_subject" = "重置您的 Pen AI 密码";
+"password_reset_email_greeting" = "您好，";
+"password_reset_email_body" = "您请求重置您的 Pen AI 账户密码。";
+"password_reset_email_temporary_password" = "您的临时密码是：%@";
+"password_reset_email_instruction" = "请使用此临时密码登录您的 Pen AI 账户。强烈建议您登录后更改密码。";
+"password_reset_email_footer" = "如果您没有请求此操作，可以安全地忽略此邮件。";
+"password_reset_email_signature" = "此致，\nPen AI 团队";
+
+/* Password reset errors */
+"user_not_found_error" = "用户不存在。请检查您的邮箱地址。";
+"password_update_failed_error" = "更新密码失败。请稍后再试。";
+"email_send_failed_error" = "发送邮件失败。请稍后再试。";
+
+/* Account tab */
+"update_button" = "更新";
+"maximum_file_size_ratio" = "最大文件大小：1M，建议 1:1 比例";
+"passwords_dont_match" = "密码不匹配";
+"leave_password_empty_current" = "留空密码字段以保持当前密码";
+"failed_to_load_image" = "加载图片失败";
+"passwords_dont_match_retry" = "密码不匹配。请重试。";
+"changes_saved_successfully" = "更改保存成功！";
+"failed_to_reload_user_data" = "重新加载用户数据失败。请重试。";
+"failed_to_save_changes" = "保存更改失败。请重试。";
+
+/* Registration */
+"please_fill_in_all_fields" = "请填写所有字段";
+"registration_failed_email_exists" = "注册失败。邮箱可能已被使用。";
+
+/* Prompts tab */
+"predefined_prompts_for" = "%@ 的预定义提示词";
+"default_suffix" = "（默认）";
+"default_prompt_cannot_be_deleted" = "默认提示词无法删除";
+
+/* History tab */
+"column_number" = "序号";
+"column_content_enhanced" = "增强内容：";
+"column_enhanced_at" = "增强时间：";
+"column_copy" = "复制";
+"no_history_available" = "暂无历史记录。开始增强内容以建立您的历史记录。";
+"loading_history" = "加载历史记录中...";
+"click_to_copy" = "点击复制";
+"max_history_record_number" = "最大历史记录数：%d";
+
+/* Main Menu */
+"menu_quit" = "退出";
+"menu_edit" = "编辑";
+"menu_undo" = "撤销";
+"menu_redo" = "重做";
+"menu_cut" = "剪切";
+"menu_copy" = "复制";
+"menu_paste" = "粘贴";
+"menu_select_all" = "全选";
+"menu_find" = "查找...";
+"menu_find_next" = "查找下一个";
+"menu_find_previous" = "查找上一个";
