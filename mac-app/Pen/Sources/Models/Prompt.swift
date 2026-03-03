@@ -59,8 +59,9 @@ class Prompt {
         // Parse created_datetime
         var createdDatetime = Date()
         if let createdAtStr = row["created_datetime"] as? String {
-            let dateFormatter = ISO8601DateFormatter()
-            dateFormatter.formatOptions = [.withFullDate, .withTime]
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            dateFormatter.timeZone = TimeZone(identifier: "UTC")
             if let parsedDate = dateFormatter.date(from: createdAtStr) {
                 createdDatetime = parsedDate
             } else {
@@ -74,7 +75,7 @@ class Prompt {
         let systemFlag = row["system_flag"] as? String ?? "PEN"
         
         // Get is_default from database
-        let isDefault: Bool
+        var isDefault: Bool
         if let isDefaultInt = row["is_default"] as? Int {
             isDefault = isDefaultInt == 1
         } else if let isDefaultBool = row["is_default"] as? Bool {
@@ -82,6 +83,8 @@ class Prompt {
         } else {
             isDefault = false
         }
+        
+
         
         return Prompt(id: id, userId: userId, promptName: promptName, promptText: promptText, createdDatetime: createdDatetime, updatedDatetime: nil, systemFlag: systemFlag, isDefault: isDefault)
     }

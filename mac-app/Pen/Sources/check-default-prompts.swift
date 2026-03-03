@@ -1,9 +1,11 @@
 import Foundation
 import MySQLKit
+import NIOCore
+import System
 
 // Database configuration
 let config = MySQLConfiguration(
-    host: "101.132.156.250",
+    hostname: "101.132.156.250",
     port: 33320,
     username: "wingmandev",
     password: "Wing123_Man",
@@ -37,8 +39,18 @@ func createDefaultPrompt(for userId: Int, using connection: MySQLConnection) asy
 
 func checkUsersForDefaultPrompt() async {
     do {
-        let connection = try await MySQLConnection.connect(configuration: config)
-        defer { connection.close() }
+        let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        let connection = try await MySQLConnection.connect(
+            to: SocketAddress(ipAddress: config.hostname, port: config.port),
+            username: config.username,
+            database: config.database,
+            password: config.password,
+            on: eventLoopGroup
+        )
+        defer { 
+            try? connection.close()
+            try? eventLoopGroup.syncShutdownGracefully()
+        }
         
         // Get all users
         let usersQuery = "SELECT id, email FROM users"

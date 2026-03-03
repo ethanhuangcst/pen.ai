@@ -42,8 +42,12 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         let contentWidth = frame.width
         let contentHeight = frame.height
         
+        // Create registration_form container view
+        let registrationForm = NSView(frame: NSRect(x: 0, y: -30, width: contentWidth, height: 270))
+        registrationForm.identifier = NSUserInterfaceItemIdentifier("registration_form")
+        
         // Profile section (image + user info)
-        let profileSection = NSView(frame: NSRect(x: 20, y: contentHeight - 200, width: contentWidth - 40, height: 120))
+        let profileSection = NSView(frame: NSRect(x: 20, y: 150, width: contentWidth - 40, height: 120))
         
         // Profile image
         let profileImageSize: CGFloat = 80
@@ -139,6 +143,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         nameField = NSTextField(frame: NSRect(x: 80, y: 60, width: 200, height: 24))
         nameField.stringValue = user?.name ?? "Ethan Huang" // Use user data or sample
+        nameField.tag = 100 // Tag for name field
         infoContainer.addSubview(nameField)
         
         // Email field
@@ -152,13 +157,14 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         emailField = NSTextField(frame: NSRect(x: 80, y: 20, width: 200, height: 24))
         emailField.stringValue = user?.email ?? "me@ethanhuang.com" // Use user data or sample
+        emailField.tag = 101 // Tag for email field
         infoContainer.addSubview(emailField)
         
         profileSection.addSubview(infoContainer)
-        addSubview(profileSection)
+        registrationForm.addSubview(profileSection)
         
         // Password section
-        let passwordSection = NSView(frame: NSRect(x: 20, y: contentHeight - 350, width: contentWidth - 40, height: 120))
+        let passwordSection = NSView(frame: NSRect(x: 20, y: 0, width: contentWidth - 40, height: 120))
         
         // New password field
         let passwordLabel = NSTextField(frame: NSRect(x: 0, y: 80, width: 120, height: 20))
@@ -172,6 +178,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         passwordField = NSSecureTextField(frame: NSRect(x: 120, y: 80, width: 200, height: 24))
         passwordField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
         passwordField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
+        passwordField.tag = 102 // Tag for password field
         passwordSection.addSubview(passwordField)
         
         // Plain password field (initially hidden)
@@ -180,6 +187,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         plainPasswordField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
         plainPasswordField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
         plainPasswordField.isHidden = true
+        plainPasswordField.tag = 104 // Tag for plain password field
         passwordSection.addSubview(plainPasswordField)
         
         // Password toggle button
@@ -214,6 +222,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         confirmField = NSSecureTextField(frame: NSRect(x: 120, y: 40, width: 200, height: 24))
         confirmField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
         confirmField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
+        confirmField.tag = 103 // Tag for confirm password field
         passwordSection.addSubview(confirmField)
         
         // Plain confirm password field (initially hidden)
@@ -222,6 +231,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         plainConfirmField.toolTip = LocalizationService.shared.localizedString(for: "leave_blank_current_password")
         plainConfirmField.backgroundColor = NSColor(red: 0.97, green: 0.97, blue: 0.97, alpha: 1.0)
         plainConfirmField.isHidden = true
+        plainConfirmField.tag = 105 // Tag for plain confirm password field
         passwordSection.addSubview(plainConfirmField)
         
         // Confirm password toggle button
@@ -264,10 +274,10 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         plainPasswordField.delegate = self
         plainConfirmField.delegate = self
         
-        addSubview(passwordSection)
+        registrationForm.addSubview(passwordSection)
         
         // Password instruction label (moved to 20px from left, 58px from bottom)
-        let passwordInstructionLabel = NSTextField(frame: NSRect(x: 20, y: 58, width: 325, height: 12))
+        let passwordInstructionLabel = NSTextField(frame: NSRect(x: 20, y: 88, width: 325, height: 12))
         passwordInstructionLabel.stringValue = "Leave password fields empty to keep your current password"
         passwordInstructionLabel.isBezeled = false
         passwordInstructionLabel.drawsBackground = false
@@ -276,7 +286,10 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         passwordInstructionLabel.font = NSFont.systemFont(ofSize: 10)
         passwordInstructionLabel.alignment = .left
         passwordInstructionLabel.textColor = .systemGray
-        addSubview(passwordInstructionLabel)
+        registrationForm.addSubview(passwordInstructionLabel)
+        
+        // Add registration_form container to the view
+        addSubview(registrationForm)
         
         // Action buttons
         let saveButton = FocusableButton(frame: NSRect(x: contentWidth - 220, y: 20, width: 100, height: 32))
@@ -355,11 +368,42 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         }
     }
     
+    /// Converts NSImage to base64 string with data URL format
+    private func convertImageToBase64(_ image: NSImage) -> String? {
+        guard let tiffRepresentation = image.tiffRepresentation, let bitmapImage = NSBitmapImageRep(data: tiffRepresentation) else {
+            return nil
+        }
+        
+        guard let pngData = bitmapImage.representation(using: .png, properties: [:]) else {
+            return nil
+        }
+        
+        let base64String = pngData.base64EncodedString()
+        return "data:image/png;base64," + base64String
+    }
+    
     /// Updates the profile image directly without cropping
     private func updateProfileImage(from imageURL: URL) {
         if let image = NSImage(contentsOf: imageURL) {
             // Update profile image immediately
             profileImageView.image = image
+            
+            // Convert image to base64 and update user profileImage property
+            if let base64Image = convertImageToBase64(image), let appDelegate = NSApplication.shared.delegate as? PenDelegate, var currentUser = appDelegate.currentUser {
+                // Update the user's profileImage property
+                let updatedUser = User(
+                    id: currentUser.id,
+                    name: currentUser.name,
+                    email: currentUser.email,
+                    password: currentUser.password ?? "",
+                    profileImage: base64Image,
+                    createdAt: currentUser.createdAt,
+                    systemFlag: currentUser.systemFlag,
+                    penContentHistory: currentUser.penContentHistory
+                )
+                appDelegate.currentUser = updatedUser
+                UserService.shared.currentUser = updatedUser
+            }
         } else {
             // Show error message if image fails to load
             if let appDelegate = NSApplication.shared.delegate as? PenDelegate {
@@ -570,6 +614,16 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
             resizedImage.unlockFocus()
             confirmPasswordToggleButton.image = resizedImage
         }
+    }
+    
+    // MARK: - Public Methods
+    
+    /// Gets the current profile image as a base64 string
+    func getProfileImage() -> String? {
+        if let image = profileImageView.image {
+            return convertImageToBase64(image)
+        }
+        return nil
     }
     
     // MARK: - NSTextFieldDelegate

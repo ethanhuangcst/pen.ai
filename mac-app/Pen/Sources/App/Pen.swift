@@ -44,11 +44,11 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         // Install main menu for system shortcut support
         installMainMenu()
         
-        // Perform 3-step initialization process
-        performInitialization()
-        
         // Create a simple window
         createMainWindow()
+        
+        // Perform 3-step initialization process
+        performInitialization()
         
         // Setup shortcut key functionality
         setupShortcutKey()
@@ -954,15 +954,18 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         updateWindowTitle()
         
         // Wait until menu bar icon is fully loaded before displaying popup message
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            // Display appropriate popup message
-            if loggedIn {
-                let greeting = LocalizationService.shared.localizedString(for: "hello_user", withFormat: self?.userName ?? "")
-                self?.displayPopupMessage(greeting)
-            } else {
-                // Don't display hello_guest message here, as we'll show the logout message in the logout() method
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                // Display appropriate popup message
+                if loggedIn {
+                    let greeting = LocalizationService.shared.localizedString(for: "hello_user", withFormat: self?.userName ?? "")
+                    self?.displayPopupMessage(greeting)
+                    
+                    // Update user label in Pen window to show profile image
+                    self?.penWindowService?.updateUserLabel()
+                } else {
+                    // Don't display hello_guest message here, as we'll show the logout message in the logout() method
+                }
             }
-        }
     }
     
     /// Updates the window title with the username

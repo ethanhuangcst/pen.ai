@@ -8,7 +8,7 @@ class PromptsService {
     // MARK: - Core Operations
     
     /// Creates a new prompt in the database
-    func createPrompt(userId: Int, promptName: String, promptText: String, id: String? = nil) async throws -> Prompt {
+    func createPrompt(userId: Int, promptName: String, promptText: String, id: String? = nil, isDefault: Bool = false) async throws -> Prompt {
         // Create prompt with specified ID or generate a new one
         let newPrompt: Prompt
         if let id = id {
@@ -20,7 +20,8 @@ class PromptsService {
                 promptText: promptText,
                 createdDatetime: Date(),
                 updatedDatetime: nil,
-                systemFlag: "PEN"
+                systemFlag: "PEN",
+                isDefault: isDefault
             )
         } else if promptName == "Default Prompt" {
             // This is likely the default prompt
@@ -31,28 +32,13 @@ class PromptsService {
                 promptText: promptText,
                 createdDatetime: Date(),
                 updatedDatetime: nil,
-                systemFlag: "PEN"
+                systemFlag: "PEN",
+                isDefault: true
             )
         } else {
             // Regular prompt with generated ID
-            newPrompt = Prompt.createNewPrompt(userId: userId, promptName: promptName, promptText: promptText)
+            newPrompt = Prompt.createNewPrompt(userId: userId, promptName: promptName, promptText: promptText, isDefault: isDefault)
         }
-        
-        let query = """
-        INSERT INTO wingman_db.prompts (id, user_id, prompt_name, prompt_text, system_flag, is_default)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """
-        
-        let isDefault = newPrompt.id == Prompt.DEFAULT_PROMPT_ID ? 1 : 0
-        
-        let params: [MySQLData] = [
-            MySQLData(string: newPrompt.id),
-            MySQLData(int: newPrompt.userId),
-            MySQLData(string: newPrompt.promptName),
-            MySQLData(string: newPrompt.promptText),
-            MySQLData(string: newPrompt.systemFlag),
-            MySQLData(int: isDefault)
-        ]
         
         do {
             guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
@@ -63,7 +49,56 @@ class PromptsService {
                 DatabaseConnectivityPool.shared.returnConnection(connection)
             }
             
-            _ = try await connection.execute(query: query, parameters: params)
+            if isDefault {
+                // Query the current default prompt for the user
+                let currentDefaultQuery = "SELECT id FROM wingman_db.prompts WHERE user_id = ? AND is_default = 1"
+                let currentDefaultParams: [MySQLData] = [MySQLData(int: userId)]
+                let currentDefaultRows = try await connection.execute(query: currentDefaultQuery, parameters: currentDefaultParams)
+                
+                // Update the current default prompt to not default if it exists
+                if let currentDefaultRow = currentDefaultRows.first, let currentDefaultId = currentDefaultRow["id"] as? String {
+                    let unsetDefaultQuery = "UPDATE wingman_db.prompts SET is_default = 0 WHERE id = ?"
+                    let unsetParams: [MySQLData] = [MySQLData(string: currentDefaultId)]
+                    _ = try await connection.execute(query: unsetDefaultQuery, parameters: unsetParams)
+                }
+                
+                // Insert the new prompt as default
+                let insertQuery = """
+                INSERT INTO wingman_db.prompts (id, user_id, prompt_name, prompt_text, system_flag, is_default)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """
+                
+                let insertParams: [MySQLData] = [
+                    MySQLData(string: newPrompt.id),
+                    MySQLData(int: newPrompt.userId),
+                    MySQLData(string: newPrompt.promptName),
+                    MySQLData(string: newPrompt.promptText),
+                    MySQLData(string: newPrompt.systemFlag),
+                    MySQLData(int: 1)
+                ]
+                
+                _ = try await connection.execute(query: insertQuery, parameters: insertParams)
+            } else {
+                // Insert without transaction for non-default prompts
+                let insertQuery = """
+                INSERT INTO wingman_db.prompts (id, user_id, prompt_name, prompt_text, system_flag, is_default)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """
+                
+                let isDefaultValue = newPrompt.isDefault ? 1 : 0
+                
+                let insertParams: [MySQLData] = [
+                    MySQLData(string: newPrompt.id),
+                    MySQLData(int: newPrompt.userId),
+                    MySQLData(string: newPrompt.promptName),
+                    MySQLData(string: newPrompt.promptText),
+                    MySQLData(string: newPrompt.systemFlag),
+                    MySQLData(int: isDefaultValue)
+                ]
+                
+                _ = try await connection.execute(query: insertQuery, parameters: insertParams)
+            }
+            
             return newPrompt
         } catch {
             print("[PromptsService] Failed to create prompt: \(error)")
@@ -72,19 +107,7 @@ class PromptsService {
     }
     
     /// Updates an existing prompt in the database
-    func updatePrompt(id: String, promptName: String, promptText: String) async throws -> Prompt? {
-        let query = """
-        UPDATE wingman_db.prompts
-        SET prompt_name = ?, prompt_text = ?
-        WHERE id = ?
-        """
-        
-        let params: [MySQLData] = [
-            MySQLData(string: promptName),
-            MySQLData(string: promptText),
-            MySQLData(string: id)
-        ]
-        
+    func updatePrompt(id: String, promptName: String, promptText: String, isDefault: Bool = false) async throws -> Prompt? {
         do {
             guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
                 throw NSError(domain: "PromptsService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"])
@@ -94,8 +117,65 @@ class PromptsService {
                 DatabaseConnectivityPool.shared.returnConnection(connection)
             }
             
-            _ = try await connection.execute(query: query, parameters: params)
-            return try await getPromptById(id: id)
+            // Get the current prompt to get user ID
+            guard let currentPrompt = try await getPromptById(id: id) else {
+                throw NSError(domain: "PromptsService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Prompt not found"])
+            }
+            
+            print("[PromptsService] Updating prompt: \(id), isDefault: \(isDefault), userId: \(currentPrompt.userId)")
+            
+            if isDefault {
+                // Query the current default prompt for the user
+                let currentDefaultQuery = "SELECT id FROM wingman_db.prompts WHERE user_id = ? AND is_default = 1 AND id != ?"
+                let currentDefaultParams: [MySQLData] = [
+                    MySQLData(int: currentPrompt.userId),
+                    MySQLData(string: id)
+                ]
+                let currentDefaultRows = try await connection.execute(query: currentDefaultQuery, parameters: currentDefaultParams)
+                
+                // Update the current default prompt to not default if it exists
+                if let currentDefaultRow = currentDefaultRows.first, let currentDefaultId = currentDefaultRow["id"] as? String {
+                    let unsetDefaultQuery = "UPDATE wingman_db.prompts SET is_default = 0 WHERE id = ?"
+                    let unsetParams: [MySQLData] = [MySQLData(string: currentDefaultId)]
+                    _ = try await connection.execute(query: unsetDefaultQuery, parameters: unsetParams)
+                }
+                
+                // Update the current prompt to be default
+                let updateQuery = """
+                UPDATE wingman_db.prompts
+                SET prompt_name = ?, prompt_text = ?, is_default = ?
+                WHERE id = ?
+                """
+                
+                let updateParams: [MySQLData] = [
+                    MySQLData(string: promptName),
+                    MySQLData(string: promptText),
+                    MySQLData(int: 1),
+                    MySQLData(string: id)
+                ]
+                
+                _ = try await connection.execute(query: updateQuery, parameters: updateParams)
+            } else {
+                // Update without transaction for non-default prompts
+                let updateQuery = """
+                UPDATE wingman_db.prompts
+                SET prompt_name = ?, prompt_text = ?, is_default = ?
+                WHERE id = ?
+                """
+                
+                let updateParams: [MySQLData] = [
+                    MySQLData(string: promptName),
+                    MySQLData(string: promptText),
+                    MySQLData(int: 0),
+                    MySQLData(string: id)
+                ]
+                
+                _ = try await connection.execute(query: updateQuery, parameters: updateParams)
+            }
+            
+            let updatedPrompt = try await getPromptById(id: id)
+            print("[PromptsService] Updated prompt: \(updatedPrompt?.id), isDefault: \(updatedPrompt?.isDefault)")
+            return updatedPrompt
         } catch {
             print("[PromptsService] Failed to update prompt: \(error)")
             throw error
@@ -174,7 +254,7 @@ class PromptsService {
             // Debug: Print all prompt IDs
             print("[PromptsService] Found \(prompts.count) prompts for user \(userId)")
             for (index, prompt) in prompts.enumerated() {
-                print("[PromptsService] Prompt \(index): ID=\(prompt.id), Name=\(prompt.promptName)")
+                print("[PromptsService] Prompt \(index): ID=\(prompt.id), Name=\(prompt.promptName), isDefault=\(prompt.isDefault)")
             }
             
             // Check if default prompt exists for this user
@@ -196,11 +276,17 @@ class PromptsService {
                 }
             }
             
-            // Sort prompts: Default Prompt first, then others by creation date
+            // Sort prompts: Default Prompt first, then others by creation date descending
             prompts.sort { (p1, p2) in
                 if p1.isDefault { return true }
                 if p2.isDefault { return false }
-                return p1.createdDatetime < p2.createdDatetime
+                return p1.createdDatetime > p2.createdDatetime
+            }
+            
+            // Debug: Print sorted prompts
+            print("[PromptsService] Sorted prompts:")
+            for (index, prompt) in prompts.enumerated() {
+                print("[PromptsService] Sorted Prompt \(index): ID=\(prompt.id), Name=\(prompt.promptName), isDefault=\(prompt.isDefault)")
             }
             
             return prompts
@@ -233,6 +319,9 @@ class PromptsService {
         let promptName = defaultPromptName ?? "Default Prompt"
         let promptText = defaultPromptText ?? "You are Pen, an AI writing assistant designed to help users improve their writing. Your goal is to analyze the provided text and enhance it while maintaining the original meaning and intent."
         
+        print("[PromptsService] Creating default prompt for user \(userId): \(promptName)")
+        print("[PromptsService] Default prompt text: \(promptText.prefix(100))...")
+        
         // Create a unique ID for this user's default prompt
         let uniqueDefaultId = "default-\(userId)"
         
@@ -253,7 +342,8 @@ class PromptsService {
             userId: userId,
             promptName: userDefaultPrompt.promptName,
             promptText: userDefaultPrompt.promptText,
-            id: userDefaultPrompt.id
+            id: userDefaultPrompt.id,
+            isDefault: userDefaultPrompt.isDefault
         )
         
         return userDefaultPrompt

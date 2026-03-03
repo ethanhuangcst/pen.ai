@@ -16,6 +16,10 @@ class SystemConfigService {
     // Default prompt constant
     static let DEFAULT_PROMPT_FLAG = 1 // Value for is_default column
     
+    // Configuration loading state
+    private var isConfigLoaded = false
+    private let configLoadedSemaphore = DispatchSemaphore(value: 0)
+    
     private init() {
         loadConfig()
     }
@@ -50,6 +54,7 @@ class SystemConfigService {
                     
                     // Print terminal message
                     print(" ********************************** Load Content History Count: LOW=\(CONTENT_HISTORY_LOW), MEDIUM=\(CONTENT_HISTORY_MEDIUM), HIGH=\(CONTENT_HISTORY_HIGH) **********************************")
+                    print("SystemConfigService: Loaded default prompt from database: \(DEFAULT_PROMPT_NAME ?? "Unknown")")
                 } else {
                     // No record found, use defaults and create database record
                     print("SystemConfigService: No system_config record found, using defaults and creating database record")
@@ -59,9 +64,16 @@ class SystemConfigService {
                         await updateConfig()
                     }
                 }
+                
+                // Mark config as loaded and signal
+                isConfigLoaded = true
+                configLoadedSemaphore.signal()
             } catch {
                 print("SystemConfigService: Failed to load config: \(error)")
                 useDefaultValues()
+                // Mark config as loaded and signal even on error
+                isConfigLoaded = true
+                configLoadedSemaphore.signal()
             }
         }
     }
@@ -131,6 +143,16 @@ class SystemConfigService {
     
     /// Returns the default prompt as a tuple of (name, text)
     func getDefaultPrompt() -> (name: String?, text: String?) {
+        // Wait for config to be loaded if not already loaded
+        if !isConfigLoaded {
+            print("SystemConfigService: Waiting for config to load...")
+            // Wait with timeout to avoid infinite blocking
+            let timeoutResult = configLoadedSemaphore.wait(timeout: .now() + .seconds(5))
+            if timeoutResult == .timedOut {
+                print("SystemConfigService: Config load timed out, using current values")
+            }
+        }
+        print("SystemConfigService: Returning default prompt: \(DEFAULT_PROMPT_NAME ?? "Unknown")")
         return (DEFAULT_PROMPT_NAME, DEFAULT_PROMPT_TEXT)
     }
     

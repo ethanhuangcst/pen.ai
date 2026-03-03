@@ -1,4 +1,5 @@
 import Foundation
+import MySQLKit
 
 class ContentHistoryModel {
     let uuid: UUID
@@ -8,7 +9,6 @@ class ContentHistoryModel {
     let enhancedContent: String
     let promptText: String
     let aiProvider: String
-    var isHidden: Bool
     let createdAt: Date
     let updatedAt: Date
     
@@ -20,7 +20,6 @@ class ContentHistoryModel {
         enhancedContent: String,
         promptText: String,
         aiProvider: String,
-        isHidden: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -31,7 +30,6 @@ class ContentHistoryModel {
         self.enhancedContent = enhancedContent
         self.promptText = promptText
         self.aiProvider = aiProvider
-        self.isHidden = isHidden
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -59,7 +57,6 @@ class ContentHistoryModel {
         self.enhancedContent = row["enhanced_content"] as? String ?? ""
         self.promptText = row["prompt_text"] as? String ?? ""
         self.aiProvider = row["ai_provider"] as? String ?? ""
-        self.isHidden = row["is_hidden"] as? Bool ?? false
         
         if let createdAtStr = row["created_at"] as? String {
             self.createdAt = Self.dateFromISOString(createdAtStr) ?? Date()
@@ -79,19 +76,28 @@ class ContentHistoryModel {
         return [
             "uuid": uuid.uuidString,
             "user_id": userID,
-            "enhance_datetime": ContentHistoryService.isoStringFromDate(enhanceDateTime),
+            "enhance_datetime": ContentHistoryModel.isoStringFromDate(enhanceDateTime),
             "original_content": originalContent,
             "enhanced_content": enhancedContent,
             "prompt_text": promptText,
             "ai_provider": aiProvider,
-            "is_hidden": isHidden,
-            "created_at": ContentHistoryService.isoStringFromDate(createdAt),
-            "updated_at": ContentHistoryService.isoStringFromDate(updatedAt)
+            "created_at": ContentHistoryModel.isoStringFromDate(createdAt),
+            "updated_at": ContentHistoryModel.isoStringFromDate(updatedAt)
         ]
     }
     
     // Helper methods for date formatting
     private static func dateFromISOString(_ string: String) -> Date? {
-        return ContentHistoryService.dateFromISOString(string)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.date(from: string)
+    }
+    
+    public static func isoStringFromDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: date)
     }
 }

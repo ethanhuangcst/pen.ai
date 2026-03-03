@@ -11,6 +11,8 @@ class HistoryTabView: NSView {
     private let tableView = NSTableView()
     private let scrollView = NSScrollView()
     private let emptyStateLabel = NSTextField()
+    private let statusIndicatorLabel = NSTextField()
+    private let tableContainer = NSView()
     
     // MARK: - Initialization
     init(frame: CGRect, user: User?, parentWindow: NSWindow) {
@@ -28,32 +30,60 @@ class HistoryTabView: NSView {
     // MARK: - Setup
     private func setupView() {
         self.wantsLayer = true
-        self.layer?.backgroundColor = NSColor.white.cgColor
+        self.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        
+        // Add table container with border and corner radius
+        let windowWidth = frame.width
+        let windowHeight = frame.height
+        tableContainer.frame = NSRect(x: 20, y: 50, width: windowWidth - 40, height: windowHeight - 166)
+        tableContainer.wantsLayer = true
+        tableContainer.layer?.backgroundColor = NSColor.white.cgColor
+        tableContainer.layer?.borderWidth = 1.0
+        tableContainer.layer?.borderColor = NSColor.lightGray.withAlphaComponent(0.5).cgColor
+        tableContainer.layer?.cornerRadius = 8.0
+        self.addSubview(tableContainer)
         
         // Add scroll view for history items
-        scrollView.frame = NSRect(x: 20, y: 20, width: self.frame.width - 40, height: self.frame.height - 40)
+        scrollView.frame = tableContainer.bounds
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
-        scrollView.autoresizingMask = [.width, .height]
-        self.addSubview(scrollView)
+        tableContainer.addSubview(scrollView)
         
         // Configure table view
         tableView.frame = scrollView.bounds
-        tableView.autoresizingMask = [.width, .height]
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.rowHeight = 80 // Height for each history item
+        tableView.rowHeight = 70 // Height for each history item
+        tableView.allowsColumnResizing = false
+        tableView.allowsColumnReordering = false
+        tableView.allowsEmptySelection = true
+        tableView.allowsMultipleSelection = false
         
-        // Add column for history items
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("historyItem"))
-        column.title = ""
-        column.width = scrollView.frame.width
-        tableView.addTableColumn(column)
+        // Add columns with fixed widths
+        let numberColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("number"))
+        numberColumn.title = "No."
+        numberColumn.width = 30
+        numberColumn.minWidth = 30
+        numberColumn.maxWidth = 30
+        tableView.addTableColumn(numberColumn)
+        
+        let contentColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("content"))
+        contentColumn.title = "Content enhanced:"
+        contentColumn.width = 200
+        contentColumn.minWidth = 200
+        contentColumn.maxWidth = 200
+        tableView.addTableColumn(contentColumn)
+        
+        let dateColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("date"))
+        dateColumn.title = "Enhanced at:"
+        dateColumn.width = 160
+        dateColumn.minWidth = 160
+        dateColumn.maxWidth = 160
+        tableView.addTableColumn(dateColumn)
         
         scrollView.documentView = tableView
         
         // Add empty state label
-        emptyStateLabel.frame = NSRect(x: 20, y: self.frame.height / 2 - 50, width: self.frame.width - 40, height: 100)
         emptyStateLabel.stringValue = "No history available. Start enhancing content to build your history."
         emptyStateLabel.isBezeled = false
         emptyStateLabel.drawsBackground = false
@@ -61,29 +91,134 @@ class HistoryTabView: NSView {
         emptyStateLabel.isSelectable = false
         emptyStateLabel.alignment = .center
         emptyStateLabel.font = NSFont.systemFont(ofSize: 14)
-        emptyStateLabel.textColor = NSColor.gray
+        emptyStateLabel.textColor = NSColor.secondaryLabelColor
         emptyStateLabel.isHidden = true
-        self.addSubview(emptyStateLabel)
+        tableContainer.addSubview(emptyStateLabel)
+        
+        // Add status indicator label
+        statusIndicatorLabel.isBezeled = false
+        statusIndicatorLabel.drawsBackground = false
+        statusIndicatorLabel.isEditable = false
+        statusIndicatorLabel.isSelectable = false
+        statusIndicatorLabel.alignment = .right
+        statusIndicatorLabel.font = NSFont.systemFont(ofSize: 11)
+        statusIndicatorLabel.textColor = NSColor.secondaryLabelColor
+        statusIndicatorLabel.stringValue = "Loading history..."
+        self.addSubview(statusIndicatorLabel)
+        
+        // Update frames
+        updateFrames()
+    }
+    
+    // MARK: - Layout
+    override func layout() {
+        super.layout()
+        updateFrames()
+    }
+    
+    // MARK: - Update Frames
+    private func updateFrames() {
+        // Fixed table container size and position
+        tableContainer.frame = NSRect(x: 20, y: 63, width: 470, height: 352)
+        
+        // Update scroll view frame
+        scrollView.frame = tableContainer.bounds
+        
+        // Update table view frame
+        tableView.frame = scrollView.bounds
+        
+        // Fix column widths to specified values
+        if let numberColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "number" }) {
+            numberColumn.width = 30
+            numberColumn.minWidth = 30
+            numberColumn.maxWidth = 30
+        }
+        if let contentColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "content" }) {
+            contentColumn.width = 200
+            contentColumn.minWidth = 200
+            contentColumn.maxWidth = 200
+        }
+        if let dateColumn = tableView.tableColumns.first(where: { $0.identifier.rawValue == "date" }) {
+            dateColumn.width = 160
+            dateColumn.minWidth = 160
+            dateColumn.maxWidth = 160
+        }
+        
+        // Update empty state label frame
+        emptyStateLabel.frame = NSRect(x: 0, y: tableContainer.frame.height / 2 - 50, width: tableContainer.frame.width, height: 100)
+        
+        // Update status indicator label frame
+        statusIndicatorLabel.frame = NSRect(x: 20, y: 10, width: 470, height: 20)
     }
     
     // MARK: - Load History
     private func loadHistory() {
-        guard let userID = user?.id else { return }
+        print("HistoryTabView: loadHistory called")
+        guard let userID = user?.id else { 
+            print("HistoryTabView: No user ID available")
+            updateStatusIndicator(count: 0, limit: 0)
+            return 
+        }
+        
+        print("HistoryTabView: Loading history for user ID: \(userID)")
         
         Task {
-            let result = await ContentHistoryService.shared.loadHistoryByUserID(userID: userID, count: 100) // Load up to 100 items
-            
-            await MainActor.run {
-                switch result {
-                case .success(let items):
-                    historyItems = items
-                    tableView.reloadData()
-                    updateEmptyState()
-                case .failure(let error):
-                    print("Error loading history: \(error)")
+            do {
+                // Load history items
+                print("HistoryTabView: Calling ContentHistoryService.loadHistoryByUserID")
+                let historyResult = await ContentHistoryService.shared.loadHistoryByUserID(userID: userID, count: 100) // Load up to 100 items
+                
+                // Get history count and limit in parallel
+                print("HistoryTabView: Getting history count and limit")
+                async let countResult = ContentHistoryService.shared.readHistoryCount(userID: userID)
+                async let limitResult = ContentHistoryService.shared.getUserHistoryLimit(userID: userID)
+                
+                let (count, limit) = try await (countResult.get(), limitResult)
+                print("HistoryTabView: History count: \(count), limit: \(limit)")
+                
+                await MainActor.run {
+                    switch historyResult {
+                    case .success(let items):
+                        print("HistoryTabView: Loaded \(items.count) history items")
+                        historyItems = items
+                        // Debug: Print history items
+                        for (index, item) in items.enumerated() {
+                            print("HistoryTabView: Item \(index + 1):")
+                            print("  UUID: \(item.uuid)")
+                            print("  User ID: \(item.userID)")
+                            print("  Enhance DateTime: \(item.enhanceDateTime)")
+                            print("  Enhanced content length: \(item.enhancedContent.count)")
+                            print("  Enhanced content: \(item.enhancedContent.isEmpty ? "[EMPTY]" : item.enhancedContent.prefix(100) + "...")")
+                            print("  Original content length: \(item.originalContent.count)")
+                            print("  Original content: \(item.originalContent.isEmpty ? "[EMPTY]" : item.originalContent.prefix(100) + "...")")
+                            print("  Prompt text length: \(item.promptText.count)")
+                            print("  Prompt text: \(item.promptText.isEmpty ? "[EMPTY]" : item.promptText.prefix(100) + "...")")
+                            print("  AI provider: \(item.aiProvider)")
+                        }
+                        print("HistoryTabView: Reloading table view")
+                        tableView.reloadData()
+                        print("HistoryTabView: Updating empty state")
+                        updateEmptyState()
+                    case .failure(let error):
+                        print("HistoryTabView: Error loading history: \(error)")
+                    }
+                    
+                    // Update status indicator
+                    print("HistoryTabView: Updating status indicator with count: \(count), limit: \(limit)")
+                    updateStatusIndicator(count: count, limit: limit)
+                }
+            } catch {
+                print("HistoryTabView: Error loading history data: \(error)")
+                await MainActor.run {
+                    updateStatusIndicator(count: 0, limit: 40) // Default limit
                 }
             }
         }
+    }
+    
+    // MARK: - Update Status Indicator
+    private func updateStatusIndicator(count: Int, limit: Int) {
+        statusIndicatorLabel.stringValue = "Max history record number: \(limit)"
     }
     
     // MARK: - Update Empty State
@@ -97,6 +232,8 @@ class HistoryTabView: NSView {
         }
     }
     
+
+    
     // MARK: - Copy Content to Clipboard
     private func copyContentToClipboard(_ content: String) {
         let pasteboard = NSPasteboard.general
@@ -109,21 +246,8 @@ class HistoryTabView: NSView {
     
     // MARK: - Show Confirmation Message
     private func showConfirmationMessage() {
-        let alert = NSAlert()
-        alert.messageText = "Content copied to clipboard"
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        
-        // Show alert asynchronously and close after 1 second
-        DispatchQueue.main.async { [weak self] in
-            alert.beginSheetModal(for: self?.parentWindow ?? NSWindow()) { _ in }
-            
-            // Close alert after 1 second
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { 
-                let sheetWindow = alert.window
-                sheetWindow.orderOut(nil)
-            }
-        }
+        // Use the standard popup message used in other features
+        WindowManager.shared.displayPopupMessage("Content copied to clipboard")
     }
 }
 
@@ -138,73 +262,128 @@ extension HistoryTabView: NSTableViewDataSource {
     }
 }
 
+// MARK: - Trimming Methods
+private func trimTextToFitLines(_ text: String, in textField: NSTextField, maxLines: Int) -> String {
+    let font = textField.font ?? NSFont.systemFont(ofSize: 13)
+    let width = textField.frame.width - 10 // Account for padding
+    let height = textField.frame.height
+    
+    // Replace newlines with spaces to treat them as normal characters
+    let textWithoutNewlines = text.replacingOccurrences(of: "\n", with: " ")
+    
+    let textStorage = NSTextStorage(string: textWithoutNewlines, attributes: [.font: font])
+    let layoutManager = NSLayoutManager()
+    textStorage.addLayoutManager(layoutManager)
+    let textContainer = NSTextContainer(size: CGSize(width: width, height: height))
+    textContainer.lineFragmentPadding = 0.0
+    layoutManager.addTextContainer(textContainer)
+    
+    // Calculate the range that fits within the text field
+    let range = layoutManager.glyphRange(forBoundingRect: CGRect(x: 0, y: 0, width: width, height: height), in: textContainer)
+    let characterRange = layoutManager.characterRange(forGlyphRange: range, actualGlyphRange: nil)
+    
+    // Get the trimmed text from the original text (preserving newlines)
+    var trimmedText = (text as NSString).substring(to: characterRange.upperBound)
+    
+    // Replace last 3 characters with "..."
+    if trimmedText.count >= 3 {
+        trimmedText = String(trimmedText.prefix(trimmedText.count - 3)) + "..."
+    } else {
+        // If text is too short, just return it
+        return trimmedText
+    }
+    
+    return trimmedText
+}
+    
 // MARK: - NSTableViewDelegate
 extension HistoryTabView: NSTableViewDelegate {
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         let historyItem = historyItems[row]
         
-        // Create a view for the history item
-        let view = NSView(frame: NSRect(x: 0, y: 0, width: tableView.frame.width, height: 80))
-        view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor.white.cgColor
-        view.layer?.borderWidth = 1
-        view.layer?.borderColor = NSColor.lightGray.cgColor
-        view.layer?.cornerRadius = 4
+        guard let columnIdentifier = tableColumn?.identifier else { return nil }
         
-        // Add history number label
-        let numberLabel = NSTextField(frame: NSRect(x: 10, y: 50, width: 50, height: 20))
-        numberLabel.stringValue = "#\(row + 1)"
-        numberLabel.isBezeled = false
-        numberLabel.drawsBackground = false
-        numberLabel.isEditable = false
-        numberLabel.isSelectable = false
-        numberLabel.font = NSFont.boldSystemFont(ofSize: 14)
-        view.addSubview(numberLabel)
+        switch columnIdentifier.rawValue {
+        case "number":
+            return createNumberTextField(row: row)
+        case "content":
+            return createContentTextField(historyItem: historyItem)
+        case "date":
+            return createDateTextField(historyItem: historyItem)
+        default:
+            return nil
+        }
+    }
+    
+    private func createNumberTextField(row: Int) -> NSTextField {
+        let textField = NSTextField(frame: NSRect(x: 5, y: 5, width: 20, height: 60))
+        textField.stringValue = "\(row + 1)"
+        textField.isBezeled = false
+        textField.drawsBackground = false
+        textField.isEditable = false
+        textField.isSelectable = false
+        textField.font = NSFont.systemFont(ofSize: 14)
+        textField.alignment = .center
+        return textField
+    }
+    
+    private func createContentTextField(historyItem: ContentHistoryModel) -> NSTextField {
+        let textField = NSTextField(frame: NSRect(x: 5, y: 5, width: 190, height: 60))
+        textField.stringValue = historyItem.enhancedContent
+        textField.isBezeled = false
+        textField.drawsBackground = false
+        textField.isEditable = false
+        textField.isSelectable = false
+        textField.font = NSFont.systemFont(ofSize: 13)
+        // NSTextField doesn't have numberOfLines, use cell's wraps property
+        if let cell = textField.cell as? NSTextFieldCell {
+            cell.wraps = true
+        }
+        textField.lineBreakMode = .byTruncatingTail
         
-        // Add date/time label
+        // Set full text with truncation
+        textField.stringValue = historyItem.enhancedContent
+        
+        // Add tooltip for full text on hover
+        textField.toolTip = historyItem.enhancedContent
+        
+        return textField
+    }
+    
+    private func createDateTextField(historyItem: ContentHistoryModel) -> NSTextField {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .short
         dateFormatter.timeStyle = .short
-        let dateString = dateFormatter.string(from: historyItem.enhanceDateTime)
+        let dateString = dateFormatter.string(from: historyItem.createdAt)
         
-        let dateLabel = NSTextField(frame: NSRect(x: 70, y: 50, width: 150, height: 20))
-        dateLabel.stringValue = dateString
-        dateLabel.isBezeled = false
-        dateLabel.drawsBackground = false
-        dateLabel.isEditable = false
-        dateLabel.isSelectable = false
-        dateLabel.font = NSFont.systemFont(ofSize: 12)
-        dateLabel.textColor = NSColor.gray
-        view.addSubview(dateLabel)
-        
-        // Add enhanced content label (trimmed to 3 lines)
-        let contentLabel = NSTextField(frame: NSRect(x: 10, y: 10, width: tableView.frame.width - 20, height: 40))
-        contentLabel.stringValue = historyItem.enhancedContent
-        contentLabel.isBezeled = false
-        contentLabel.drawsBackground = false
-        contentLabel.isEditable = false
-        contentLabel.isSelectable = false
-        contentLabel.font = NSFont.systemFont(ofSize: 13)
-        // NSTextField doesn't have numberOfLines, use cell's wraps property
-        if let cell = contentLabel.cell as? NSTextFieldCell {
-            cell.wraps = true
-        }
-        contentLabel.lineBreakMode = .byTruncatingTail
-        view.addSubview(contentLabel)
+        let textField = NSTextField(frame: NSRect(x: 5, y: 5, width: 150, height: 60))
+        textField.stringValue = dateString
+        textField.isBezeled = false
+        textField.drawsBackground = false
+        textField.isEditable = false
+        textField.isSelectable = false
+        textField.font = NSFont.systemFont(ofSize: 12)
+        textField.textColor = NSColor.secondaryLabelColor
+        textField.alignment = .center
+        return textField
+    }
+    
+    func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+        let rowView = NSTableRowView()
         
         // Add clickable area
-        let clickableArea = NSView(frame: view.bounds)
+        let clickableArea = NSView(frame: rowView.bounds)
         clickableArea.wantsLayer = true
         clickableArea.layer?.backgroundColor = NSColor.clear.cgColor
         
         let clickGesture = NSClickGestureRecognizer(target: self, action: #selector(historyItemClicked(_:)))
         clickableArea.addGestureRecognizer(clickGesture)
-        view.addSubview(clickableArea)
+        rowView.addSubview(clickableArea)
         
         // Store the row index using associated object
         objc_setAssociatedObject(clickGesture, &Self.rowKey, row, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         
-        return view
+        return rowView
     }
     
     @objc private func historyItemClicked(_ gesture: NSClickGestureRecognizer) {

@@ -1,5 +1,7 @@
 import Foundation
 import MySQLKit
+import NIOCore
+import System
 
 // Database configuration
 let config = MySQLConfiguration(
@@ -12,11 +14,21 @@ let config = MySQLConfiguration(
 
 print("Connecting to database...")
 
-task {
+Task {
     do {
         // Connect to the database
-        let connection = try await MySQLConnection.connect(configuration: config)
-        defer { try? connection.close() }
+        let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        let connection = try await MySQLConnection.connect(
+            to: SocketAddress(ipAddress: config.hostname, port: config.port),
+            username: config.username,
+            database: config.database,
+            password: config.password,
+            on: eventLoopGroup
+        )
+        defer { 
+            try? connection.close()
+            try? eventLoopGroup.syncShutdownGracefully()
+        }
         
         print("Connected to database successfully!")
         

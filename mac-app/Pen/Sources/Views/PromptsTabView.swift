@@ -62,11 +62,11 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
             do {
                 let loadedPrompts = try await promptsService.getPromptsByUserId(userId: userId)
                 DispatchQueue.main.async {
-                    // Sort prompts: Default Prompt first, then others by creation date
+                    // Sort prompts: Default Prompt first, then others by creation date descending
                     self.prompts = loadedPrompts.sorted { (p1, p2) in
-                        if p1.id == Prompt.DEFAULT_PROMPT_ID { return true }
-                        if p2.id == Prompt.DEFAULT_PROMPT_ID { return false }
-                        return p1.createdDatetime < p2.createdDatetime
+                        if p1.isDefault { return true }
+                        if p2.isDefault { return false }
+                        return p1.createdDatetime > p2.createdDatetime
                     }
                     self.tableView.reloadData()
                     self.updateEmptyStateView()
@@ -283,7 +283,7 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         case "name":
             let textField = createReadonlyTextField(text: prompt.promptName)
             // Add "(Default)" suffix to default prompt
-            if prompt.id == Prompt.DEFAULT_PROMPT_ID {
+            if prompt.isDefault {
                 textField.stringValue = "\(prompt.promptName) (Default)"
             }
             return textField
@@ -294,7 +294,7 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
         case "delete":
             let deleteButton = createDeleteButton(tag: row)
             // Disable delete button for default prompt
-            if prompt.id == Prompt.DEFAULT_PROMPT_ID {
+            if prompt.isDefault {
                 deleteButton.isEnabled = false
                 deleteButton.contentTintColor = NSColor.secondaryLabelColor
                 deleteButton.toolTip = "Default prompt cannot be deleted"
@@ -420,16 +420,14 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
                         try await self.promptsService.updatePrompt(
                             id: updatedPrompt.id,
                             promptName: updatedPrompt.promptName,
-                            promptText: updatedPrompt.promptText
+                            promptText: updatedPrompt.promptText,
+                            isDefault: updatedPrompt.isDefault
                         )
                         
                         DispatchQueue.main.async {
-                            // Update the prompt in the array
-                            if let index = self.prompts.firstIndex(where: { $0.id == updatedPrompt.id }) {
-                                self.prompts[index] = updatedPrompt
-                                self.tableView.reloadData()
-                                WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_updated_successfully"))
-                            }
+                            // Reload all prompts to ensure correct default statuses
+                            self.loadPromptsFromDatabase()
+                            WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_updated_successfully"))
                         }
                     } catch {
                         print("[PromptsTabView] Failed to update prompt: \(error)")
@@ -455,7 +453,7 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
             let prompt = prompts[row]
             
             // Safety check: prevent deletion of default prompt
-            if prompt.id == Prompt.DEFAULT_PROMPT_ID {
+            if prompt.isDefault {
                 WindowManager.shared.displayPopupMessage("Default prompt cannot be deleted")
                 return
             }
@@ -626,19 +624,13 @@ class PromptsTabView: NSView, NSTableViewDataSource, NSTableViewDelegate {
                         let createdPrompt = try await self.promptsService.createPrompt(
                             userId: userId,
                             promptName: newPrompt.promptName,
-                            promptText: newPrompt.promptText
+                            promptText: newPrompt.promptText,
+                            isDefault: newPrompt.isDefault
                         )
                         
                         DispatchQueue.main.async {
-                            // Add the new prompt to the array and sort: Default Prompt first, then others by creation date
-                            self.prompts.append(createdPrompt)
-                            self.prompts.sort { (p1, p2) in
-                                if p1.id == Prompt.DEFAULT_PROMPT_ID { return true }
-                                if p2.id == Prompt.DEFAULT_PROMPT_ID { return false }
-                                return p1.createdDatetime < p2.createdDatetime
-                            }
-                            self.tableView.reloadData()
-                            self.updateEmptyStateView()
+                            // Reload all prompts to ensure correct default statuses
+                            self.loadPromptsFromDatabase()
                             WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "prompt_created_successfully"))
                         }
                     } catch {

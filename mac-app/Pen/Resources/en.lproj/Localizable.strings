@@ -45,7 +45,17 @@
 
 /* Login window */
 "register_new_account" = "Register New Account";
+"register" = "Register";
 "forgot_password" = "Forgot Password?";
+"forgot_password_window_title" = "Forgot Password";
+"send_reset_link_button" = "Send Reset Link";
+"reset_link_sent_success" = "Password reset link sent successfully! Check your email.";
+"reset_link_sent_failure" = "Failed to send reset link. Please check your email and try again.";
+"invalid_email_error" = "Please enter a valid email address.";
+"success_title" = "Success";
+"error_title" = "Error";
+"ok_button" = "OK";
+"cancel_button" = "Cancel";
 
 /* General tab */
 "keyboard_shortcut_title" = "Keyboard Shortcut To Toggle Pen";
@@ -186,6 +196,7 @@
 "failed_to_update_prompt" = "Failed to update prompt";
 "failed_to_delete_prompt" = "Failed to delete prompt";
 "no_prompts_saved_yet" = "No prompts saved yet";
+"set_as_default_prompt" = "Set as default prompt";
 
 /* Clipboard messages */
 "clipboard_empty_message" = "Clipboard is empty. Copy your text and click paste button, or use hot key to process.";
@@ -206,3 +217,6 @@
 "pen_no_prompts_available" = "No prompts available";
 "pen_enhance_error" = "Failed to enhance text. Please try again later.";
 "pen_refining_content" = "Refining ...";
+
+/* Registration success message */
+"registration_success" = "New user registration suceeded!\nPlease login to continue.";

@@ -11,6 +11,9 @@ protocol DatabaseConnection {
     func close()
     func execute(query: String, parameters: [MySQLData]) async throws -> [[String: Any]]
     func execute(query: String) async throws -> [[String: Any]]
+    func beginTransaction() async throws
+    func commitTransaction() async throws
+    func rollbackTransaction() async throws
 }
 
 // MySQL database connection implementation using MySQLKit
@@ -212,6 +215,58 @@ class MySQLConnection: DatabaseConnection {
                 if let systemFlagData = row.column("system_flag"), let systemFlag = systemFlagData.string {
                     rowData["system_flag"] = systemFlag
                 }
+                if let isDefaultData = row.column("is_default"), let isDefault = isDefaultData.int {
+                    rowData["is_default"] = isDefault
+                }
+                
+                // Add system config specific columns
+                if let defaultPromptNameData = row.column("default_prompt_name"), let defaultPromptName = defaultPromptNameData.string {
+                    rowData["default_prompt_name"] = defaultPromptName
+                }
+                // Handle TEXT column for default_prompt_text
+                if let defaultPromptTextData = row.column("default_prompt_text") {
+                    // Try to get as string directly
+                    if let defaultPromptText = defaultPromptTextData.string {
+                        rowData["default_prompt_text"] = defaultPromptText
+                    } else {
+                        // For TEXT columns, try to convert to string using description
+                        let description = defaultPromptTextData.description
+                        // Remove any surrounding quotes or formatting
+                        let cleanedDescription = description.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+                        if !cleanedDescription.isEmpty {
+                            rowData["default_prompt_text"] = cleanedDescription
+                        }
+                    }
+                }
+                if let contentHistoryCountLowData = row.column("content_history_count_low"), let contentHistoryCountLow = contentHistoryCountLowData.int {
+                    rowData["content_history_count_low"] = contentHistoryCountLow
+                }
+                if let contentHistoryCountMediumData = row.column("content_history_count_medium"), let contentHistoryCountMedium = contentHistoryCountMediumData.int {
+                    rowData["content_history_count_medium"] = contentHistoryCountMedium
+                }
+                if let contentHistoryCountHighData = row.column("content_history_count_high"), let contentHistoryCountHigh = contentHistoryCountHighData.int {
+                    rowData["content_history_count_high"] = contentHistoryCountHigh
+                }
+                
+                // Add content history specific columns
+                if let originalContentData = row.column("original_content"), let originalContent = originalContentData.string {
+                    rowData["original_content"] = originalContent
+                }
+                if let enhancedContentData = row.column("enhanced_content"), let enhancedContent = enhancedContentData.string {
+                    rowData["enhanced_content"] = enhancedContent
+                }
+                if let promptTextData = row.column("prompt_text"), let promptText = promptTextData.string {
+                    rowData["prompt_text"] = promptText
+                }
+                if let aiProviderData = row.column("ai_provider"), let aiProvider = aiProviderData.string {
+                    rowData["ai_provider"] = aiProvider
+                }
+                if let enhanceDatetimeData = row.column("enhance_datetime"), let enhanceDatetime = enhanceDatetimeData.string {
+                    rowData["enhance_datetime"] = enhanceDatetime
+                }
+                if let uuidData = row.column("uuid"), let uuid = uuidData.string {
+                    rowData["uuid"] = uuid
+                }
                 
                 // Try to get all other columns (for JSON columns like base_urls)
                 // We'll try common column names that might be present
@@ -230,6 +285,57 @@ class MySQLConnection: DatabaseConnection {
             return resultRows
         } catch {
             print("[MySQLConnection] Query failed: \(error)")
+            throw error
+        }
+    }
+    
+    /// Begins a transaction
+    func beginTransaction() async throws {
+        guard isConnected else {
+            throw NSError(domain: "MySQLConnection", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not connected to database"])
+        }
+        
+        print("[MySQLConnection] Beginning transaction")
+        
+        do {
+            let query = "START TRANSACTION"
+            _ = try await execute(query: query)
+        } catch {
+            print("[MySQLConnection] Failed to begin transaction: \(error)")
+            throw error
+        }
+    }
+    
+    /// Commits a transaction
+    func commitTransaction() async throws {
+        guard isConnected else {
+            throw NSError(domain: "MySQLConnection", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not connected to database"])
+        }
+        
+        print("[MySQLConnection] Committing transaction")
+        
+        do {
+            let query = "COMMIT"
+            _ = try await execute(query: query)
+        } catch {
+            print("[MySQLConnection] Failed to commit transaction: \(error)")
+            throw error
+        }
+    }
+    
+    /// Rolls back a transaction
+    func rollbackTransaction() async throws {
+        guard isConnected else {
+            throw NSError(domain: "MySQLConnection", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not connected to database"])
+        }
+        
+        print("[MySQLConnection] Rolling back transaction")
+        
+        do {
+            let query = "ROLLBACK"
+            _ = try await execute(query: query)
+        } catch {
+            print("[MySQLConnection] Failed to rollback transaction: \(error)")
             throw error
         }
     }

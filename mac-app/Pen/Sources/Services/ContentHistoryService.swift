@@ -8,7 +8,7 @@ class ContentHistoryService {
     
     // MARK: - Public Methods
     
-    /// Get the count of non-deleted history records for a user
+    /// Get the count of history records for a user
     func readHistoryCount(userID: Int) async -> Result<Int, Error> {
         guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
             return .failure(NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"]))
@@ -16,7 +16,7 @@ class ContentHistoryService {
         defer { DatabaseConnectivityPool.shared.returnConnection(connection) }
         
         do {
-            let query = "SELECT COUNT(*) as count FROM content_history WHERE user_id = ? AND is_hidden = FALSE"
+            let query = "SELECT COUNT(*) as count FROM content_history WHERE user_id = ?"
             let parameters: [MySQLData] = [MySQLData(int: userID)]
             
             let result = try await connection.execute(query: query, parameters: parameters)
@@ -39,7 +39,7 @@ class ContentHistoryService {
         defer { DatabaseConnectivityPool.shared.returnConnection(connection) }
         
         do {
-            let query = "SELECT * FROM content_history WHERE user_id = ? AND is_hidden = FALSE ORDER BY enhance_datetime DESC LIMIT ?"
+            let query = "SELECT * FROM content_history WHERE user_id = ? ORDER BY enhance_datetime DESC, created_at DESC LIMIT ?"
             let parameters: [MySQLData] = [MySQLData(int: userID), MySQLData(int: count)]
             
             let result = try await connection.execute(query: query, parameters: parameters)
@@ -60,21 +60,20 @@ class ContentHistoryService {
         
         do {
             let query = """
-            INSERT INTO content_history (uuid, user_id, enhance_datetime, original_content, enhanced_content, prompt_text, ai_provider, is_hidden, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO content_history (uuid, user_id, enhance_datetime, original_content, enhanced_content, prompt_text, ai_provider, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             
             let parameters: [MySQLData] = [
                 MySQLData(string: history.uuid.uuidString),
                 MySQLData(int: userID),
-                MySQLData(string: ContentHistoryService.isoStringFromDate(history.enhanceDateTime)),
+                MySQLData(string: ContentHistoryModel.isoStringFromDate(history.enhanceDateTime)),
                 MySQLData(string: history.originalContent),
                 MySQLData(string: history.enhancedContent),
                 MySQLData(string: history.promptText),
                 MySQLData(string: history.aiProvider),
-                MySQLData(bool: history.isHidden),
-                MySQLData(string: ContentHistoryService.isoStringFromDate(history.createdAt)),
-                MySQLData(string: ContentHistoryService.isoStringFromDate(history.updatedAt))
+                MySQLData(string: ContentHistoryModel.isoStringFromDate(history.createdAt)),
+                MySQLData(string: ContentHistoryModel.isoStringFromDate(history.updatedAt))
             ]
             
             _ = try await connection.execute(query: query, parameters: parameters)
@@ -88,7 +87,7 @@ class ContentHistoryService {
         }
     }
     
-    /// Soft delete all history records for a user
+    /// Delete all history records for a user
     func resetHistoryByUserID(userID: Int) async -> Result<Bool, Error> {
         guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
             return .failure(NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"]))
@@ -96,7 +95,7 @@ class ContentHistoryService {
         defer { DatabaseConnectivityPool.shared.returnConnection(connection) }
         
         do {
-            let query = "UPDATE content_history SET is_hidden = TRUE WHERE user_id = ? AND is_hidden = FALSE"
+            let query = "DELETE FROM content_history WHERE user_id = ?"
             let parameters: [MySQLData] = [MySQLData(int: userID)]
             
             _ = try await connection.execute(query: query, parameters: parameters)
@@ -131,10 +130,9 @@ class ContentHistoryService {
             
             let recordsToDelete = currentCount - historyLimit
             let query = """
-            UPDATE content_history
-            SET is_hidden = TRUE
-            WHERE user_id = ? AND is_hidden = FALSE
-            ORDER BY enhance_datetime ASC
+            DELETE FROM content_history
+            WHERE user_id = ?
+            ORDER BY enhance_datetime ASC, created_at ASC
             LIMIT ?
             """
             
@@ -148,7 +146,7 @@ class ContentHistoryService {
     }
     
     /// Get the user's history limit from preferences
-    private func getUserHistoryLimit(userID: Int) async throws -> Int {
+    public func getUserHistoryLimit(userID: Int) async throws -> Int {
         guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
             throw NSError(domain: "ContentHistoryService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to get database connection"])
         }
@@ -168,15 +166,5 @@ class ContentHistoryService {
     
     // MARK: - Helper Methods
     
-    /// Helper method to convert Date to ISO string (made public for use in ContentHistoryModel)
-    public static func isoStringFromDate(_ date: Date) -> String {
-        let formatter = ISO8601DateFormatter()
-        return formatter.string(from: date)
-    }
-    
-    /// Helper method to convert ISO string to Date (made public for use in ContentHistoryModel)
-    public static func dateFromISOString(_ string: String) -> Date? {
-        let formatter = ISO8601DateFormatter()
-        return formatter.date(from: string)
-    }
+
 }

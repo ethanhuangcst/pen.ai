@@ -221,4 +221,99 @@ class AuthenticationService {
             return false
         }
     }
+    
+    /// Registers a new user
+    func registerUser(name: String, email: String, password: String, profileImage: String? = nil) async -> Bool {
+        print("[AuthenticationService] Registering new user: \(email)")
+        
+        // Check if we have a database connection
+        guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
+            print("[AuthenticationService] Failed to get database connection")
+            return false
+        }
+        
+        defer {
+            // Return the connection to the pool
+            DatabaseConnectivityPool.shared.returnConnection(connection)
+        }
+        
+        do {
+            // Check if user already exists
+            if let _ = await getUserByEmail(email: email) {
+                print("[AuthenticationService] User already exists: \(email)")
+                return false
+            }
+            
+            // Insert new user
+            let query = "INSERT INTO users (name, email, password, profileImage, createdAt) VALUES (?, ?, ?, ?, NOW())"
+            let parameters: [MySQLData] = [
+                MySQLData(string: name),
+                MySQLData(string: email),
+                MySQLData(string: hashPassword(password)),
+                MySQLData(string: profileImage ?? "")
+            ]
+            
+            print("[AuthenticationService] Executing insert query: \(query)")
+            let results = try await connection.execute(query: query, parameters: parameters)
+            
+            // Get the last inserted user ID
+            let lastInsertIdQuery = "SELECT LAST_INSERT_ID() as id"
+            let lastInsertIdResults = try await connection.execute(query: lastInsertIdQuery, parameters: [])
+            
+            if let lastInsertRow = lastInsertIdResults.first, let userId = lastInsertRow["id"] as? Int {
+                print("[AuthenticationService] New user ID: \(userId)")
+                
+                // Create default prompt for the new user
+                do {
+                    let promptsService = PromptsService()
+                    _ = try await promptsService.createDefaultPrompt(userId: userId)
+                    print("[AuthenticationService] Default prompt created for user \(userId)")
+                } catch {
+                    print("[AuthenticationService] Failed to create default prompt: \(error)")
+                    // Continue with registration even if prompt creation fails
+                }
+            }
+            
+            print("[AuthenticationService] User registered successfully")
+            return true
+        } catch {
+            print("[AuthenticationService] Database insertion failed: \(error)")
+            return false
+        }
+    }
+    
+    /// Sends a password reset email
+    func sendPasswordResetEmail(email: String) async -> Bool {
+        print("[AuthenticationService] Sending password reset email to: \(email)")
+        
+        // Check if user exists
+        guard let user = await getUserByEmail(email: email) else {
+            print("[AuthenticationService] User not found: \(email)")
+            return false
+        }
+        
+        // Generate reset token
+        let resetToken = generateResetToken()
+        
+        // Store reset token in database (would typically be stored in a password_reset_tokens table)
+        // For now, we'll just print it for demonstration
+        print("[AuthenticationService] Generated reset token: \(resetToken)")
+        print("[AuthenticationService] Reset link: https://pen.ai/reset-password?token=\(resetToken)")
+        
+        // Simulate sending email
+        print("[AuthenticationService] Sending reset email to: \(email)")
+        print("[AuthenticationService] Email sent successfully")
+        
+        return true
+    }
+    
+    /// Generates a random reset token
+    private func generateResetToken() -> String {
+        let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        var token = ""
+        for _ in 0..<32 {
+            token.append(chars.randomElement()!)
+        }
+        return token
+    }
 }

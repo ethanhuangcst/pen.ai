@@ -11,6 +11,7 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
     private let promptPlaceholderLabel = NSTextField()
     private let saveButton = FocusableButton()
     private let cancelButton = FocusableButton()
+    private let defaultPromptCheckbox = NSButton()
     
     private var prompt: Prompt?
     private var isNewPrompt: Bool
@@ -142,11 +143,23 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
         cancelButton.action = #selector(cancelButtonClicked)
         contentView.addSubview(cancelButton)
         
+        // Set as default prompt checkbox
+        defaultPromptCheckbox.frame = NSRect(x: 40, y: 26, width: 200, height: 32)
+        defaultPromptCheckbox.title = localizedString(for: "set_as_default_prompt")
+        defaultPromptCheckbox.bezelStyle = .regularSquare
+        defaultPromptCheckbox.setButtonType(.switch)
+        defaultPromptCheckbox.state = .off
+        contentView.addSubview(defaultPromptCheckbox)
+        
         // Set up fields based on whether it's a new prompt or edit prompt
         if let prompt = prompt {
             // Edit prompt: pre-fill with existing values
             promptNameField.stringValue = prompt.promptName
             promptTextField.string = prompt.promptText
+            // Set default prompt checkbox
+            defaultPromptCheckbox.state = prompt.isDefault ? .on : .off
+            // Hide checkbox if prompt is already default
+            defaultPromptCheckbox.isHidden = prompt.isDefault
             // Hide placeholder since we have content
             promptPlaceholderLabel.isHidden = true
             // Display in Markdown format (preserving Markdown syntax)
@@ -155,6 +168,10 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
             promptNameField.placeholderString = localizedString(for: "enter_prompt_name_placeholder")
             // Set empty string for text view, placeholder will be shown
             promptTextField.string = ""
+            // Set default prompt checkbox to off
+            defaultPromptCheckbox.state = .off
+            // Show checkbox for new prompts
+            defaultPromptCheckbox.isHidden = false
             // Show placeholder
             promptPlaceholderLabel.isHidden = false
         }
@@ -182,6 +199,8 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
             return
         }
         
+        let isDefault = defaultPromptCheckbox.state == .on
+        
         if let existingPrompt = prompt {
             // Update existing prompt
             let updatedPrompt = Prompt(
@@ -191,7 +210,8 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
                 promptText: promptText,
                 createdDatetime: existingPrompt.createdDatetime,
                 updatedDatetime: Date(),
-                systemFlag: existingPrompt.systemFlag
+                systemFlag: existingPrompt.systemFlag,
+                isDefault: isDefault
             )
             onSave?(updatedPrompt)
         } else {
@@ -203,7 +223,8 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
                 promptText: promptText,
                 createdDatetime: Date(),
                 updatedDatetime: nil,
-                systemFlag: "PEN"
+                systemFlag: "PEN",
+                isDefault: isDefault
             )
             onSave?(newPrompt)
         }

@@ -45,7 +45,17 @@
 
 /* Login window */
 "register_new_account" = "注册新账户";
+"register" = "注册";
 "forgot_password" = "忘记密码？";
+"forgot_password_window_title" = "忘记密码";
+"send_reset_link_button" = "发送重置链接";
+"reset_link_sent_success" = "密码重置链接已成功发送！请检查您的邮箱。";
+"reset_link_sent_failure" = "发送重置链接失败。请检查您的邮箱并重试。";
+"invalid_email_error" = "请输入有效的邮箱地址。";
+"success_title" = "成功";
+"error_title" = "错误";
+"ok_button" = "确定";
+"cancel_button" = "取消";
 
 /* General tab */
 "keyboard_shortcut_title" = "切换 Pen 窗口的键盘快捷键";
@@ -147,6 +157,7 @@
 "failed_to_update_prompt" = "更新提示词失败";
 "failed_to_delete_prompt" = "删除提示词失败";
 "no_prompts_saved_yet" = "暂无保存的提示词";
+"set_as_default_prompt" = "设为默认提示词";
 
 /* Footer text */
 "pen_footer_label" = " Pen ";
@@ -175,3 +186,6 @@
 "pen_no_providers_available" = "没有可用的 AI 提供商";
 "pen_no_prompts_available" = "没有可用的提示词";
 "pen_refining_content" = "优化中...";
+
+/* Registration success message */
+"registration_success" = "新用户注册成功！\n请登录继续。";

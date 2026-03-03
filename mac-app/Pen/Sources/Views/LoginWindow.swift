@@ -1,7 +1,7 @@
 import Cocoa
 
 // Login window that inherits common behaviors from BaseWindow
-class LoginWindow: BaseWindow {
+class LoginWindow: BaseWindow, NSTextFieldDelegate {
     // MARK: - Properties
     private let windowWidth: CGFloat = 518
     private let windowHeight: CGFloat = 318
@@ -84,6 +84,7 @@ class LoginWindow: BaseWindow {
         emailField.placeholderString = LocalizationService.shared.localizedString(for: "enter_email_placeholder")
         // Set background to system text background color
         emailField.backgroundColor = NSColor.textBackgroundColor
+        emailField.delegate = self
         contentView.addSubview(emailField)
         
         // Add password label
@@ -100,6 +101,7 @@ class LoginWindow: BaseWindow {
         securePasswordField.placeholderString = LocalizationService.shared.localizedString(for: "enter_password_placeholder")
         // Set background to system text background color
         securePasswordField.backgroundColor = NSColor.textBackgroundColor
+        securePasswordField.delegate = self
         contentView.addSubview(securePasswordField)
         
         // Add plain password field (initially hidden)
@@ -107,6 +109,7 @@ class LoginWindow: BaseWindow {
         plainPasswordField.placeholderString = LocalizationService.shared.localizedString(for: "enter_password_placeholder")
         // Set background to system text background color
         plainPasswordField.backgroundColor = NSColor.textBackgroundColor
+        plainPasswordField.delegate = self
         plainPasswordField.isHidden = true
         contentView.addSubview(plainPasswordField)
         
@@ -333,12 +336,19 @@ class LoginWindow: BaseWindow {
         // Handle register logic
         print("Register link clicked")
         // Open registration window
+        let registrationWindow = RegistrationWindow(penDelegate: penDelegate)
+        registrationWindow.showAndFocus()
+        // Close login window
+        self.orderOut(nil)
     }
     
     @objc private func forgotPassword() {
         // Handle forgot password logic
         print("Forgot password link clicked")
         // Open forgot password window
+        orderOut(nil)
+        let forgotPasswordWindow = ForgotPasswordWindow(penDelegate: penDelegate!)
+        forgotPasswordWindow.showAndFocus()
     }
     
     @objc private func rememberMeToggled() {
@@ -351,6 +361,19 @@ class LoginWindow: BaseWindow {
             print("User credentials to be stored:")
             print("Email: \(email)")
             print("Password: \(password)")
+        }
+    }
+    
+    // MARK: - NSTextFieldDelegate
+    
+    func controlTextDidEndEditing(_ obj: Notification) {
+        if let textField = obj.object as? NSTextField {
+            // Check if the return key was pressed
+            if let reason = obj.userInfo?["NSTextMovement"] as? Int,
+               reason == 1 { // 1 is the raw value for return key
+                // Trigger login action when Enter is pressed
+                login()
+            }
         }
     }
 }
