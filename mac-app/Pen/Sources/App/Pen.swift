@@ -33,6 +33,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("SimpleAppDelegate: Application launched")
         
+        // Force app to always use light mode (disable dark mode for now)
+        NSApplication.shared.appearance = NSAppearance(named: .aqua)
+        
         // Initialize system config service
         print("Initializing SystemConfigService...")
         _ = SystemConfigService.shared
@@ -229,8 +232,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         textLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_lable")
         
         // Add small logo
-        let logoPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/logo.png"
-        if let logo = NSImage(contentsOfFile: logoPath) {
+        if let logo = ColorService.shared.getLogo() {
             let logoSize: CGFloat = 26
             let logoView = NSImageView(frame: NSRect(x: 0, y: 0, width: logoSize, height: logoSize))
             logoView.image = logo

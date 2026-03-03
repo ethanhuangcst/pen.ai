@@ -63,6 +63,7 @@
 
 /* General tab */
 "keyboard_shortcut_title" = "切换 Pen 窗口的键盘快捷键";
+"toggle_pen_shortcut_title" = "使用快捷键切换 Pen：";
 "record_shortcut_instruction" = "点击记录自定义快捷键：";
 "press_key_combination" = "按下按键组合...";
 "press_key_combination_instruction" = "按下您想要使用的按键组合...";
@@ -251,3 +252,10 @@
 "menu_find" = "查找...";
 "menu_find_next" = "查找下一个";
 "menu_find_previous" = "查找上一个";
+/* Appearance Section */
+"appearance_title" = "外观";
+"auto_switch_appearance" = "自动切换外观";
+"appearance_mode" = "外观模式";
+"light_mode" = "浅色";
+"dark_mode" = "深色";
+"auto_switch_appearance_description" = "根据系统设置自动在浅色和深色模式之间切换";

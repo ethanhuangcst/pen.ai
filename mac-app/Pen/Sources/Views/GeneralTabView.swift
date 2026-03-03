@@ -13,6 +13,10 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
     
     private var languagePopup: NSPopUpButton!
     
+    // Appearance section properties
+    private var autoSwitchButton: NSSwitch!
+    private var appearancePopup: NSPopUpButton!
+    
     // MARK: - Initialization
     init(frame: CGRect, parentWindow: NSWindow) {
         self.parentWindow = parentWindow
@@ -60,10 +64,18 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         setupLanguageSection(languageSection)
         addSubview(languageSection)
         
+        // Appearance section - DISABLED for now, always use light mode
+        // let appearanceSection = createSectionView(x: 20, y: contentHeight - 442, width: contentWidth - 40, height: sectionHeight + 10)
+        // setupAppearanceSection(appearanceSection)
+        // addSubview(appearanceSection)
+        
         // Set tab order explicitly
         historyCountLow.nextKeyView = historyCountMedium
         historyCountMedium.nextKeyView = historyCountHigh
         historyCountHigh.nextKeyView = languagePopup
+        // languagePopup.nextKeyView = autoSwitchButton
+        // autoSwitchButton.nextKeyView = appearancePopup
+        // appearancePopup.nextKeyView = historyCountLow
         languagePopup.nextKeyView = historyCountLow
         
         // Add save button at the bottom right
@@ -206,7 +218,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         
         // Section title
         let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 30, width: 250, height: 20))
-        titleLabel.stringValue = LocalizationService.shared.localizedString(for: "keyboard_shortcut_title")
+        titleLabel.stringValue = LocalizationService.shared.localizedString(for: "toggle_pen_shortcut_title")
         titleLabel.isBezeled = false
         titleLabel.drawsBackground = false
         titleLabel.isEditable = false
@@ -214,18 +226,8 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         titleLabel.font = NSFont.boldSystemFont(ofSize: 14)
         section.addSubview(titleLabel)
         
-        // Instruction label
-        let instructionLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 57, width: 300, height: 24))
-        instructionLabel.stringValue = LocalizationService.shared.localizedString(for: "record_shortcut_instruction")
-        instructionLabel.isBezeled = false
-        instructionLabel.drawsBackground = false
-        instructionLabel.isEditable = false
-        instructionLabel.isSelectable = false
-        instructionLabel.font = NSFont.systemFont(ofSize: 14)
-        section.addSubview(instructionLabel)
-        
-        // Shortcut key display field - moved to new row
-        shortcutKeyField = ClickableTextField(frame: NSRect(x: 20, y: sectionHeight - 85, width: 238, height: 27))
+        // Shortcut key display field
+        shortcutKeyField = ClickableTextField(frame: NSRect(x: 280, y: sectionHeight - 28, width: 238, height: 27))
         shortcutKeyField.stringValue = previousShortcut // Use the loaded shortcut
         shortcutKeyField.isEditable = false
         shortcutKeyField.isSelectable = true
@@ -374,6 +376,77 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         languagePopup.target = self
         languagePopup.action = #selector(languageSelected)
         section.addSubview(languagePopup)
+    }
+    
+    private func setupAppearanceSection(_ section: NSView) {
+        let sectionHeight = section.bounds.height
+        
+        // Section title
+        let titleLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 28, width: 200, height: 20))
+        titleLabel.stringValue = LocalizationService.shared.localizedString(for: "appearance_title")
+        titleLabel.isBezeled = false
+        titleLabel.drawsBackground = false
+        titleLabel.isEditable = false
+        titleLabel.isSelectable = false
+        titleLabel.font = NSFont.boldSystemFont(ofSize: 14)
+        section.addSubview(titleLabel)
+        
+        // Auto-switch label
+        let autoSwitchLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 58, width: 200, height: 20))
+        autoSwitchLabel.stringValue = LocalizationService.shared.localizedString(for: "auto_switch_appearance")
+        autoSwitchLabel.isBezeled = false
+        autoSwitchLabel.drawsBackground = false
+        autoSwitchLabel.isEditable = false
+        autoSwitchLabel.isSelectable = false
+        section.addSubview(autoSwitchLabel)
+        
+        // Auto-switch button
+        autoSwitchButton = NSSwitch(frame: NSRect(x: 230, y: sectionHeight - 60, width: 50, height: 25))
+        autoSwitchButton.state = SystemConfigService.shared.autoSwitchAppearance ? .on : .off
+        autoSwitchButton.target = self
+        autoSwitchButton.action = #selector(autoSwitchChanged)
+        section.addSubview(autoSwitchButton)
+        
+        // Appearance label
+        let appearanceLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 88, width: 150, height: 20))
+        appearanceLabel.stringValue = LocalizationService.shared.localizedString(for: "appearance_mode")
+        appearanceLabel.isBezeled = false
+        appearanceLabel.drawsBackground = false
+        appearanceLabel.isEditable = false
+        appearanceLabel.isSelectable = false
+        section.addSubview(appearanceLabel)
+        
+        // Appearance popup button
+        appearancePopup = NSPopUpButton(frame: NSRect(x: 170, y: sectionHeight - 93, width: 200, height: 28))
+        appearancePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "light_mode"))
+        appearancePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "dark_mode"))
+        
+        // Set initial selection based on saved preference
+        if let savedAppearance = SystemConfigService.shared.manualAppearance {
+            if savedAppearance == .darkAqua {
+                appearancePopup.selectItem(at: 1)
+            } else {
+                appearancePopup.selectItem(at: 0)
+            }
+        } else {
+            appearancePopup.selectItem(at: 0) // Default to Light
+        }
+        
+        appearancePopup.target = self
+        appearancePopup.action = #selector(appearanceSelected)
+        appearancePopup.isEnabled = !SystemConfigService.shared.autoSwitchAppearance
+        section.addSubview(appearancePopup)
+        
+        // Description label
+        let descriptionLabel = NSTextField(frame: NSRect(x: 20, y: sectionHeight - 115, width: 400, height: 20))
+        descriptionLabel.stringValue = LocalizationService.shared.localizedString(for: "auto_switch_appearance_description")
+        descriptionLabel.isBezeled = false
+        descriptionLabel.drawsBackground = false
+        descriptionLabel.isEditable = false
+        descriptionLabel.isSelectable = false
+        descriptionLabel.textColor = .secondaryLabelColor
+        descriptionLabel.font = NSFont.systemFont(ofSize: 11)
+        section.addSubview(descriptionLabel)
     }
     
     // MARK: - Actions
@@ -664,6 +737,43 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         if let selectedItem = sender.selectedItem {
             print("Language selected: \(selectedItem.title)")
         }
+    }
+    
+    @objc private func autoSwitchChanged(_ sender: NSSwitch) {
+        let isAutoSwitch = sender.state == .on
+        SystemConfigService.shared.autoSwitchAppearance = isAutoSwitch
+        
+        // Enable/disable appearance popup based on auto-switch state
+        appearancePopup.isEnabled = !isAutoSwitch
+        
+        if isAutoSwitch {
+            // Reset to system appearance
+            NSApplication.shared.windows.forEach { window in
+                window.appearance = nil
+            }
+        } else {
+            // Apply manual appearance
+            appearanceSelected(appearancePopup)
+        }
+        
+        print("Auto-switch appearance: \(isAutoSwitch)")
+    }
+    
+    @objc private func appearanceSelected(_ sender: NSPopUpButton) {
+        let selectedIndex = sender.indexOfSelectedItem
+        let appearance: NSAppearance.Name? = selectedIndex == 1 ? .darkAqua : .aqua
+        
+        SystemConfigService.shared.manualAppearance = appearance
+        
+        // Apply appearance to all windows
+        if let appearanceName = appearance {
+            let nsAppearance = NSAppearance(named: appearanceName)
+            NSApplication.shared.windows.forEach { window in
+                window.appearance = nsAppearance
+            }
+        }
+        
+        print("Appearance selected: \(selectedIndex == 1 ? "Dark" : "Light")")
     }
     
     // MARK: - Private Methods

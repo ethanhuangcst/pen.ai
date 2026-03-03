@@ -10,6 +10,8 @@ class PenWindowService {
     private var promptsService: PromptsService
     private var currentClipboardContent: String?
     private var isWindowOpen: Bool = false
+    private var isInitializing: Bool = false
+    private var isEnhancing: Bool = false
     
     init() {
         self.userService = UserService.shared
@@ -108,6 +110,8 @@ class PenWindowService {
             return
         }
         
+        isInitializing = true
+        
         // 1. Load User Information
         await loadUserInformation()
         
@@ -131,6 +135,8 @@ class PenWindowService {
                 print("[PenWindowService] Clipboard content unchanged, skipping enhancement in initiatePen")
             }
         }
+        
+        isInitializing = false
     }
     
     // MARK: - User Information Loading
@@ -401,8 +407,7 @@ class PenWindowService {
         textLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_lable")
         
         // Add small logo
-        let logoPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/logo.png"
-        if let logo = NSImage(contentsOfFile: logoPath) {
+        if let logo = ColorService.shared.getLogo() {
             let logoSize: CGFloat = 26
             let logoView = NSImageView(frame: NSRect(x: 336, y: 2, width: logoSize, height: logoSize))
             logoView.image = logo
@@ -592,27 +597,14 @@ class PenWindowService {
     }
     
     private func setPlaceholderImage(to imageView: NSImageView) {
-        // Try multiple paths to find the logo.png file
-        let possiblePaths = [
-            // Absolute paths
-            "/Users/ethanhuang/code/pen.ai/pen/mac-app/Pen/Resources/Assets/logo.png",
-            "/Users/ethanhuang/code/pen.ai/pen/web-app/public/logo.png",
-            // Relative paths
-            "Resources/Assets/logo.png",
-            "mac-app/Pen/Resources/Assets/logo.png",
-            "pen/mac-app/Pen/Resources/Assets/logo.png"
-        ]
-        
-        for path in possiblePaths {
-            print("[PenWindowService] Trying placeholder image path: \(path)")
-            if let image = NSImage(contentsOfFile: path) {
-                imageView.image = image
-                print("[PenWindowService] Using placeholder image from: \(path)")
-                return
-            }
+        // Use ColorService to get the appropriate logo based on appearance
+        if let logo = ColorService.shared.getLogo() {
+            imageView.image = logo
+            print("[PenWindowService] Using logo from ColorService")
+            return
         }
         
-        print("[PenWindowService] Placeholder image not found at any path")
+        print("[PenWindowService] Logo not found from ColorService")
         // As a last resort, try to create a simple placeholder
         let placeholderImage = NSImage(size: NSSize(width: 20, height: 20))
         placeholderImage.lockFocus()
@@ -1140,6 +1132,14 @@ class PenWindowService {
     private func enhanceText() async {
         guard let window = window else { return }
         
+        guard !isEnhancing else {
+            print("[PenWindowService] Already enhancing, skipping duplicate request")
+            return
+        }
+        
+        isEnhancing = true
+        defer { isEnhancing = false }
+        
         // Get selected prompt
         guard let selectedPrompt = await getSelectedPrompt() else {
             print("[PenWindowService] No prompt selected")
@@ -1333,6 +1333,10 @@ class PenWindowService {
     
     @objc private func handlePromptSelectionChanged() {
         print("[PenWindowService] Prompt selection changed")
+        guard !isInitializing else {
+            print("[PenWindowService] Skipping enhancement during initialization")
+            return
+        }
         // Trigger text enhancement when prompt selection changes
         Task {
             await enhanceText()
@@ -1341,6 +1345,10 @@ class PenWindowService {
     
     @objc private func handleProviderSelectionChanged() {
         print("[PenWindowService] Provider selection changed")
+        guard !isInitializing else {
+            print("[PenWindowService] Skipping enhancement during initialization")
+            return
+        }
         // Trigger text enhancement when provider selection changes
         Task {
             await enhanceText()

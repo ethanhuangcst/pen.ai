@@ -63,6 +63,7 @@
 
 /* General tab */
 "keyboard_shortcut_title" = "Keyboard Shortcut To Toggle Pen";
+"toggle_pen_shortcut_title" = "Toggle Pen with shortcut:";
 "record_shortcut_instruction" = "Click to record your own shortcut:";
 "press_key_combination" = "Press a key combination...";
 "press_key_combination_instruction" = "Press the key combination you want to use...";
@@ -284,3 +285,10 @@
 "menu_find" = "Find...";
 "menu_find_next" = "Find Next";
 "menu_find_previous" = "Find Previous";
+/* Appearance Section */
+"appearance_title" = "Appearance";
+"auto_switch_appearance" = "Auto-switch appearance";
+"appearance_mode" = "Appearance mode";
+"light_mode" = "Light";
+"dark_mode" = "Dark";
+"auto_switch_appearance_description" = "Automatically switch between light and dark mode based on system settings";

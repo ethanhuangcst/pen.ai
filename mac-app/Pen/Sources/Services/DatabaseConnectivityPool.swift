@@ -101,32 +101,14 @@ class MySQLConnection: DatabaseConnection {
             for (rowIndex, row) in rows.enumerated() {
                 var rowData: [String: Any] = [:]
                 
-                // Debug: Print ALL column names for the first row of content_history queries
                 if query.contains("content_history") && rowIndex == 0 {
                     print("[MySQLConnection] ========== CONTENT_HISTORY QUERY DEBUG ==========")
                     print("[MySQLConnection] Query: \(query)")
-                    print("[MySQLConnection] Row \(rowIndex) - Checking ALL possible columns:")
-                    
-                    // List all columns that might be in content_history table
-                    let contentHistoryColumns = ["id", "uuid", "user_id", "enhance_datetime", "original_content", "enhanced_content", "prompt_text", "ai_provider", "created_at", "updated_at"]
-                    for columnName in contentHistoryColumns {
-                        if let columnData = row.column(columnName) {
-                            print("[MySQLConnection]   Column '\(columnName)' EXISTS - type: \(type(of: columnData))")
-                            if let str = columnData.string {
-                                print("[MySQLConnection]     string value: \(str.prefix(100))")
-                            } else if let int = columnData.int {
-                                print("[MySQLConnection]     int value: \(int)")
-                            } else {
-                                print("[MySQLConnection]     description: \(columnData.description.prefix(100))")
-                            }
-                        } else {
-                            print("[MySQLConnection]   Column '\(columnName)' NOT FOUND")
-                        }
-                    }
-                    print("[MySQLConnection] ================================================")
+                    print("[MySQLConnection] Row \(rowIndex) - ALL columns in row:")
+                    print("[MySQLConnection] ================================================" )
                     fflush(stdout)
                 }
-                
+
                 // Process all columns dynamically
                 // First, try common columns
                 if let idData = row.column("id") {

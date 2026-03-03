@@ -192,8 +192,7 @@ class BaseWindow: NSWindow {
     
     /// Adds the PenAI logo to the window
     func addPenAILogo(to contentView: NSView, windowHeight: CGFloat) {
-        let logoPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/logo.png"
-        if let logo = NSImage(contentsOfFile: logoPath) {
+        if let logo = ColorService.shared.getLogo() {
             let logoSize: CGFloat = 38
             let logoView = NSImageView(frame: NSRect(x: 20, y: windowHeight - 55, width: logoSize, height: logoSize))
             logoView.image = logo

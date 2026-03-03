@@ -288,14 +288,14 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         addSubview(registrationForm)
         
         // Action buttons
-        let saveButton = FocusableButton(frame: NSRect(x: contentWidth - 189, y: 8, width: 100, height: 32))
+        let saveButton = FocusableButton(frame: NSRect(x: 49, y: 22, width: 100, height: 32))
         saveButton.title = LocalizationService.shared.localizedString(for: "save_changes")
         saveButton.bezelStyle = .rounded
         saveButton.target = self
         saveButton.action = #selector(saveChanges)
         addSubview(saveButton)
         
-        let logoutButton = FocusableButton(frame: NSRect(x: contentWidth - 79, y: 8, width: 90, height: 32))
+        let logoutButton = FocusableButton(frame: NSRect(x: 155, y: 22, width: 90, height: 32))
         logoutButton.title = LocalizationService.shared.localizedString(for: "logout")
         logoutButton.bezelStyle = .rounded
         logoutButton.target = self

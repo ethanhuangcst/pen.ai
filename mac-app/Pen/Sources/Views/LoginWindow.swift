@@ -299,13 +299,16 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
                     print("********************************* ONLINE-LOGIN MODE *********************************")
                     
                     // Close login window on main thread
-                    DispatchQueue.main.async {
-                        self.orderOut(nil)
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self = self else { return }
                         
                         // Notify delegate to set app to online-login mode and update menu bar icon
                         self.penDelegate?.setAppMode(.onlineLogin)
                         self.penDelegate?.updateMenuBarIcon()
                         self.penDelegate?.createGlobalUserObject(user: user)
+                        
+                        // Close window after delegate calls
+                        self.orderOut(nil)
                     }
                 } else {
                     print("Login failed: Invalid password")
