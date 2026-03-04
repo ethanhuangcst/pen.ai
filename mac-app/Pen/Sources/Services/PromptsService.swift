@@ -249,16 +249,7 @@ class PromptsService {
             let rows = try await connection.execute(query: query, parameters: [MySQLData(int: userId)])
             var prompts = rows.compactMap { Prompt.fromDatabaseRow($0) }
             
-            // Debug: Print all prompt IDs
-            print("[PromptsService] Found \(prompts.count) prompts for user \(userId)")
-            for (index, prompt) in prompts.enumerated() {
-                print("[PromptsService] Prompt \(index): ID=\(prompt.id), Name=\(prompt.promptName), isDefault=\(prompt.isDefault)")
-            }
-            
-            // Check if default prompt exists for this user
             let hasDefaultPrompt = prompts.contains { $0.isDefault }
-            print("[PromptsService] hasDefaultPrompt: \(hasDefaultPrompt)")
-            print("[PromptsService] Checking prompts for default: \(prompts.map { $0.promptName }.joined(by: ", "))")
             
             if !hasDefaultPrompt {
                 // Create default prompt using the standalone method
@@ -279,12 +270,6 @@ class PromptsService {
                 if p1.isDefault { return true }
                 if p2.isDefault { return false }
                 return p1.createdDatetime > p2.createdDatetime
-            }
-            
-            // Debug: Print sorted prompts
-            print("[PromptsService] Sorted prompts:")
-            for (index, prompt) in prompts.enumerated() {
-                print("[PromptsService] Sorted Prompt \(index): ID=\(prompt.id), Name=\(prompt.promptName), isDefault=\(prompt.isDefault)")
             }
             
             return prompts
@@ -317,10 +302,6 @@ class PromptsService {
         let promptName = defaultPromptName ?? "Default Prompt"
         let promptText = defaultPromptText ?? "You are Pen, an AI writing assistant designed to help users improve their writing. Your goal is to analyze the provided text and enhance it while maintaining the original meaning and intent."
         
-        print("[PromptsService] Creating default prompt for user \(userId): \(promptName)")
-        print("[PromptsService] Default prompt text: \(promptText.prefix(100))...")
-        
-        // Create a unique ID for this user's default prompt
         let uniqueDefaultId = "default-\(userId)"
         
         // Create a copy with the user's ID

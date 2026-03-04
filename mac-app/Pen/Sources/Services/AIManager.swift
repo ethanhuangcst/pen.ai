@@ -400,10 +400,12 @@ public class AIManager {
         
         for baseURL in baseURLs {
             totalAttempts += 1
+            print("[AIManager] Testing connection attempt \(totalAttempts) for \(providerName): \(baseURL)")
             
             do {
                 guard let url = URL(string: baseURL) else {
                     lastError = "Invalid URL: \(baseURL)"
+                    print("[AIManager] ❌ \(lastError)")
                     continue
                 }
                 
@@ -442,8 +444,10 @@ public class AIManager {
                 // Check response status code
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                     let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                    let errorMessage = "API call failed with status code: \(statusCode)"
-                    print(errorMessage)
+                    let errorMessage = "HTTP \(statusCode)"
+                    let responseBody = String(data: data, encoding: .utf8) ?? "No response body"
+                    print("[AIManager] ❌ Failed: HTTP \(statusCode) - \(baseURL)")
+                    print("[AIManager] Response: \(responseBody.prefix(200))")
                     lastError = errorMessage
                     continue
                 }
@@ -454,31 +458,34 @@ public class AIManager {
                     if let choices = responseData?["choices"] as? [[String: Any]],
                        let firstChoice = choices.first,
                        let message = firstChoice["message"] as? [String: Any],
-                       let _ = message["content"] as? String {
-                        print("Successfully connected to \(providerName) using URL: \(baseURL)")
+                       let content = message["content"] as? String {
+                        print("[AIManager] ✅ Successfully connected to \(providerName)")
+                        print("[AIManager] URL: \(baseURL)")
+                        print("[AIManager] Response: \(content)")
                         return true
                     } else {
                         let errorMessage = "Invalid API response format"
-                        print(errorMessage)
+                        print("[AIManager] ❌ Failed: \(errorMessage) - \(baseURL)")
                         lastError = errorMessage
                         continue
                     }
                 } catch {
                     let errorMessage = "Failed to parse API response: \(error)"
-                    print(errorMessage)
+                    print("[AIManager] ❌ Failed: \(errorMessage) - \(baseURL)")
                     lastError = errorMessage
                     continue
                 }
             } catch {
-                let errorMessage = "Error connecting to \(baseURL): \(error)"
-                print(errorMessage)
+                let errorMessage = "Network error: \(error.localizedDescription)"
+                print("[AIManager] ❌ Failed: \(errorMessage) - \(baseURL)")
                 lastError = errorMessage
                 continue
             }
         }
         
         // All URLs failed
-        print("All \(totalAttempts) attempts to connect to \(providerName) failed")
+        print("[AIManager] ❌ All \(totalAttempts) attempts failed for \(providerName)")
+        print("[AIManager] Last error: \(lastError)")
         throw AIError.networkError
     }
     
@@ -1122,10 +1129,8 @@ public class AIManager {
         }
         
         let statusCode = httpResponse.statusCode
-        let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
         
         print("[AIManager] HTTP Status: \(statusCode)")
-        print("[AIManager] Response Body: \(responseBody.prefix(500))")
         
         guard (200...299).contains(statusCode) else {
             let responsePrefix = String(responseBody.prefix(200))
@@ -1158,11 +1163,9 @@ public class AIManager {
     }
     
     private func mapError(_ data: Data, response: HTTPURLResponse) -> AIError {
-        let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
         let statusCode = response.statusCode
         
         print("[AIManager] Mapping error for HTTP \(statusCode)")
-        print("[AIManager] Error response body: \(responseBody.prefix(500))")
         
         do {
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]

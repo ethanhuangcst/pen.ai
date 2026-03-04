@@ -31,9 +31,6 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
     // MARK: - Initialization
     init(menuBarIconFrame: NSRect? = nil, penDelegate: PenDelegate? = nil) {
         let windowSize = NSSize(width: windowWidth, height: windowHeight)
-        print("LoginWindow: Opening with size: \(windowSize)")
-        
-        // Create window with borderless style (default)
         super.init(size: windowSize)
         
         // Disable toolbar
@@ -119,19 +116,13 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
         passwordToggleButton.bezelStyle = .smallSquare
         passwordToggleButton.isBordered = false
         
-        // Load and resize the hidden.svg icon to 18px
         let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/hidden.svg"
-        print("LoginWindow: Loading hidden.svg from path: \(iconPath)")
         if let originalImage = NSImage(contentsOfFile: iconPath) {
-            print("LoginWindow: Original image size: \(originalImage.size)")
             let resizedImage = NSImage(size: NSSize(width: 18, height: 18))
             resizedImage.lockFocus()
             originalImage.draw(in: NSRect(origin: .zero, size: NSSize(width: 18, height: 18)), from: NSRect(origin: .zero, size: originalImage.size), operation: .sourceOver, fraction: 1.0)
             resizedImage.unlockFocus()
-            print("LoginWindow: Resized image size: \(resizedImage.size)")
             passwordToggleButton.image = resizedImage
-        } else {
-            print("LoginWindow: Error: Could not load hidden.svg")
         }
         
         passwordToggleButton.target = self
@@ -248,20 +239,14 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
             plainPasswordField.nextKeyView = rememberMeCheckbox
         }
         
-        // Update button icon with proper sizing
         let iconName = isPasswordSecure ? "hidden" : "show"
         let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/\(iconName).svg"
-        print("LoginWindow: Loading \(iconName).svg from path: \(iconPath)")
         if let originalImage = NSImage(contentsOfFile: iconPath) {
-            print("LoginWindow: Original image size: \(originalImage.size)")
             let resizedImage = NSImage(size: NSSize(width: 18, height: 18))
             resizedImage.lockFocus()
             originalImage.draw(in: NSRect(origin: .zero, size: NSSize(width: 18, height: 18)), from: NSRect(origin: .zero, size: originalImage.size), operation: .sourceOver, fraction: 1.0)
             resizedImage.unlockFocus()
-            print("LoginWindow: Resized image size: \(resizedImage.size)")
             passwordToggleButton.image = resizedImage
-        } else {
-            print("LoginWindow: Error: Could not load \(iconName).svg")
         }
     }
     
@@ -275,45 +260,28 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
             // First check if user exists
             let authService = AuthenticationService.shared
             if let user = await authService.getUserByEmail(email: email) {
-                // Then validate password
                 if await authService.validateCredentials(email: email, password: password) {
-                    print("Login successful")
-                    
-                    // Store credentials if remember me is checked, otherwise clear them
                     if rememberMe {
                         authService.storeCredentials(email: email, password: password)
-                        print("********************************* User Credentials Stored Successfully *********************************")
-                        print("********************************* Key Chain info: \(email) *********************************")
                     } else {
                         authService.clearCredentials()
-                        print("********************************* User Credentials Stored Cleared!!! *********************************")
                     }
                     
-                    // Print success messages
-                    print("********************************* User logged in successfully *********************************")
-                    print("********************************* Hello, \(user.name)  *********************************")
-                    print("********************************* ONLINE-LOGIN MODE *********************************")
-                    
-                    // Close login window on main thread
                     DispatchQueue.main.async { [weak self] in
                         guard let self = self else { return }
                         
-                        // Notify delegate to set app to online-login mode and update menu bar icon
                         self.penDelegate?.setAppMode(.onlineLogin)
                         self.penDelegate?.updateMenuBarIcon()
                         self.penDelegate?.createGlobalUserObject(user: user)
                         
-                        // Close window after delegate calls
                         self.orderOut(nil)
                     }
                 } else {
-                    print("Login failed: Invalid password")
                     DispatchQueue.main.async {
                         self.showErrorMessage(LocalizationService.shared.localizedString(for: "invalid_credentials"))
                     }
                 }
             } else {
-                print("Login failed: Invalid credentials")
                 DispatchQueue.main.async {
                     self.showErrorMessage(LocalizationService.shared.localizedString(for: "invalid_credentials"))
                 }
@@ -327,35 +295,22 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
     }
     
     @objc private func cancel() {
-        // Handle cancel logic
-        print("Cancel button clicked")
         closeWindow()
     }
     
     @objc private func register() {
-        // Handle register logic
-        print("Register link clicked")
-        // Open registration window
         let registrationWindow = RegistrationWindow(penDelegate: penDelegate)
         registrationWindow.showAndFocus()
-        // Close login window
         self.orderOut(nil)
     }
     
     @objc private func forgotPassword() {
-        // Handle forgot password logic
-        print("Forgot password link clicked")
-        // Open forgot password window as a pop-up in front of login window
         let forgotPasswordWindow = ForgotPasswordWindow(penDelegate: penDelegate!, loginWindow: self)
         forgotPasswordWindow.showAndFocus()
     }
     
     @objc private func rememberMeToggled() {
-        let isRememberMe = rememberMeCheckbox.state == .on
-        let email = emailField.stringValue
-        let password = isPasswordSecure ? securePasswordField.stringValue : plainPasswordField.stringValue
-        
-        print("Remember Me toggled: \(isRememberMe)")
+        let _ = rememberMeCheckbox.state == .on
     }
     
     // MARK: - NSTextFieldDelegate

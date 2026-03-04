@@ -47,31 +47,11 @@ class ContentHistoryService {
         
         do {
             let query = "SELECT * FROM content_history WHERE user_id = ? ORDER BY enhance_datetime DESC, created_at DESC LIMIT ?"
-            let parameters: [MySQLData] = [MySQLData(string: "\(userID)"), MySQLData(int: count)] // Convert to string to match table schema
-            
-            print("[ContentHistoryService] Executing query: \(query)")
-            print("[ContentHistoryService] Parameters: userID=\(userID), count=\(count)")
-            fflush(stdout)
+            let parameters: [MySQLData] = [MySQLData(string: "\(userID)"), MySQLData(int: count)]
             
             let result = try await connection.execute(query: query, parameters: parameters)
             
-            print("[ContentHistoryService] Query returned \(result.count) rows")
-            fflush(stdout)
-            
-            // Debug: Print the first row to see what columns are present
-            if let firstRow = result.first {
-                print("[ContentHistoryService] First row keys: \(firstRow.keys)")
-                if let enhanceDatetime = firstRow["enhance_datetime"] {
-                    print("[ContentHistoryService] First row enhance_datetime: \(enhanceDatetime)")
-                } else {
-                    print("[ContentHistoryService] enhance_datetime NOT found in first row")
-                }
-                fflush(stdout)
-            }
-            
             let historyItems = result.map { ContentHistoryModel(from: $0) }
-            print("========== ContentHistoryService.loadHistoryByUserID END ==========")
-            fflush(stdout)
             return .success(historyItems)
         } catch {
             print("[ContentHistoryService] Error loading history: \(error)")

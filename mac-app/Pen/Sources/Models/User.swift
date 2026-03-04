@@ -88,7 +88,6 @@ class User {
         }
         
         let profileImage = row["profileImage"] as? String
-        print("[User] profileImage: \(profileImage ?? "nil")")
         let systemFlag = row["system_flag"] as? String ?? "PEN"
         
         // Get pen_content_history
