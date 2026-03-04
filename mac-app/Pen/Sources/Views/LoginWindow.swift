@@ -271,13 +271,9 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
         let password = isPasswordSecure ? securePasswordField.stringValue : plainPasswordField.stringValue
         let rememberMe = rememberMeCheckbox.state == .on
         
-        print("Login button clicked with email: \(email), password: \(password), rememberMe: \(rememberMe)")
-        
-        // Validate credentials asynchronously
-        let authService = AuthenticationService.shared
-        
         Task {
             // First check if user exists
+            let authService = AuthenticationService.shared
             if let user = await authService.getUserByEmail(email: email) {
                 // Then validate password
                 if await authService.validateCredentials(email: email, password: password) {
@@ -360,11 +356,6 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
         let password = isPasswordSecure ? securePasswordField.stringValue : plainPasswordField.stringValue
         
         print("Remember Me toggled: \(isRememberMe)")
-        if isRememberMe {
-            print("User credentials to be stored:")
-            print("Email: \(email)")
-            print("Password: \(password)")
-        }
     }
     
     // MARK: - NSTextFieldDelegate

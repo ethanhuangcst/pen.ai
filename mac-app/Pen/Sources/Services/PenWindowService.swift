@@ -131,8 +131,6 @@ class PenWindowService {
                     await enhanceText()
                 }
             } else {
-                // Clipboard content is unchanged, skip enhancement
-                print("[PenWindowService] Clipboard content unchanged, skipping enhancement in initiatePen")
             }
         }
         
@@ -144,39 +142,16 @@ class PenWindowService {
     private func loadUserInformation() async {
         guard let window = window else { return }
         
-        // Check login status
         let isLoggedIn = userService.isLoggedIn
         let isOnline = userService.isOnline
         
-        print("[PenWindowService] loadUserInformation called")
-        print("[PenWindowService] isLoggedIn: \(isLoggedIn)")
-        print("[PenWindowService] isOnline: \(isOnline)")
-        
         if isOnline && isLoggedIn {
-            // User is logged in, load user information
-            do {
-                let user = userService.currentUser
-                print("[PenWindowService] userService.currentUser: \(user)")
-                if let user = user {
-                    print("[PenWindowService] User information loaded:")
-                    print("  Name: \(user.name)")
-                    print("  Email: \(user.email)")
-                    print("  User ID: \(user.id)")
-                } else {
-                    print("[PenWindowService] userService.currentUser is nil even though isLoggedIn is true")
-                    showDefaultUI()
-                    WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "pen_load_login_error"))
-                    return
-                }
-            } catch {
-                // Handle user information load failure
-                print("[PenWindowService] Failed to load user information: \(error)")
+            if userService.currentUser == nil {
                 showDefaultUI()
                 WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "pen_load_login_error"))
                 return
             }
         } else if isOnline && !isLoggedIn {
-            // User is not logged in
             showDefaultUI()
             WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "pen_not_logged_in_error"))
             return
@@ -188,10 +163,7 @@ class PenWindowService {
     private func loadAIConfigurations() async {
         guard let window = window else { return }
         
-        // Check if AIManager instance exists
         guard let aiManager = userService.aiManager else {
-            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager NOT found, AI configuration not loaded. #################@@@@@@@@@@@@@@@")
-            // Load prompts even if AIManager is not found
             if let user = userService.currentUser {
                 await loadPrompts()
             }
@@ -199,11 +171,7 @@ class PenWindowService {
             return
         }
         
-        if aiManager.isInitialized {
-            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager found, AI configuration and Prompts loaded successfully. #################@@@@@@@@@@@@@@@")
-        } else {
-            // Initialize AIManager instance
-            print("^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager NOT initialized, initializing now. #################@@@@@@@@@@@@@@@")
+        if !aiManager.isInitialized {
             aiManager.initialize()
         }
         
@@ -253,10 +221,6 @@ class PenWindowService {
         
         do {
             let prompts = try await promptsService.getPromptsByUserId(userId: user.id)
-            print("[PenWindowService] Loaded \(prompts.count) prompts for user \(user.id)")
-            for (index, prompt) in prompts.enumerated() {
-                print("[PenWindowService] Prompt \(index): \(prompt.promptName) (ID: \(prompt.id), UserID: \(prompt.userId))")
-            }
             await populatePromptsDropdown(prompts: prompts)
         } catch {
             print("[PenWindowService] Failed to load prompts: \(error)")
@@ -502,7 +466,6 @@ class PenWindowService {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
-        print("[PenWindowService] Text copied to clipboard: \(text)")
     }
     
     private func addControllerContainer(to contentView: NSView) {
@@ -595,65 +558,44 @@ class PenWindowService {
     }
     
     private func setPlaceholderImage(to imageView: NSImageView) {
-        // Use ColorService to get the appropriate logo based on appearance
         if let logo = ColorService.shared.getLogo() {
             imageView.image = logo
-            print("[PenWindowService] Using logo from ColorService")
             return
         }
         
-        print("[PenWindowService] Logo not found from ColorService")
-        // As a last resort, try to create a simple placeholder
         let placeholderImage = NSImage(size: NSSize(width: 20, height: 20))
         placeholderImage.lockFocus()
         NSColor.gray.setFill()
         NSRect(x: 0, y: 0, width: 20, height: 20).fill()
         placeholderImage.unlockFocus()
         imageView.image = placeholderImage
-        print("[PenWindowService] Using generated placeholder image")
     }
     
     private func addUserLabelContainer(to contentView: NSView) {
-        print("[PenWindowService] addUserLabelContainer called")
         let userLabelContainer = NSView(frame: NSRect(x: 232, y: 352, width: 120, height: 30))
         userLabelContainer.wantsLayer = true
         userLabelContainer.layer?.backgroundColor = NSColor.clear.cgColor
         userLabelContainer.identifier = NSUserInterfaceItemIdentifier("pen_userlabel")
         
-        // Add user profile image
         let profileImage = NSImageView(frame: NSRect(x: 0, y: 0, width: 20, height: 20))
         profileImage.identifier = NSUserInterfaceItemIdentifier("pen_userlabel_img")
         
-        // Set profile image if available
         if let user = userService.currentUser, let profileImageData = user.profileImage, !profileImageData.isEmpty {
-            print("[PenWindowService] User has profile image")
-            // Check if it's a base64-encoded image
             if profileImageData.hasPrefix("data:image") {
-                // Handle base64-encoded image
-                print("[PenWindowService] Profile image is base64-encoded")
                 if let base64String = profileImageData.components(separatedBy: ",").last {
                     if let imageData = Data(base64Encoded: base64String) {
                         if let image = NSImage(data: imageData) {
                             profileImage.image = image
-                            print("[PenWindowService] Loaded base64-encoded profile image")
                         } else {
-                            // Use placeholder if image fails to load
-                            print("[PenWindowService] Failed to load base64-encoded image")
                             self.setPlaceholderImage(to: profileImage)
                         }
                     } else {
-                        // Use placeholder if base64 data is invalid
-                        print("[PenWindowService] Invalid base64 data")
                         self.setPlaceholderImage(to: profileImage)
                     }
                 } else {
-                    // Use placeholder if base64 data is invalid
-                    print("[PenWindowService] Invalid base64 format")
                     self.setPlaceholderImage(to: profileImage)
                 }
             } else {
-                // Try to load as file path
-                print("[PenWindowService] Profile image is file path: \(profileImageData)")
                 let possiblePaths = [
                     "Resources/ProfileImages/\(profileImageData)",
                     "mac-app/Pen/Resources/ProfileImages/\(profileImageData)",
@@ -662,24 +604,18 @@ class PenWindowService {
                 
                 var foundImage = false
                 for path in possiblePaths {
-                    print("[PenWindowService] Trying profile image path: \(path)")
                     if let image = NSImage(contentsOfFile: path) {
                         profileImage.image = image
-                        print("[PenWindowService] Loaded profile image from: \(path)")
                         foundImage = true
                         break
                     }
                 }
                 
                 if !foundImage {
-                    print("[PenWindowService] Profile image not found at any path")
-                    // Add a placeholder image if no profile image found
                     self.setPlaceholderImage(to: profileImage)
                 }
             }
         } else {
-            print("[PenWindowService] No user or no profile image")
-            // Add a placeholder image if no user or no profile image
             self.setPlaceholderImage(to: profileImage)
         }
         
@@ -687,17 +623,13 @@ class PenWindowService {
         let userNameLabel = NSTextField(frame: NSRect(x: 26, y: -13, width: 90, height: 30))
         userNameLabel.identifier = NSUserInterfaceItemIdentifier("pen_userlable_text")
         
-        // Set user name
         if let user = userService.currentUser {
             let name = user.name
-            // Trim name to fit width
             let font = NSFont.boldSystemFont(ofSize: 12)
             let trimmedName = trimTextToFitWidth(name, font: font, maxWidth: 90)
             userNameLabel.stringValue = trimmedName
-            print("[PenWindowService] Set user name: \(name), trimmed to: \(trimmedName)")
         } else {
             userNameLabel.stringValue = LocalizationService.shared.localizedString(for: "no_user")
-            print("[PenWindowService] Set user name to: no_user")
         }
         
         userNameLabel.isBezeled = false
@@ -711,7 +643,6 @@ class PenWindowService {
         userLabelContainer.addSubview(profileImage)
         userLabelContainer.addSubview(userNameLabel)
         contentView.addSubview(userLabelContainer)
-        print("[PenWindowService] Added user label container to content view")
     }
     
     private func trimTextToFitWidth(_ text: String, font: NSFont, maxWidth: CGFloat) -> String {
@@ -923,8 +854,6 @@ class PenWindowService {
                     if !clipboardText.isEmpty {
                         // Check if clipboard content has changed
                         if !forceEnhance && clipboardText == currentClipboardContent {
-                            // Clipboard content is the same, skip enhancement
-                            print("[PenWindowService] Clipboard content unchanged, skipping enhancement")
                             return nil
                         }
                         
@@ -1219,13 +1148,7 @@ class PenWindowService {
             )
             
             Task {
-                let result = await ContentHistoryService.shared.addToHistoryByUserID(history: historyModel, userID: user.id)
-                switch result {
-                case .success:
-                    print("Content history saved successfully")
-                case .failure(let error):
-                    print("Error saving content history: \(error)")
-                }
+                let _ = await ContentHistoryService.shared.addToHistoryByUserID(history: historyModel, userID: user.id)
             }
         } catch {
             print("[PenWindowService] Failed to enhance text: \(error)")
@@ -1320,9 +1243,7 @@ class PenWindowService {
     // MARK: - Event Handling Methods
     
     @objc private func handlePasteButton() {
-        print("[PenWindowService] Paste button clicked")
         if loadClipboardContent(forceEnhance: true) != nil {
-            // Trigger text enhancement if clipboard content is loaded successfully
             Task {
                 await enhanceText()
             }
@@ -1330,24 +1251,18 @@ class PenWindowService {
     }
     
     @objc private func handlePromptSelectionChanged() {
-        print("[PenWindowService] Prompt selection changed")
         guard !isInitializing else {
-            print("[PenWindowService] Skipping enhancement during initialization")
             return
         }
-        // Trigger text enhancement when prompt selection changes
         Task {
             await enhanceText()
         }
     }
     
     @objc private func handleProviderSelectionChanged() {
-        print("[PenWindowService] Provider selection changed")
         guard !isInitializing else {
-            print("[PenWindowService] Skipping enhancement during initialization")
             return
         }
-        // Trigger text enhancement when provider selection changes
         Task {
             await enhanceText()
         }

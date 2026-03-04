@@ -223,6 +223,38 @@ public class AIManager {
         case invalidResponse
         case providerError(String)
         case configurationError(String)
+        case unauthorized(String)
+        case forbidden(String)
+        case notFound(String)
+        case serverError(Int, String)
+        case clientError(Int, String)
+        
+        var localizedDescription: String {
+            switch self {
+            case .invalidAPIKey:
+                return "Invalid API key"
+            case .rateLimited:
+                return "Rate limited - too many requests"
+            case .networkError:
+                return "Network error - unable to connect"
+            case .invalidResponse:
+                return "Invalid response from server"
+            case .providerError(let message):
+                return "Provider error: \(message)"
+            case .configurationError(let message):
+                return "Configuration error: \(message)"
+            case .unauthorized(let message):
+                return "Unauthorized: \(message)"
+            case .forbidden(let message):
+                return "Forbidden: \(message)"
+            case .notFound(let message):
+                return "Not found: \(message)"
+            case .serverError(let code, let message):
+                return "Server error (\(code)): \(message)"
+            case .clientError(let code, let message):
+                return "Client error (\(code)): \(message)"
+            }
+        }
     }
     
     private protocol ProviderStrategy {
@@ -370,11 +402,7 @@ public class AIManager {
             totalAttempts += 1
             
             do {
-                print("Attempt \(totalAttempts) for \(providerName) using URL: \(baseURL)")
-                
-                // Create URL object
                 guard let url = URL(string: baseURL) else {
-                    print("Invalid URL: \(baseURL)")
                     lastError = "Invalid URL: \(baseURL)"
                     continue
                 }
@@ -387,14 +415,10 @@ public class AIManager {
                 
                 // Add authorization header
                 if provider.requiresAuth {
-                    // For providers like OpenAI that use Bearer token
                     if provider.authHeader == "Authorization" {
                         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: provider.authHeader)
-                        print("[AIManager] Debug: Using Bearer token authentication")
                     } else {
-                        // For providers like Anthropic that use direct API key
                         request.setValue(apiKey, forHTTPHeaderField: provider.authHeader)
-                        print("[AIManager] Debug: Using direct API key authentication")
                     }
                 }
                 
@@ -414,10 +438,6 @@ public class AIManager {
                 
                 // Make API call
                 let (data, response) = try await URLSession.shared.data(for: request)
-                
-                // Log raw response
-                print("[AIManager] Debug: Raw response data:")
-                print(String(data: data, encoding: .utf8) ?? "No response body")
                 
                 // Check response status code
                 guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
@@ -569,56 +589,31 @@ public class AIManager {
             
             // Try direct MySQLConnection access for JSON columns
             if let mysqlConnection = connection as? MySQLConnection, let internalConnection = mysqlConnection.getConnection() {
-                print("[AIManager] Using direct MySQL connection for JSON columns")
-                
-                // Execute query directly with JSON column cast to string
                 let query = "SELECT id, name, CAST(base_urls AS CHAR) as base_urls, default_model, requires_auth, auth_header, created_at, updated_at FROM ai_providers"
-                print("[AIManager] Executing query: \(query)")
                 let rows = try await internalConnection.query(query).get()
                 
                 var providers: [PublicAIModelProvider] = []
                 
                 for row in rows {
-                    // Create a row dictionary manually
                     var rowData: [String: Any] = [:]
                     
-                    // Debug: Try to access base_urls directly
-                    print("[AIManager] Debug: Trying to access base_urls column")
-                    if let baseURLsData = row.column("base_urls") {
-                        print("[AIManager] Debug: base_urls column exists")
-                        print("[AIManager] Debug: base_urls data type: \(type(of: baseURLsData))")
-                        
-                        // Try to get as string
-                        if let baseURLs = baseURLsData.string {
-                            rowData["base_urls"] = baseURLs
-                            print("[AIManager] Debug: base_urls as string: \(baseURLs)")
-                        } else {
-                            print("[AIManager] Debug: base_urls is not a string")
-                        }
-                    } else {
-                        print("[AIManager] Debug: base_urls column not found in row")
-                    }
-                    
-                    // Access other columns
                     if let idData = row.column("id"), let id = idData.string {
                         rowData["id"] = id
                     }
                     if let nameData = row.column("name"), let name = nameData.string {
                         rowData["name"] = name
-                        print("[AIManager] Debug: Provider name: \(name)")
+                    }
+                    if let baseURLsData = row.column("base_urls"), let baseURLs = baseURLsData.string {
+                        rowData["base_urls"] = baseURLs
                     }
                     if let defaultModelData = row.column("default_model"), let defaultModel = defaultModelData.string {
                         rowData["default_model"] = defaultModel
-                        print("[AIManager] Debug: Default model: \(defaultModel)")
                     }
                     if let requiresAuthData = row.column("requires_auth"), let requiresAuth = requiresAuthData.int {
                         rowData["requires_auth"] = requiresAuth
                     }
                     if let authHeaderData = row.column("auth_header"), let authHeader = authHeaderData.string {
                         rowData["auth_header"] = authHeader
-                        print("[AIManager] Debug: Auth header: \(authHeader)")
-                    } else {
-                        print("[AIManager] Debug: Auth header not found, using default")
                     }
                     if let createdAtData = row.column("created_at"), let createdAt = createdAtData.string {
                         rowData["created_at"] = createdAt
@@ -648,8 +643,6 @@ public class AIManager {
                 
                 return providers
             } else {
-                // Fallback to regular method
-                print("[AIManager] Falling back to regular execute method")
                 let query = "SELECT * FROM ai_providers"
                 let results = try await connection.execute(query: query)
                 
@@ -913,11 +906,7 @@ public class AIManager {
             
             // Try direct MySQLConnection access for JSON columns
             if let mysqlConnection = connection as? MySQLConnection, let internalConnection = mysqlConnection.getConnection() {
-                print("[AIManager] Using direct MySQL connection for JSON columns")
-                
-                // Execute query directly with JSON column cast to string
                 let query = "SELECT id, name, CAST(base_urls AS CHAR) as base_urls, default_model, requires_auth, auth_header, created_at, updated_at FROM ai_providers WHERE name = '\(name)'"
-                print("[AIManager] Executing query: \(query)")
                 let rows = try await internalConnection.query(query).get()
                 
                 guard !rows.isEmpty else {
@@ -925,46 +914,25 @@ public class AIManager {
                 }
                 
                 for row in rows {
-                    // Create a row dictionary manually
                     var rowData: [String: Any] = [:]
                     
-                    // Debug: Try to access base_urls directly
-                    print("[AIManager] Debug: Trying to access base_urls column")
-                    if let baseURLsData = row.column("base_urls") {
-                        print("[AIManager] Debug: base_urls column exists")
-                        print("[AIManager] Debug: base_urls data type: \(type(of: baseURLsData))")
-                        
-                        // Try to get as string
-                        if let baseURLs = baseURLsData.string {
-                            rowData["base_urls"] = baseURLs
-                            print("[AIManager] Debug: base_urls as string: \(baseURLs)")
-                        } else {
-                            print("[AIManager] Debug: base_urls is not a string")
-                        }
-                    } else {
-                        print("[AIManager] Debug: base_urls column not found in row")
-                    }
-                    
-                    // Access other columns
                     if let idData = row.column("id"), let id = idData.string {
                         rowData["id"] = id
                     }
-                    if let nameData = row.column("name"), let name = nameData.string {
-                        rowData["name"] = name
-                        print("[AIManager] Debug: Provider name: \(name)")
+                    if let nameData = row.column("name"), let nameVal = nameData.string {
+                        rowData["name"] = nameVal
+                    }
+                    if let baseURLsData = row.column("base_urls"), let baseURLs = baseURLsData.string {
+                        rowData["base_urls"] = baseURLs
                     }
                     if let defaultModelData = row.column("default_model"), let defaultModel = defaultModelData.string {
                         rowData["default_model"] = defaultModel
-                        print("[AIManager] Debug: Default model: \(defaultModel)")
                     }
                     if let requiresAuthData = row.column("requires_auth"), let requiresAuth = requiresAuthData.int {
                         rowData["requires_auth"] = requiresAuth
                     }
                     if let authHeaderData = row.column("auth_header"), let authHeader = authHeaderData.string {
                         rowData["auth_header"] = authHeader
-                        print("[AIManager] Debug: Auth header: \(authHeader)")
-                    } else {
-                        print("[AIManager] Debug: Auth header not found, using default")
                     }
                     if let createdAtData = row.column("created_at"), let createdAt = createdAtData.string {
                         rowData["created_at"] = createdAt
@@ -989,8 +957,6 @@ public class AIManager {
                 
                 return nil
             } else {
-                // Fallback to regular method
-                print("[AIManager] Falling back to regular execute method")
                 let parameterizedQuery = "SELECT * FROM ai_providers WHERE name = '\(name)'"
                 let results = try await connection.execute(query: parameterizedQuery)
                 
@@ -1125,7 +1091,8 @@ public class AIManager {
         body: [String: Any],
         apiKey: String,
         authHeader: String,
-        requiresAuth: Bool
+        requiresAuth: Bool,
+        providerName: String = "unknown"
     ) async throws -> Data {
         guard let url = URL(string: endpoint) else {
             throw AIError.configurationError("Invalid endpoint URL")
@@ -1149,26 +1116,74 @@ public class AIManager {
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-            throw AIError.networkError
+        guard let httpResponse = response as? HTTPURLResponse else {
+            print("[AIManager] ❌ Invalid response type")
+            throw AIError.invalidResponse
+        }
+        
+        let statusCode = httpResponse.statusCode
+        let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
+        
+        print("[AIManager] HTTP Status: \(statusCode)")
+        print("[AIManager] Response Body: \(responseBody.prefix(500))")
+        
+        guard (200...299).contains(statusCode) else {
+            let responsePrefix = String(responseBody.prefix(200))
+            switch statusCode {
+            case 401:
+                print("[AIManager] ❌ Unauthorized (401) - API key may be invalid or missing")
+                throw AIError.unauthorized("Authentication failed. Please check your API key for \(providerName). Response: \(responsePrefix)")
+            case 403:
+                print("[AIManager] ❌ Forbidden (403) - Access denied")
+                throw AIError.forbidden("Access denied. Your API key may not have permission for this operation. Response: \(responsePrefix)")
+            case 404:
+                print("[AIManager] ❌ Not Found (404) - Endpoint not found")
+                throw AIError.notFound("API endpoint not found. Please check the URL configuration. Response: \(responsePrefix)")
+            case 429:
+                print("[AIManager] ❌ Rate Limited (429) - Too many requests")
+                throw AIError.rateLimited
+            case 400...499:
+                print("[AIManager] ❌ Client Error (\(statusCode))")
+                throw AIError.clientError(statusCode, responsePrefix)
+            case 500...599:
+                print("[AIManager] ❌ Server Error (\(statusCode))")
+                throw AIError.serverError(statusCode, responsePrefix)
+            default:
+                print("[AIManager] ❌ Unknown Error (\(statusCode))")
+                throw AIError.networkError
+            }
         }
         
         return data
     }
     
     private func mapError(_ data: Data, response: HTTPURLResponse) -> AIError {
-        // Implementation for mapping provider-specific errors
+        let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
+        let statusCode = response.statusCode
+        
+        print("[AIManager] Mapping error for HTTP \(statusCode)")
+        print("[AIManager] Error response body: \(responseBody.prefix(500))")
+        
         do {
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            
             if let error = json?["error"] as? [String: Any],
                let message = error["message"] as? String {
+                let errorType = error["type"] as? String ?? "unknown"
+                let errorCode = error["code"] as? String ?? "unknown"
+                print("[AIManager] Provider error - Type: \(errorType), Code: \(errorCode), Message: \(message)")
+                return AIError.providerError("\(message) (type: \(errorType), code: \(errorCode))")
+            }
+            
+            if let message = json?["message"] as? String {
+                print("[AIManager] Provider error - Message: \(message)")
                 return AIError.providerError(message)
             }
         } catch {
-            // Ignore parsing errors
+            print("[AIManager] Failed to parse error response as JSON: \(error)")
         }
         
-        return AIError.networkError
+        print("[AIManager] Returning generic error for HTTP \(statusCode)")
+        return AIError.clientError(statusCode, String(responseBody.prefix(200)))
     }
 }

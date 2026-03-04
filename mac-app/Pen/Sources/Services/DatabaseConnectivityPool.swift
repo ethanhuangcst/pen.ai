@@ -33,12 +33,6 @@ class MySQLConnection: DatabaseConnection {
     
     private func connect() {
         print("[MySQLConnection] Connecting to database...")
-        print("[MySQLConnection] Host: \(config.host)")
-        print("[MySQLConnection] Port: \(config.port)")
-        print("[MySQLConnection] Database: \(config.databaseName)")
-        print("[MySQLConnection] Username: \(config.username)")
-        print("[MySQLConnection] Password length: \(config.password.count)")
-        print("[MySQLConnection] Password first 3 chars: \(config.password.prefix(3))...")
         
         do {
             // Create MySQL configuration with TLS disabled for development
@@ -83,31 +77,15 @@ class MySQLConnection: DatabaseConnection {
             throw NSError(domain: "MySQLConnection", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not connected to database"])
         }
         
-        print("========== MySQLConnection.execute START ==========")
-        print("[MySQLConnection] Executing query: \(query)")
-        print("[MySQLConnection] Parameters: \(parameters)")
-        fflush(stdout)
-        
         do {
             // Execute the query
             let rows = try await connection.query(query, parameters).get()
-            
-            print("[MySQLConnection] Query returned \(rows.count) rows")
-            fflush(stdout)
             
             // Process the result
             var resultRows: [[String: Any]] = []
             
             for (rowIndex, row) in rows.enumerated() {
                 var rowData: [String: Any] = [:]
-                
-                if query.contains("content_history") && rowIndex == 0 {
-                    print("[MySQLConnection] ========== CONTENT_HISTORY QUERY DEBUG ==========")
-                    print("[MySQLConnection] Query: \(query)")
-                    print("[MySQLConnection] Row \(rowIndex) - ALL columns in row:")
-                    print("[MySQLConnection] ================================================" )
-                    fflush(stdout)
-                }
 
                 // Process all columns dynamically
                 // First, try common columns
@@ -257,38 +235,26 @@ class MySQLConnection: DatabaseConnection {
                 // Add content history specific columns
                 if let originalContentData = row.column("original_content"), let originalContent = originalContentData.string {
                     rowData["original_content"] = originalContent
-                    print("[MySQLConnection] Found original_content: \(originalContent.prefix(50))...")
                 }
                 if let enhancedContentData = row.column("enhanced_content"), let enhancedContent = enhancedContentData.string {
                     rowData["enhanced_content"] = enhancedContent
-                    print("[MySQLConnection] Found enhanced_content: \(enhancedContent.prefix(50))...")
                 }
                 if let promptTextData = row.column("prompt_text"), let promptText = promptTextData.string {
                     rowData["prompt_text"] = promptText
-                    print("[MySQLConnection] Found prompt_text: \(promptText)")
                 }
                 if let aiProviderData = row.column("ai_provider"), let aiProvider = aiProviderData.string {
                     rowData["ai_provider"] = aiProvider
-                    print("[MySQLConnection] Found ai_provider: \(aiProvider)")
                 }
                 if let enhanceDatetimeData = row.column("enhance_datetime") {
-                    print("[MySQLConnection] Found enhance_datetime column")
                     if let enhanceDatetime = enhanceDatetimeData.string {
                         rowData["enhance_datetime"] = enhanceDatetime
-                        print("[MySQLConnection] enhance_datetime value: \(enhanceDatetime)")
                     } else {
-                        print("[MySQLConnection] enhance_datetime is not a string, trying other types")
-                        // Try to get the value using description
                         let description = enhanceDatetimeData.description
-                        print("[MySQLConnection] enhance_datetime description: \(description)")
                         rowData["enhance_datetime"] = description
                     }
-                } else {
-                    print("[MySQLConnection] enhance_datetime column NOT found")
                 }
                 if let uuidData = row.column("uuid"), let uuid = uuidData.string {
                     rowData["uuid"] = uuid
-                    print("[MySQLConnection] Found uuid: \(uuid)")
                 }
                 
                 // Try to get all other columns (for JSON columns like base_urls)

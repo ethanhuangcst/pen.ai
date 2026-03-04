@@ -106,20 +106,11 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         
         let iconName = online ? "icon.png" : "icon_offline.png"
         
-        print("PenDelegate: Using icon: \(iconName)")
-        
-        // Get the current directory path
         let fileManager = FileManager.default
         let currentDirectory = fileManager.currentDirectoryPath
-        
-        // Construct the full path to the icon
         let iconPath = "\(currentDirectory)/Resources/Assets/\(iconName)"
         
-        print("PenDelegate: Icon path: \(iconPath)")
-        
         if let icon = NSImage(contentsOfFile: iconPath) {
-            print("PenDelegate: Loaded icon from path: \(iconPath)")
-            // Resize icon to appropriate menu bar size (22x22 pixels)
             let desiredSize = NSSize(width: 22, height: 22)
             let resizedIcon = NSImage(size: desiredSize)
             
@@ -127,13 +118,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             icon.draw(in: NSRect(origin: .zero, size: desiredSize), from: NSRect(origin: .zero, size: icon.size), operation: .sourceOver, fraction: 1.0)
             resizedIcon.unlockFocus()
             
-            // Set isTemplate to true for automatic dark/light mode adaptation
             resizedIcon.isTemplate = true
-            
-            // Set the resized icon
             button.image = resizedIcon
             
-            // Set tooltip based on app mode
             var tooltip: String
             if online {
                 if isLoggedIn {
@@ -152,10 +139,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             }
             
             button.toolTip = tooltip
-            print("PenDelegate: Icon updated successfully with template mode enabled")
         } else {
-            print("PenDelegate: Error: Could not load icon from path: \(iconPath)")
-            // Fallback: set a simple text in the menu bar
             button.title = online ? LocalizationService.shared.localizedString(for: "pen_menu_title") : LocalizationService.shared.localizedString(for: "pen_menu_title_offline")
             button.toolTip = online ? LocalizationService.shared.localizedString(for: "pen_ai") : LocalizationService.shared.localizedString(for: "pen_ai_offline")
         }
@@ -180,17 +164,8 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private func createMainWindow() {
         print("SimpleAppDelegate: Creating main window")
         
-        // Create PenWindowService instance
         penWindowService = PenWindowService()
-        
-        // Create window using PenWindowService
         window = penWindowService?.createWindow()
-        
-        // Don't show window automatically on app launch
-        
-        print("PenDelegate: Main window created but not shown")
-        print("PenDelegate: Window size: \(windowWidth)x\(windowHeight)")
-        print("PenDelegate: Window will be shown when shortcut key is pressed")
     }
     
     /// Adds a footer container with text label and logo
@@ -259,18 +234,11 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             footerContainer.addSubview(logoView)
         }
         
-        // Position at the specified coordinates (0, 0)
         footerContainer.frame.origin = NSPoint(x: 0, y: 0)
-        print("PenDelegate: Footer position set to (0, 0)")
-        
-        // Add footer container to content view
         contentView.addSubview(footerContainer)
     }
     
     private func setupMenuBarIcon() {
-        print("SimpleAppDelegate: Setting up menu bar icon")
-        
-        // Create status item
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         guard let button = statusItem?.button else {
@@ -278,72 +246,31 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             return
         }
         
-        // Configure button to have no background or border
         button.isBordered = false
         button.focusRingType = .none
         button.showsBorderOnlyWhileMouseInside = false
         
-        // Set initial icon based on online status that was set during initialization
-        print("PenDelegate: Updating status icon with online status: \(isOnline)")
         updateStatusIcon(online: isOnline)
         
-        // Set the button's action to handle both left and right clicks
         button.action = #selector(handleMenuBarClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        
-        // Log the exact frame of the menu bar button
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            if let button = self?.statusItem?.button {
-                let frame = button.frame
-                let screenFrame = button.window?.frame ?? CGRect.zero
-                print("PenDelegate: Menu bar button frame: \(frame)")
-                print("PenDelegate: Menu bar window frame: \(screenFrame)")
-                
-                // Get the screen
-                if let screen = NSScreen.main {
-                    print("PenDelegate: Main screen frame: \(screen.frame)")
-                    print("PenDelegate: Main screen visible frame: \(screen.visibleFrame)")
-                    let menuBarHeight = screen.frame.height - screen.visibleFrame.height
-                    print("PenDelegate: Menu bar height: \(menuBarHeight)")
-                }
-            }
-        }
-        
-        print("SimpleAppDelegate: Menu created with debug options")
-        print("SimpleAppDelegate: Left-click opens window, right-click shows menu")
     }
     
     @objc private func handleMenuBarClick(_ sender: Any) {
-        // Get the current event to determine which mouse button was clicked
         if let event = NSApp.currentEvent {
             if event.type == .leftMouseUp {
-                print("PenDelegate: Left-click detected on menu bar icon")
-                
-                // Handle left-click based on app mode
                 if !isOnline {
-                    // Offline mode: Show reload option
-                    print("PenDelegate: Offline mode - displaying reload option")
                     displayReloadOption()
-                    // Restart initialization process
                     performInitialization()
                 } else if isLoggedIn {
-                    // Online-login mode: Open PenAI window
-                    print("PenDelegate: Online-login mode - opening PenAI window")
                     openWindow()
                 } else {
-                    // Online-logout mode: Open Login window
-                    print("PenDelegate: Online-logout mode - opening Login window")
                     openLoginWindow()
                 }
             } else if event.type == .rightMouseUp {
-                print("PenDelegate: Right-click detected on menu bar icon")
-                
-                // Create menu for right-click
                 let menu = NSMenu()
                 
-                // Add menu items based on app mode
                 if isOnline && isLoggedIn {
-                    // Online-login mode: Show preferences, logout and exit
                     menu.addItem(NSMenuItem(title: LocalizationService.shared.localizedString(for: "preferences"), action: #selector(openPreferences), keyEquivalent: "p"))
                     menu.addItem(NSMenuItem(title: LocalizationService.shared.localizedString(for: "logout"), action: #selector(logout), keyEquivalent: "l"))
                     menu.addItem(NSMenuItem.separator())
@@ -450,96 +377,55 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         let y = screenHeight - menuBarHeight - spacing - windowSize.height
         
         print("PenDelegate: Menu bar icon screen frame: \(buttonScreenFrame)")
-        print("PenDelegate: Calculated window position: x=\(x), y=\(y)")
-        print("PenDelegate: Screen height: \(screenHeight), Menu bar height: \(menuBarHeight)")
-        
-        // Set window position
         window.setFrameOrigin(NSPoint(x: x, y: y))
-        
-        // Clamp window to screen bounds
         clampWindowToScreen(window, screen: screen)
-        
-        // Ensure window is on the same screen as the menu bar icon
         window.setFrame(window.frame, display: false, animate: false)
     }
     
 
     
     @objc private func openPreferences() {
-        print("PenDelegate: Opening preferences")
-        print("PenDelegate: Current user: \(currentUser?.name ?? "nil")")
-
-        
-        // Close other windows before opening preferences window
         closeOtherWindows()
         
-        // Check if preferences window already exists
         if let window = preferencesWindow {
-            // If it exists, just show it
-            print("PenDelegate: Preferences window already exists, showing existing window")
             window.showAndFocus()
         } else {
-            // If it doesn't exist, create a new one
-            print("PenDelegate: Creating new PreferencesWindow with user: \(currentUser?.name ?? "nil")")
             preferencesWindow = PreferencesWindow(user: currentUser)
             
             if let window = preferencesWindow {
-                // Use the showAndFocus method to ensure keyboard input works
                 window.showAndFocus()
-                print("PenDelegate: Preferences window shown")
             }
         }
     }
     
     @objc private func openTestWindow() {
-        print("PenDelegate: Opening test window")
-        
-        // Create and show the test window with UI controls
         let testWindow = BaseWindow.createTestWindow()
-        
-        // Position window relative to menu bar icon
         positionWindowRelativeToMenuBarIcon(testWindow)
-        
-        // Show the window
         testWindow.showAndFocus()
-        
-        print("PenDelegate: Test window opened with UI controls")
     }
     
     @objc private func openWindow() {
-        print("PenDelegate: Opening window from menubar icon")
-        
-        // Check if app is in online login mode
         if !isOnline || !isLoggedIn {
-            print("PenDelegate: Not in online login mode, cannot open window")
             return
         }
         
-        // Recreate window if it's nil
         if window == nil {
             createMainWindow()
         }
         
         if let window = window {
             if window.isVisible {
-                print("PenDelegate: Window is already open, closing it")
                 window.orderOut(nil)
             } else {
-                // Close other windows before opening Pen window
                 closeOtherWindows()
                 
-                // Recreate window if it's nil after closing other windows
                 if self.window == nil {
                     createMainWindow()
                 }
                 
                 if let window = self.window {
-                    // Position window relative to menu bar icon
                     window.positionRelativeToMenuBarIcon()
                     
-                    print("PenDelegate: Opening window at specified position")
-                    
-                    // Initialize Pen window using PenWindowService
                     Task {
                         await penWindowService?.initiatePen()
                     }
@@ -550,18 +436,11 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    /// Closes all other windows except the one being opened
     private func closeOtherWindows() {
-        print("PenDelegate: Closing other windows")
-        
-        // Close all open windows
         for window in NSApplication.shared.windows {
-            // Close the window
             window.orderOut(nil)
-            print("PenDelegate: Closed window: \(type(of: window))")
         }
         
-        // Reset window references
         window = nil
         loginWindow = nil
         preferencesWindow = nil
@@ -571,45 +450,20 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private func setupShortcutKey() {
         print("SimpleAppDelegate: Setting up shortcut key")
         
-        // Check accessibility permissions
         checkAccessibilityPermissions()
         
-        // Load saved shortcut from UserDefaults
         let defaults = UserDefaults.standard
         let shortcutKeyDefaultsKey = "pen.shortcutKey"
         let defaultShortcut = "Command+Option+P"
         let savedShortcut = defaults.string(forKey: shortcutKeyDefaultsKey) ?? defaultShortcut
         
-        print("SimpleAppDelegate: Loaded shortcut: \(savedShortcut)")
-        
-        // Convert shortcut string to key code and modifiers
         if let (keyCode, modifiers) = shortcutStringToKeyCodeAndModifiers(shortcut: savedShortcut) {
-            // Register the shortcut using ShortcutService
             shortcutService = ShortcutService()
             shortcutService?.registerShortcut(keyCode: keyCode, modifiers: modifiers)
-            print("SimpleAppDelegate: Shortcut registered using ShortcutService")
         } else {
-            print("SimpleAppDelegate: Failed to parse shortcut: \(savedShortcut), using default")
-            // Register default shortcut
             shortcutService = ShortcutService()
             shortcutService?.registerShortcut(keyCode: 35, modifiers: UInt32(cmdKey | optionKey))
         }
-        
-        // Dependencies analysis
-        print("SimpleAppDelegate: Dependencies for global shortcut key:")
-        print("1. Accessibility permissions: Required for global event monitoring")
-        print("2. ShortcutService: Required for shortcut key management")
-        print("3. UserDefaults: Required for shortcut persistence")
-        
-        // Current status
-        print("SimpleAppDelegate: Current status:")
-        print("- ✅ Shortcut key is registered")
-        print("- ✅ Using shortcut: \(savedShortcut)")
-        print("- ✅ Accessibility permissions are checked")
-        
-        // Note for real implementation
-        print("SimpleAppDelegate: Note: Press the configured shortcut to open the PenAI window")
-        print("SimpleAppDelegate: Note: This works from any application")
     }
     
     private func shortcutStringToKeyCodeAndModifiers(shortcut: String) -> (UInt32, UInt32)? {
@@ -660,41 +514,24 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         return keyMap[key] ?? 0
     }
     
-    /// Positions a window relative to the mouse cursor
     private func positionWindowRelativeToMouseCursor(_ window: NSWindow) {
-        // Get current mouse location
         let mouseLocation = NSEvent.mouseLocation
         
-        // Get the screen that contains the mouse cursor
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(mouseLocation) }) ?? NSScreen.main else {
-            print("PenDelegate: Error: Could not get screen for mouse location")
             return
         }
         
-        // Calculate window position: mouse cursor + offset
-        // Note: NSEvent.mouseLocation returns coordinates in global screen space with origin at bottom-left
-        // NSWindow.setFrameOrigin expects the bottom-left corner of the window
         let windowX = mouseLocation.x + mouseOffset
         let windowY = mouseLocation.y - mouseOffset - window.frame.height
         
-        print("PenDelegate: Mouse cursor position: x=\(mouseLocation.x), y=\(mouseLocation.y)")
-        print("PenDelegate: Screen frame: \(screen.frame)")
-        print("PenDelegate: Calculated window position: x=\(windowX), y=\(windowY)")
-        print("PenDelegate: Mouse offset: \(mouseOffset)px")
-        
-        // Set window position
         window.setFrameOrigin(NSPoint(x: windowX, y: windowY))
-        
-        // Clamp window to screen bounds
         clampWindowToScreen(window, screen: screen)
     }
     
-    /// Clamps a window to the screen bounds to prevent it from going off-screen
     private func clampWindowToScreen(_ window: NSWindow, screen: NSScreen) {
         let visibleFrame = screen.visibleFrame
         var frame = window.frame
         
-        // Clamp horizontally
         if frame.maxX > visibleFrame.maxX {
             frame.origin.x = visibleFrame.maxX - frame.width
         }
@@ -702,7 +539,6 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             frame.origin.x = visibleFrame.minX
         }
         
-        // Clamp vertically
         if frame.minY < visibleFrame.minY {
             frame.origin.y = visibleFrame.minY
         }
@@ -710,92 +546,60 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             frame.origin.y = visibleFrame.maxY - frame.height
         }
         
-        // Apply the clamped position
         window.setFrame(frame, display: false)
-        
-        print("PenDelegate: Window clamped to screen bounds: \(frame)")
     }
     
     @objc private func openPenAI() {
-        print("PenDelegate: Handling shortcut key press")
-        
-        // Check if app is in online login mode
         if !isOnline || !isLoggedIn {
-            print("PenDelegate: Not in online login mode, cannot open window")
             return
         }
         
         if let window = window {
             if window.isVisible {
-                print("PenDelegate: Window is already open, reloading at new mouse cursor position")
-                
-                // Reposition window relative to mouse cursor
                 positionWindowRelativeToMouseCursor(window)
                 
-                // Reload Pen window content
                 Task {
                     await penWindowService?.initiatePen()
                 }
                 
-                print("PenDelegate: Window reloaded and repositioned, app remains running with menubar icon available")
                 window.makeKeyAndOrderFront(nil)
             } else {
-                // Close other windows before opening Pen window
                 closeOtherWindows()
                 
-                print("PenDelegate: Window is closed, opening relative to mouse cursor")
-                
-                // Position window relative to mouse cursor
                 positionWindowRelativeToMouseCursor(window)
                 
-                // Initialize Pen window using PenWindowService
                 Task {
                     await penWindowService?.initiatePen()
                 }
                 
-                print("PenDelegate: Opening PenAI window at new position, app is ready for interaction")
                 window.showAndFocus()
             }
         }
     }
     
-    /// Toggles the main window visibility
     func toggleMainWindow() {
-        print("PenDelegate: Toggling main window")
-        
-        // Check if app is in online login mode
         if !isOnline || !isLoggedIn {
-            print("PenDelegate: Not in online login mode, cannot open window")
             return
         }
         
-        // Recreate window if it's nil
         if window == nil {
             createMainWindow()
         }
         
         if let window = window {
             if window.isVisible {
-                print("PenDelegate: Window is already open, reloading at new mouse cursor position")
-                
-                // Reposition window relative to mouse cursor
                 positionWindowRelativeToMouseCursor(window)
                 
-                // Reload Pen window content
                 Task {
                     await penWindowService?.initiatePen()
                 }
                 
-                print("PenDelegate: Window reloaded and repositioned, app remains running with menubar icon available")
                 window.makeKeyAndOrderFront(nil)
             } else {
-                // Close other windows before opening Pen window
                 closeOtherWindows()
                 
-                print("PenDelegate: Showing window relative to mouse cursor")
                 positionWindowRelativeToMouseCursor(window)
                 
-                // Initialize Pen window using PenWindowService
                 Task {
                     await penWindowService?.initiatePen()
                 }
@@ -806,33 +610,19 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc private func closeWindow() {
-        print("PenDelegate: Closing PenAI window via close button")
         window?.orderOut(nil)
-        print("PenDelegate: Window closed, app remains running with menubar icon available")
-        print("PenDelegate: Shortcut key functionality still works")
     }
     
     @objc func openLoginWindow() {
-        print("PenDelegate: Opening login window")
-        
-        // Close other windows before opening login window
         closeOtherWindows()
         
-        // Create or show login window
         if loginWindow == nil {
-            // Create login window with nil menuBarIconFrame (position will be calculated externally)
-            // Pass self as the penDelegate
-            print("PenDelegate: Creating new LoginWindow")
             loginWindow = LoginWindow(menuBarIconFrame: nil, penDelegate: self)
         }
         
         if let window = loginWindow {
-            // Position window relative to menu bar icon
             positionWindowRelativeToMenuBarIcon(window)
-            
-            // Use the showAndFocus method to ensure keyboard input works
             window.showAndFocus()
-            print("PenDelegate: Login window shown")
         }
     }
     
@@ -888,39 +678,21 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                 }
                 let configurations = try await aiManager.getConnections(for: user.id)
                 
-                print("PenDelegate: Loaded \(configurations.count) AI configurations for user \(user.name)")
-                
                 if configurations.isEmpty {
-                    // No AI configurations found
-                    print("PenDelegate: No AI configurations found for user \(user.name)")
-                    // Wait until previous popup messages fade out (3 seconds + 0.3 seconds fade out)
-                    try await Task.sleep(nanoseconds: 3_300_000_000) // 3.3 seconds
-                    // Show shorter popup message
+                    try await Task.sleep(nanoseconds: 3_300_000_000)
                     WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "no_ai_configuration"))
                 } else {
-                    // Test each AI configuration
                     for (index, configuration) in configurations.enumerated() {
-                        print("\n********************************** Test AI Configuration for \(user.name) : Provider \(index + 1): \(configuration.apiProvider) *********************************")
-                        
                         do {
-                            // Test the connection
-                            let success = try await aiManager.testConnection(
+                            let _ = try await aiManager.testConnection(
                                 apiKey: configuration.apiKey,
                                 providerName: configuration.apiProvider
                             )
-                            
-                            if success {
-                                print("PenDelegate: AI Configuration \(configuration.apiProvider) test successful")
-                            } else {
-                                print("PenDelegate: AI Configuration \(configuration.apiProvider) test failed")
-                            }
                         } catch {
-                            print("PenDelegate: Error testing AI Configuration \(configuration.apiProvider): \(error)")
                         }
                     }
                 }
             } catch {
-                print("PenDelegate: Error loading AI configurations: \(error)")
             }
         }
     }
@@ -931,28 +703,16 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         if let user = user {
             self.userName = user.name
             self.currentUser = user
-            // Also update UserService
             UserService.shared.login(user: user)
-            print("PenDelegate: UserService.login called with user \(user.name) and email \(user.email)")
         } else if !userName.isEmpty {
             self.userName = userName
         } else if !loggedIn {
-            // Clear user information when logging out
             self.userName = ""
             self.currentUser = nil
-            // Also clear UserService
             UserService.shared.logout()
-            print("PenDelegate: UserService.logout called")
-            
-            // Clean up AI configurations and prompts
-            // This will be handled by AIManager and PromptsService
-            print("PenDelegate: Cleaning up AI configurations and prompts")
         }
         
-        // Update the menu bar icon based on login status
         updateStatusIcon(online: isOnline)
-        
-        // Update window title with username
         updateWindowTitle()
         
         // Wait until menu bar icon is fully loaded before displaying popup message

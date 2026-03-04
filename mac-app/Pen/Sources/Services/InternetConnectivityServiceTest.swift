@@ -55,49 +55,57 @@ class InternetConnectivityServiceTest {
         let semaphore = DispatchSemaphore(value: 0)
         var isConnected = false
         
-        // Create URL for connectivity test
-        guard let url = URL(string: "https://www.apple.com") else {
-            logError("Invalid URL for connectivity test")
-            return false
-        }
+        let testUrls = [
+            "https://api.deepseek.com",
+            "https://dashscope.aliyuncs.com",
+            "https://openaiss.com"
+        ]
         
-        // Create URL session configuration with timeout
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = timeout
-        
-        // Create URL session
-        let session = URLSession(configuration: configuration)
-        
-        // Create data task
-        let task = session.dataTask(with: url) { (_, response, error) in
-            defer { semaphore.signal() }
+        for urlString in testUrls {
+            guard let url = URL(string: urlString) else { continue }
             
-            if let error = error {
-                self.logError("Connectivity test failed: \(error.localizedDescription)")
-                isConnected = false
-                return
+            let configuration = URLSessionConfiguration.default
+            configuration.timeoutIntervalForRequest = timeout
+            
+            let session = URLSession(configuration: configuration)
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "HEAD"
+            request.timeoutInterval = timeout
+            
+            let task = session.dataTask(with: request) { (_, response, error) in
+                defer { semaphore.signal() }
+                
+                if let error = error {
+                    self.logError("Connectivity test to \(urlString) failed: \(error.localizedDescription)")
+                    isConnected = false
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse {
+                    isConnected = true
+                    print("[InternetConnectivityServiceTest] Successfully connected to \(urlString) (HTTP \(httpResponse.statusCode))")
+                } else {
+                    isConnected = false
+                }
             }
             
-            if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
-                isConnected = true
-            } else {
-                isConnected = false
+            task.resume()
+            
+            let timeoutResult = semaphore.wait(timeout: .now() + timeout)
+            
+            if timeoutResult == .timedOut {
+                logError("Connectivity test to \(urlString) timed out after \(timeout) seconds")
+                task.cancel()
+                continue
+            }
+            
+            if isConnected {
+                return true
             }
         }
         
-        // Start task
-        task.resume()
-        
-        // Wait for task to complete or timeout
-        let timeoutResult = semaphore.wait(timeout: .now() + timeout)
-        
-        if timeoutResult == .timedOut {
-            logError("Connectivity test timed out after \(timeout) seconds")
-            task.cancel()
-            return false
-        }
-        
-        return isConnected
+        return false
     }
     
     /// Logs errors
