@@ -1,10 +1,8 @@
-# Shortcut Key Architecture Design
+# Custom Hotkey for Window Toggle
+
+This document describes the architecture design for implementing customizable shortcut key functionality to toggle the Pen window visibility.
 
 ## Overview
-
-This document outlines the architecture design for implementing customizable shortcut key functionality in the Pen application. The design is based on the technical requirements specified in General.md and the recommended solution from diagnose.txt.
-
-## Technical Requirements
 
 The application should:
 - Use macOS accessibility APIs for global keyboard monitoring
@@ -34,7 +32,7 @@ mac-app/Pen/
 │   ├── Views/
 │   │   └── GeneralTabView.swift     # Contains shortcut recorder UI
 │   └── App/
-│       └── PenAI.swift             # App delegate with shortcut listener
+│       └── Pen.swift             # App delegate with shortcut listener
 └── Package.swift                   # Add KeyboardShortcuts dependency
 ```
 

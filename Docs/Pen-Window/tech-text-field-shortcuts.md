@@ -1,34 +1,51 @@
-# System Shortcut Support in macOS Menu Bar Apps
+# Text Field System Shortcuts
+
+This document describes the solution for enabling system shortcuts (Command+C, V, A, X, Z, etc.) in text fields for macOS menu bar applications.
+
+## Problem Statement
+
+System shortcuts (Command+C, Command+V, Command+A, Command+X, Command+Z, etc.) were not working in text fields throughout the application.
+
+### Symptoms
+- Typing works normally
+- System shortcuts are completely ignored
+- No response to standard editing shortcuts
 
 ## Root Cause Analysis
 
-### The Problem
-System shortcuts (Command+C, Command+V, Command+A, Command+X, Command+Z, etc.) were not working in text fields throughout the application.
+### Why This Happens
 
-### Root Cause
 System shortcuts in macOS are **not** handled directly by `NSTextField` or `NSTextView` components. Instead, they are managed through the AppKit responder chain via:
 - The **Edit menu** in the main menu bar
 - **NSMenuItem key equivalents**
 
-### Why This Happened
-The Pen application is a menu bar app with the following characteristics:
+### The Problem with Menu Bar Apps
+
+Pen is a menu bar app with the following characteristics:
 1. Launched from an `NSStatusItem`
 2. No standard main menu installed
 3. No Edit menu exists
 4. No menu items with standard selectors
 
-Without a main menu containing the Edit menu, AppKit has nowhere to route shortcut commands, resulting in:
-- Typing working normally
-- System shortcuts being completely ignored
+Without a main menu containing the Edit menu, AppKit has nowhere to route shortcut commands.
 
-This is **expected macOS behavior**, not a bug in the application.
+**This is expected macOS behavior**, not a bug in the application.
+
+### Diagnosis Checklist
+
+If ALL of these are true, shortcuts will fail:
+- [ ] App is launched from NSStatusItem
+- [ ] No main menu is installed
+- [ ] No Edit menu exists
+- [ ] No menu items with standard selectors exist
 
 ## Solution
 
-### Correct Fix (Apple-Approved Method)
+### The Correct Fix (Apple-Approved Method)
+
 The only correct solution is to **install a minimal main menu with standard Edit actions**.
 
-### Implementation Steps
+### Implementation
 
 #### Step 1: Create MainMenu.swift
 
@@ -107,8 +124,6 @@ In `Pen.swift` (AppDelegate):
 
 ```swift
 func applicationDidFinishLaunching(_ notification: Notification) {
-    print("SimpleAppDelegate: Application launched")
-    
     // Setup menu bar icon first
     setupMenuBarIcon()
     
@@ -122,10 +137,11 @@ func applicationDidFinishLaunching(_ notification: Notification) {
 }
 ```
 
+**Important**: Install the menu AFTER `NSApp.setActivationPolicy(.regular)` and BEFORE showing any windows.
+
 #### Step 3: Remove Conflicting Code
 
 Remove any custom key handling that might intercept shortcuts:
-
 - `NSEvent.addLocalMonitorForEvents` returning `nil`
 - `override keyDown` without calling `super.keyDown(with: event)`
 - `override performKeyEquivalent` returning `true`
@@ -145,30 +161,26 @@ textField.isSelectable = true
 ## Expected Results After Fix
 
 ### Basic Editing Shortcuts
-- ✅ Command+C (Copy)
-- ✅ Command+V (Paste)
-- ✅ Command+A (Select All)
-- ✅ Command+X (Cut)
-- ✅ Command+Z (Undo)
-- ✅ Shift+Command+Z (Redo)
+| Shortcut | Action |
+|----------|--------|
+| Command+C | Copy |
+| Command+V | Paste |
+| Command+A | Select All |
+| Command+X | Cut |
+| Command+Z | Undo |
+| Shift+Command+Z | Redo |
 
 ### Text Navigation Shortcuts
-- ✅ Shift+Command+Left Arrow (Select to beginning of line)
-- ✅ Shift+Command+Right Arrow (Select to end of line)
-- ✅ Shift+Command+Up Arrow (Select to beginning of document)
-- ✅ Shift+Command+Down Arrow (Select to end of document)
-- ✅ Option+Left Arrow (Move to beginning of word)
-- ✅ Option+Right Arrow (Move to end of word)
-- ✅ Option+Up Arrow (Move to beginning of paragraph)
-- ✅ Option+Down Arrow (Move to end of paragraph)
-
-### Advanced Editing Shortcuts
-- ✅ Command+F (Find)
-- ✅ Command+G (Find Next)
-- ✅ Shift+Command+G (Find Previous)
-- ✅ Command+D (Duplicate)
-- ✅ Command+Delete (Delete to beginning of word)
-- ✅ Option+Delete (Delete to end of word)
+| Shortcut | Action |
+|----------|--------|
+| Shift+Command+Left Arrow | Select to beginning of line |
+| Shift+Command+Right Arrow | Select to end of line |
+| Shift+Command+Up Arrow | Select to beginning of document |
+| Shift+Command+Down Arrow | Select to end of document |
+| Option+Left Arrow | Move to beginning of word |
+| Option+Right Arrow | Move to end of word |
+| Option+Up Arrow | Move to beginning of paragraph |
+| Option+Down Arrow | Move to end of paragraph |
 
 ### All Native macOS Text Behaviors
 - ✅ All standard macOS text editing behaviors are restored
@@ -180,14 +192,6 @@ textField.isSelectable = true
 macOS shortcuts are **menu-driven** by design. The operating system expects to route shortcut commands through menu items with specific selectors. Without a menu system in place, there's no mechanism for AppKit to handle these shortcuts.
 
 This is not a bug in the application, but rather a fundamental aspect of macOS architecture.
-
-## Best Practices
-
-1. **Install the menu early**: Install the main menu as early as possible in the application lifecycle
-2. **Keep it minimal**: The menu only needs the essential Edit actions for shortcuts to work
-3. **Avoid custom key handling**: Let the menu system handle standard shortcuts
-4. **Test thoroughly**: Verify all standard shortcuts work across different text fields
-5. **Document the solution**: Include this documentation in the codebase for future reference
 
 ## Troubleshooting
 
@@ -206,8 +210,10 @@ This is not a bug in the application, but rather a fundamental aspect of macOS a
 - **Custom key handling**: Any custom key event handling can break the menu-based shortcut system
 - **Incorrect text field configuration**: Text fields must be editable and selectable
 
-## Conclusion
+## Best Practices
 
-By following this Apple-approved approach, the Pen application now has full support for system shortcuts in all text fields. This solution is robust, maintainable, and aligned with macOS design principles.
-
-The fix ensures that users have a consistent and familiar experience with text editing, regardless of whether the application is a traditional windowed app or a menu bar app.
+1. **Install the menu early**: Install the main menu as early as possible in the application lifecycle
+2. **Keep it minimal**: The menu only needs the essential Edit actions for shortcuts to work
+3. **Avoid custom key handling**: Let the menu system handle standard shortcuts
+4. **Test thoroughly**: Verify all standard shortcuts work across different text fields
+5. **Document the solution**: Include this documentation in the codebase for future reference

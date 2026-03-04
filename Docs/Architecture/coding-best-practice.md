@@ -41,6 +41,7 @@ This document serves as:
 | `req-*.md` | Requirements documents |
 | `design-*.md` | Design documents |
 | `tech-*.md` | Technical documentation |
+| `ui-*.md` | UI/UX documentation |
 
 ---
 

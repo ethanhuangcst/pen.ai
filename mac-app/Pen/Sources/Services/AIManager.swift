@@ -228,6 +228,7 @@ public class AIManager {
         case notFound(String)
         case serverError(Int, String)
         case clientError(Int, String)
+        case invalidJSONResponse(String)
         
         var localizedDescription: String {
             switch self {
@@ -253,6 +254,8 @@ public class AIManager {
                 return "Server error (\(code)): \(message)"
             case .clientError(let code, let message):
                 return "Client error (\(code)): \(message)"
+            case .invalidJSONResponse(let message):
+                return "Invalid JSON response: \(message)"
             }
         }
     }
@@ -384,8 +387,9 @@ public class AIManager {
             throw AIError.providerError("Provider not found")
         }
         
-        // Get all base URLs from the provider
-        var baseURLs = Array(provider.baseURLs.values)
+        // Get all base URLs from the provider, sorted by key for consistent ordering
+        let sortedKeys = provider.baseURLs.keys.sorted()
+        var baseURLs = sortedKeys.map { provider.baseURLs[$0]! }
         
         // Filter to only test chat completion endpoints
         baseURLs = baseURLs.filter { $0.contains("chat/completions") }
@@ -454,6 +458,21 @@ public class AIManager {
                 
                 // Parse response
                 do {
+                    // First, check if response looks like valid JSON
+                    let responseString = String(data: data, encoding: .utf8) ?? ""
+                    
+                    // Check if response starts with '{' or '[' (valid JSON)
+                    let trimmedResponse = responseString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard trimmedResponse.hasPrefix("{") || trimmedResponse.hasPrefix("[") else {
+                        // Response is not JSON - likely HTML or plain text
+                        let preview = trimmedResponse.prefix(100)
+                        let errorMessage = "Server returned non-JSON response (likely wrong endpoint). Response starts with: \(preview)"
+                        print("[AIManager] ❌ Failed: Non-JSON response - \(baseURL)")
+                        print("[AIManager] Response preview: \(preview)")
+                        lastError = errorMessage
+                        continue
+                    }
+                    
                     let responseData = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                     if let choices = responseData?["choices"] as? [[String: Any]],
                        let firstChoice = choices.first,
@@ -463,15 +482,26 @@ public class AIManager {
                         print("[AIManager] URL: \(baseURL)")
                         print("[AIManager] Response: \(content)")
                         return true
+                    } else if let errorDict = responseData?["error"] as? [String: Any] {
+                        // API returned an error object
+                        let errorMsg = errorDict["message"] as? String ?? "Unknown error"
+                        let errorType = errorDict["type"] as? String ?? "unknown"
+                        print("[AIManager] ❌ API Error: \(errorMsg) (type: \(errorType)) - \(baseURL)")
+                        lastError = "API error: \(errorMsg)"
+                        continue
                     } else {
-                        let errorMessage = "Invalid API response format"
+                        let errorMessage = "Invalid API response format - missing expected fields"
                         print("[AIManager] ❌ Failed: \(errorMessage) - \(baseURL)")
+                        print("[AIManager] Response keys: \(responseData?.keys.sorted().joined(separator: ", ") ?? "none")")
                         lastError = errorMessage
                         continue
                     }
-                } catch {
-                    let errorMessage = "Failed to parse API response: \(error)"
+                } catch let jsonError as NSError {
+                    // JSON parsing failed
+                    let responsePreview = String(data: data, encoding: .utf8)?.prefix(200) ?? "Unable to decode"
+                    let errorMessage = "JSON parsing failed: \(jsonError.localizedDescription)"
                     print("[AIManager] ❌ Failed: \(errorMessage) - \(baseURL)")
+                    print("[AIManager] Response preview: \(responsePreview)")
                     lastError = errorMessage
                     continue
                 }
@@ -1136,6 +1166,15 @@ public class AIManager {
         
         guard (200...299).contains(statusCode) else {
             let responsePrefix = String(responseBody.prefix(200))
+            
+            // Check if response is non-JSON (likely HTML error page)
+            let trimmedResponse = responseBody.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedResponse.hasPrefix("{") && !trimmedResponse.hasPrefix("[") {
+                print("[AIManager] ❌ Non-JSON response received (likely wrong endpoint or server error)")
+                print("[AIManager] Response preview: \(trimmedResponse.prefix(100))")
+                throw AIError.invalidJSONResponse("Server returned non-JSON response. This usually means the endpoint URL is incorrect. Preview: \(trimmedResponse.prefix(100))")
+            }
+            
             switch statusCode {
             case 401:
                 print("[AIManager] ❌ Unauthorized (401) - API key may be invalid or missing")
