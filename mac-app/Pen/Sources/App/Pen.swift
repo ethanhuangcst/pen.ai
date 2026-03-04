@@ -33,6 +33,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("SimpleAppDelegate: Application launched")
         
+        // Set activation policy to accessory to prevent Dock icon
+        NSApplication.shared.setActivationPolicy(.accessory)
+        
         // Force app to always use light mode (disable dark mode for now)
         NSApplication.shared.appearance = NSAppearance(named: .aqua)
         

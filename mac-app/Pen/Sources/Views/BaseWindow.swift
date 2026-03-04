@@ -269,9 +269,6 @@ class BaseWindow: NSWindow {
     // MARK: - Public Methods
     /// Makes the window visible, brings it to front, and sets focus to the first input field
     func showAndFocus() {
-        // Set activation policy for system shortcuts
-        NSApp.setActivationPolicy(.regular)
-        
         NSApp.activate(ignoringOtherApps: true)
         self.makeKeyAndOrderFront(nil)
         
