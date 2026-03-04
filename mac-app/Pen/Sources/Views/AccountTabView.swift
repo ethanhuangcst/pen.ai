@@ -222,7 +222,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         passwordToggleButton.isBordered = false
         
         // Load and resize the hidden.svg icon
-        let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/hidden.svg"
+        let iconPath = ResourceService.shared.getResourcePath(relativePath: "Assets/hidden.svg")
         if let originalImage = NSImage(contentsOfFile: iconPath) {
             let resizedImage = NSImage(size: NSSize(width: 18, height: 18))
             resizedImage.lockFocus()
@@ -598,7 +598,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         // Update button icon
         let iconName = isPasswordSecure ? "hidden" : "show"
-        let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/\(iconName).svg"
+        let iconPath = ResourceService.shared.getResourcePath(relativePath: "Assets/\(iconName).svg")
         if let originalImage = NSImage(contentsOfFile: iconPath) {
             let resizedImage = NSImage(size: NSSize(width: 18, height: 18))
             resizedImage.lockFocus()
@@ -624,7 +624,7 @@ class AccountTabView: NSView, NSOpenSavePanelDelegate, NSTextFieldDelegate {
         
         // Update button icon
         let iconName = isConfirmPasswordSecure ? "hidden" : "show"
-        let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/\(iconName).svg"
+        let iconPath = ResourceService.shared.getResourcePath(relativePath: "Assets/\(iconName).svg")
         if let originalImage = NSImage(contentsOfFile: iconPath) {
             let resizedImage = NSImage(size: NSSize(width: 18, height: 18))
             resizedImage.lockFocus()

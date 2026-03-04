@@ -104,11 +104,8 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     func updateStatusIcon(online: Bool) {
         guard let button = statusItem?.button else { return }
         
-        let iconName = online ? "icon.png" : "icon_offline.png"
-        
-        let fileManager = FileManager.default
-        let currentDirectory = fileManager.currentDirectoryPath
-        let iconPath = "\(currentDirectory)/Resources/Assets/\(iconName)"
+        let iconName = online ? "icon" : "icon_offline"
+        let iconPath = ResourceService.shared.getResourcePath(relativePath: "Assets/\(iconName).png")
         
         if let icon = NSImage(contentsOfFile: iconPath) {
             let desiredSize = NSSize(width: 22, height: 22)

@@ -60,7 +60,7 @@ class LocalizationService {
         let lprojName = currentLanguage.lprojName
         
         let possiblePaths = [
-            "\(FileManager.default.currentDirectoryPath)/Resources/\(lprojName)/Localizable.strings",
+            ResourceService.shared.getResourcePath(relativePath: "\(lprojName)/Localizable.strings"),
             Bundle.main.path(forResource: "Localizable", ofType: "strings", inDirectory: lprojName),
             Bundle.main.path(forResource: "Localizable", ofType: "strings")
         ]

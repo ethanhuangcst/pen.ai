@@ -45,7 +45,7 @@ class ColorService {
         let isDarkMode = NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         let logoName = isDarkMode ? "logo_dark" : "logo"
         
-        let logoPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/\(logoName).png"
+        let logoPath = ResourceService.shared.getResourcePath(relativePath: "Assets/\(logoName).png")
         return NSImage(contentsOfFile: logoPath)
     }
     

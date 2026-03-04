@@ -688,7 +688,7 @@ class PenWindowService {
         pasteButton.title = ""
         pasteButton.bezelStyle = .smallSquare
         pasteButton.isBordered = false
-        pasteButton.image = NSImage(contentsOfFile: "\(FileManager.default.currentDirectoryPath)/Resources/Assets/paste.svg")
+        pasteButton.image = NSImage(contentsOfFile: ResourceService.shared.getResourcePath(relativePath: "Assets/paste.svg"))
         pasteButton.target = self
         pasteButton.action = #selector(handlePasteButton)
         pasteButton.identifier = NSUserInterfaceItemIdentifier("pen_manual_paste_button")

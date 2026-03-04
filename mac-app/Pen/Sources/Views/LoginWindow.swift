@@ -116,7 +116,7 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
         passwordToggleButton.bezelStyle = .smallSquare
         passwordToggleButton.isBordered = false
         
-        let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/hidden.svg"
+        let iconPath = ResourceService.shared.getResourcePath(relativePath: "Assets/hidden.svg")
         if let originalImage = NSImage(contentsOfFile: iconPath) {
             let resizedImage = NSImage(size: NSSize(width: 18, height: 18))
             resizedImage.lockFocus()
@@ -240,7 +240,7 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
         }
         
         let iconName = isPasswordSecure ? "hidden" : "show"
-        let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/\(iconName).svg"
+        let iconPath = ResourceService.shared.getResourcePath(relativePath: "Assets/\(iconName).svg")
         if let originalImage = NSImage(contentsOfFile: iconPath) {
             let resizedImage = NSImage(size: NSSize(width: 18, height: 18))
             resizedImage.lockFocus()

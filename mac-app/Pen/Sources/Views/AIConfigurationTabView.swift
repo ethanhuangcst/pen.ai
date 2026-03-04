@@ -338,7 +338,8 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         button.bezelStyle = .texturedRounded
         button.setButtonType(.momentaryPushIn)
         button.isBordered = false
-        let image = NSImage(contentsOf: URL(fileURLWithPath: "/Users/ethanhuang/code/pen.ai/pen/mac-app/Pen/Resources/Assets/delete.svg"))
+        let imagePath = ResourceService.shared.getResourcePath(relativePath: "Assets/delete.svg")
+        let image = NSImage(contentsOfFile: imagePath)
         image?.size = NSSize(width: 18, height: 18)
         button.image = image
         button.target = self
@@ -353,7 +354,8 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
         button.bezelStyle = .texturedRounded
         button.setButtonType(.momentaryPushIn)
         button.isBordered = false
-        let image = NSImage(contentsOf: URL(fileURLWithPath: "/Users/ethanhuang/code/pen.ai/pen/mac-app/Pen/Resources/Assets/save.svg"))
+        let imagePath = ResourceService.shared.getResourcePath(relativePath: "Assets/save.svg")
+        let image = NSImage(contentsOfFile: imagePath)
         image?.size = NSSize(width: 18, height: 18)
         button.image = image
         button.target = self

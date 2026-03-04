@@ -394,7 +394,7 @@ extension HistoryTabView: NSTableViewDelegate {
         button.isBordered = false
         button.title = ""
         
-        let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/copy.svg"
+        let iconPath = ResourceService.shared.getResourcePath(relativePath: "Assets/copy.svg")
         if let image = NSImage(contentsOfFile: iconPath) {
             image.size = NSSize(width: 20, height: 20)
             button.image = image
