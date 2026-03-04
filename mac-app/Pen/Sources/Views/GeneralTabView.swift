@@ -79,7 +79,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         generalForm.addSubview(shortcutLabel)
         
         // Shortcut recording field
-        shortcutKeyField = ClickableTextField(frame: NSRect(x: 320, y: 290, width: 200, height: 25))
+        shortcutKeyField = ClickableTextField(frame: NSRect(x: 240, y: 292, width: 200, height: 25))
         shortcutKeyField.stringValue = previousShortcut
         shortcutKeyField.isEditable = false
         shortcutKeyField.isSelectable = true
@@ -118,7 +118,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         let mediumValue = configService.CONTENT_HISTORY_MEDIUM
         let highValue = configService.CONTENT_HISTORY_HIGH
         
-        historyCountPopup = NSPopUpButton(frame: NSRect(x: 320, y: 235, width: 80, height: 25))
+        historyCountPopup = NSPopUpButton(frame: NSRect(x: 240, y: 237, width: 80, height: 25))
         historyCountPopup.addItem(withTitle: "\(lowValue)")
         historyCountPopup.addItem(withTitle: "\(mediumValue)")
         historyCountPopup.addItem(withTitle: "\(highValue)")
@@ -146,7 +146,7 @@ class GeneralTabView: NSView, NSTextFieldDelegate {
         generalForm.addSubview(languageLabel)
         
         // Language dropdown
-        languagePopup = NSPopUpButton(frame: NSRect(x: 320, y: 180, width: 200, height: 25))
+        languagePopup = NSPopUpButton(frame: NSRect(x: 240, y: 182, width: 200, height: 25))
         languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "english_language"))
         languagePopup.addItem(withTitle: LocalizationService.shared.localizedString(for: "chinese_language"))
         

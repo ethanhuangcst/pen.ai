@@ -228,19 +228,17 @@ class PenWindowService {
                 // Get all available providers
                 let allProviders = try await aiManager.getProviders()
                 
-                // Filter providers to only those the user has configured
-                let userProviders = allProviders.filter { provider in
-                    return configurations.contains { config in
-                        config.apiProvider == provider.name
-                    }
+                // Order providers by the order of user's connections (same as AIConfigurationTabView)
+                let orderedProviders: [AIProvider] = configurations.compactMap { config in
+                    allProviders.first { $0.name == config.apiProvider }
                 }
                 
-                if userProviders.isEmpty {
+                if orderedProviders.isEmpty {
                     // No matching providers found
                     await handleNoAIProviders()
                 } else {
-                    // Populate AI providers dropdown with user's configured providers
-                    await populateProvidersDropdown(providers: userProviders)
+                    // Populate AI providers dropdown with user's configured providers in connection order
+                    await populateProvidersDropdown(providers: orderedProviders)
                 }
             }
         } catch {

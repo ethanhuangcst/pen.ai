@@ -237,9 +237,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             let logoView = NSImageView(frame: NSRect(x: 0, y: 0, width: logoSize, height: logoSize))
             logoView.image = logo
             
-            // Set instruction label position to 30, 9
+            // Set instruction label position to 30, 8
             let instructionX: CGFloat = 30
-            let instructionY: CGFloat = -6 // 0 (footer Y) + (-6) + 15 (text center) = 9
+            let instructionY: CGFloat = -7 // 0 (footer Y) + (-7) + 15 (text center) = 8
             // Set text label position to 330, 9
             let textX: CGFloat = 330
             let textY: CGFloat = -6 // 0 (footer Y) + (-6) + 15 (text center) = 9
