@@ -56,19 +56,19 @@ class Prompt {
             return nil
         }
         
-        // Parse created_datetime
+        // Parse created_at (database column name)
         var createdDatetime = Date()
-        if let createdAtStr = row["created_datetime"] as? String {
+        if let createdAtStr = row["created_at"] as? String {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             dateFormatter.timeZone = TimeZone(identifier: "UTC")
             if let parsedDate = dateFormatter.date(from: createdAtStr) {
                 createdDatetime = parsedDate
             } else {
-                print("[Prompt] Failed to parse created_datetime: \(createdAtStr), using current date")
+                print("[Prompt] Failed to parse created_at: \(createdAtStr), using current date")
             }
         } else {
-            print("[Prompt] created_datetime not found, using current date")
+            print("[Prompt] created_at not found, using current date")
         }
         
         // Get system flag from database

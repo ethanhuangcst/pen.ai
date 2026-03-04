@@ -1132,6 +1132,8 @@ public class AIManager {
         
         print("[AIManager] HTTP Status: \(statusCode)")
         
+        let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
+        
         guard (200...299).contains(statusCode) else {
             let responsePrefix = String(responseBody.prefix(200))
             switch statusCode {
@@ -1164,6 +1166,7 @@ public class AIManager {
     
     private func mapError(_ data: Data, response: HTTPURLResponse) -> AIError {
         let statusCode = response.statusCode
+        let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
         
         print("[AIManager] Mapping error for HTTP \(statusCode)")
         
