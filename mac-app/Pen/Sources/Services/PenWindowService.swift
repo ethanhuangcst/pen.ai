@@ -361,7 +361,7 @@ class PenWindowService {
         instructionLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_instruction")
         
         // Add auto label
-        let autoLabel = NSTextField(frame: NSRect(x: 288, y: -7, width: 40, height: footerHeight))
+        let autoLabel = NSTextField(frame: NSRect(x: 176, y: -6, width: 150, height: 30))
         autoLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_auto")
         autoLabel.isBezeled = false
         autoLabel.drawsBackground = false
@@ -369,7 +369,7 @@ class PenWindowService {
         autoLabel.isSelectable = false
         autoLabel.font = NSFont.systemFont(ofSize: 12)
         autoLabel.textColor = NSColor.secondaryLabelColor
-        autoLabel.alignment = .left
+        autoLabel.alignment = .right
         autoLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_label")
         
         // Add auto switch button
