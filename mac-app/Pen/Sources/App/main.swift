@@ -200,6 +200,42 @@ if arguments.count > 1 {
         
         // Run the task
         RunLoop.main.run()
+    } else if command == "debug-ai-test-connection" {
+        print("Running AIManager testConnection debug mode...")
+        
+        Task {
+            do {
+                let providerName = ProcessInfo.processInfo.environment["PEN_PROVIDER"] ?? "gpt-4o-mini"
+                let apiKey = ProcessInfo.processInfo.environment["PEN_API_KEY"] ?? ""
+                
+                guard !apiKey.isEmpty else {
+                    print("Missing PEN_API_KEY")
+                    exit(1)
+                }
+                
+                let aiManager = AIManager()
+                let providers = try await aiManager.loadAllProviders()
+                if let provider = providers.first(where: { $0.name == providerName }) {
+                    print("Provider from DB/cache:")
+                    print("  name: \(provider.name)")
+                    print("  default_model: \(provider.defaultModel)")
+                    print("  requires_auth: \(provider.requiresAuth)")
+                    print("  auth_header: \(provider.authHeader)")
+                    print("  base_urls: \(provider.baseURLs)")
+                } else {
+                    print("Provider \(providerName) not found in loadAllProviders(), AIManager may use fallback")
+                }
+                
+                _ = try await aiManager.testConnection(apiKey: apiKey, providerName: providerName)
+                print("testConnection succeeded")
+                exit(0)
+            } catch {
+                print("testConnection failed: \(error)")
+                exit(1)
+            }
+        }
+        
+        RunLoop.main.run()
     }
 }
 

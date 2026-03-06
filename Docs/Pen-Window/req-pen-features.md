@@ -6,15 +6,17 @@
   - US1. Close non-Pen windows when Pen window opens
   - US2. Load user information on Pen window launch
   - US3. Load AI configurations on Pen window launch
-- F2. Clipboard Intake to Original Text
-  - US1. Automatically load clipboard text into `pen_original_text_text`
-  - US2. Manually load clipboard text into `pen_original_text_text`
+- F2. Input Mode and Clipboard Intake
+  - US1. Switch between auto-copy mode and manual-edit mode
+  - US2. Persist selected input mode across logout and app restart
+  - US3. On switch to auto mode, load clipboard text and preserve manual draft
+  - US4. On switch to manual mode, clear enhanced text and restore manual draft
+  - US5. Manually load clipboard text into `pen_original_text_text` in auto mode
 - F3. Text Enhancement Workflow
   - US1. Post original text to AI and display enhanced text
   - US2. Compare clipboard content before automatic enhancement
   - US3. Click enhanced text to copy
   - US4. Display loading indicator during AI processing
-  - US5. Click original text field to edit and press Enter to enhance
 - F4. Default UI Display Reference
   - UI component definitions
 
@@ -136,62 +138,163 @@ Scenario F1-US3-S4: Handle no AI providers configured
 
 ---
 
-## F2. Clipboard Intake to Original Text
+## F2. Input Mode and Clipboard Intake
 
-### US1. Automatically load clipboard text into `pen_original_text_text`
-As a Pen user, I want Pen app to automatically detect and load clipboard text into original text field, so that I can process content without manual input.
-
-#### Acceptance Criteria
-- AC1. Valid clipboard text is loaded into `pen_original_text_text` on Pen window launch.
-- AC2. Display text is trimmed to fit with ellipsis when needed.
-- AC3. Non-text clipboard content does not replace original text and user sees placeholder.
-- AC4. Empty clipboard and clipboard read failure are handled with clear localized messages.
-
-#### Scenarios
-Scenario F2-US1-S1: Load valid clipboard text on window launch
-  Given Pen is running
-  And system clipboard contains valid text
-  When Pen window launches
-  Then the latest clipboard text is read
-  And text is displayed in `pen_original_text_text`
-  And displayed text is trimmed with ellipsis when overflow occurs
-  And full text remains available for processing
-
-Scenario F2-US1-S2: Handle non-text clipboard content
-  Given Pen is running
-  And system clipboard contains non-text content
-  When Pen window launches
-  Then `pen_original_text_text` is not replaced with non-text content
-  And localized placeholder text is shown
-
-Scenario F2-US1-S3: Handle empty clipboard
-  Given Pen is running
-  And system clipboard is empty
-  When Pen window launches
-  Then localized empty-clipboard guidance is shown in `pen_original_text_text`
-
-Scenario F2-US1-S4: Handle clipboard read failure
-  Given Pen is running
-  And clipboard read operation fails
-  When Pen window launches
-  Then localized clipboard-access error message is shown in `pen_original_text_text`
-  And manual paste remains available
-  And the failure is logged for troubleshooting
-
-### US2. Manually load clipboard text into `pen_original_text_text`
-As a Pen user, I want to manually load clipboard text into original text field, so that I can explicitly refresh content when needed.
+### US1. Switch between auto-copy mode and manual-edit mode
+As a Pen user, I want to switch between auto-copy mode and manual-edit mode, so that I can choose whether source text comes from clipboard or from my own draft.
 
 #### Acceptance Criteria
-- AC1. Clicking `pen_manual_paste_button` triggers clipboard text intake.
-- AC2. Manual intake follows the same validation and display rules as automatic intake.
+- AC1. `pen_footer_auto_switch_button` toggles between Auto mode and Manual mode.
+- AC2. In Auto mode, source text view is `pen_original_text_text`.
+- AC3. In Manual mode, source text view is `pen_original_text_input`.
+- AC4. Mode switch updates only input-mode-related UI and does not change selected prompt/provider.
 
 #### Scenarios
-Scenario F2-US2-S1: User clicks manual paste button
+Scenario F2-US1-S1: Switch from Auto mode to Manual mode
   Given Pen is running
   And Pen window is open
+  And input mode is Auto
+  When user toggles `pen_footer_auto_switch_button` to Manual
+  Then input mode becomes Manual
+  And `pen_original_text_input` is shown as source input view
+  And `pen_original_text_text` is hidden as source input view
+  And prompt and provider selections remain unchanged
+
+Scenario F2-US1-S2: Switch from Manual mode to Auto mode
+  Given Pen is running
+  And Pen window is open
+  And input mode is Manual
+  When user toggles `pen_footer_auto_switch_button` to Auto
+  Then input mode becomes Auto
+  And `pen_original_text_text` is shown as source input view
+  And `pen_original_text_input` is hidden as source input view
+  And prompt and provider selections remain unchanged
+
+### US2. Persist selected input mode across logout and app restart
+As a Pen user, I want Pen app to remember my last selected input mode, so that I do not need to switch mode every time.
+
+#### Acceptance Criteria
+- AC1. The selected input mode is saved when the switch changes.
+- AC2. After user logout and next login, Pen restores the last saved input mode.
+- AC3. After app quit and relaunch, Pen restores the last saved input mode.
+- AC4. If saved mode is unavailable or invalid, Pen falls back to Auto mode.
+
+#### Scenarios
+Scenario F2-US2-S1: Restore saved mode after logout and login
+  Given Pen is running
+  And user has selected Manual mode
+  And mode preference is saved
+  When user logs out and logs in again
+  Then Pen window starts in Manual mode
+
+Scenario F2-US2-S2: Restore saved mode after app relaunch
+  Given user has selected Auto mode
+  And mode preference is saved
+  When user quits and relaunches Pen app
+  Then Pen window starts in Auto mode
+
+Scenario F2-US2-S3: Fallback to Auto mode on invalid saved value
+  Given mode preference storage contains an invalid mode value
+  When Pen window launches
+  Then input mode is set to Auto
+
+### US3. On switch to auto mode, load clipboard text and preserve manual draft
+As a Pen user, I want Auto mode to immediately refresh source text from clipboard without losing my manual draft, so that I can freely move between both workflows.
+
+#### Acceptance Criteria
+- AC1. Switching to Auto mode triggers clipboard intake into `pen_original_text_text`.
+- AC2. Existing text in `pen_original_text_input` is preserved and not overwritten.
+- AC3. Clipboard validation and fallback behavior follow existing clipboard rules.
+- AC4. In Auto mode, enhancement source uses `pen_original_text_text`.
+
+#### Scenarios
+Scenario F2-US3-S1: Switch to Auto mode with existing manual draft
+  Given Pen is running
+  And Pen window is open
+  And input mode is Manual
+  And `pen_original_text_input` contains draft text A
+  And system clipboard contains text B
+  When user toggles mode to Auto
+  Then `pen_original_text_text` is updated from clipboard text B
+  And `pen_original_text_input` still keeps draft text A
+  And enhancement source is `pen_original_text_text`
+
+### US4. On switch to manual mode, clear enhanced text and restore manual draft
+As a Pen user, I want Manual mode to reset enhanced output and restore my draft, so that I can continue editing without stale enhancement results.
+
+#### Acceptance Criteria
+- AC1. Switching to Manual mode clears `pen_enhanced_text_text`.
+- AC2. After clearing, `pen_enhanced_text_text` shows default hint text: "Enhanced text will appear here".
+- AC3. Switching to Manual mode restores previously saved text in `pen_original_text_input`, if any.
+- AC4. If no saved manual draft exists, `pen_original_text_input` starts empty and editable.
+- AC5. In Manual mode, enhancement source uses `pen_original_text_input`.
+- AC6. In Manual mode, enhancement can be triggered by either `Cmd+Enter` or clicking the send button.
+- AC7. In Manual mode, pressing Enter without Command inserts a new line and does not trigger enhancement.
+
+#### Scenarios
+Scenario F2-US4-S1: Switch to Manual mode with existing draft
+  Given Pen is running
+  And Pen window is open
+  And input mode is Auto
+  And `pen_original_text_input` has saved draft text A
+  And `pen_enhanced_text_text` currently shows enhanced result R
+  When user toggles mode to Manual
+  Then `pen_enhanced_text_text` is reset to "Enhanced text will appear here"
+  And `pen_original_text_input` restores draft text A
+  And enhancement source is `pen_original_text_input`
+
+Scenario F2-US4-S2: Switch to Manual mode without existing draft
+  Given Pen is running
+  And Pen window is open
+  And input mode is Auto
+  And `pen_original_text_input` has no saved draft
+  When user toggles mode to Manual
+  Then `pen_enhanced_text_text` is reset to "Enhanced text will appear here"
+  And `pen_original_text_input` is empty and editable
+
+Scenario F2-US4-S3: Trigger enhancement from manual input by Cmd+Enter
+  Given Pen is running
+  And Pen window is open
+  And input mode is Manual
+  And `pen_original_text_input` contains source text
+  When user presses Cmd+Enter in `pen_original_text_input`
+  Then enhancement flow in F3-US1-S1 is executed
+  And source text is taken from `pen_original_text_input`
+
+Scenario F2-US4-S4: Trigger enhancement from manual input by send button click
+  Given Pen is running
+  And Pen window is open
+  And input mode is Manual
+  And `pen_original_text_input` contains source text
+  When user clicks the manual send button in `pen_original_text_input`
+  Then enhancement flow in F3-US1-S1 is executed
+  And source text is taken from `pen_original_text_input`
+
+Scenario F2-US4-S5: Enter without Command creates a new line in manual input
+  Given Pen is running
+  And Pen window is open
+  And input mode is Manual
+  And `pen_original_text_input` contains source text
+  When user presses Enter in `pen_original_text_input` without Command
+  Then a new line is inserted in `pen_original_text_input`
+  And enhancement is not triggered
+
+### US5. Manually load clipboard text into `pen_original_text_text` in auto mode
+As a Pen user, I want to manually load clipboard text in Auto mode, so that I can explicitly refresh source content when needed.
+
+#### Acceptance Criteria
+- AC1. Clicking `pen_manual_paste_button` triggers clipboard text intake in Auto mode.
+- AC2. Manual intake follows the same validation and display rules as automatic intake.
+- AC3. In Manual mode, clicking `pen_manual_paste_button` does not overwrite `pen_original_text_input`.
+
+#### Scenarios
+Scenario F2-US5-S1: User clicks manual paste in Auto mode
+  Given Pen is running
+  And Pen window is open
+  And input mode is Auto
   When user clicks `pen_manual_paste_button`
   Then clipboard intake is executed
-  And the same behavior as F2-US1 scenarios is applied
+  And `pen_original_text_text` is updated using clipboard rules
 
 ---
 
@@ -205,6 +308,9 @@ As a Pen user, I want Pen app to send original text to AI and display enhanced t
 - AC2. Generated message follows the standard prompt format.
 - AC3. AI response is displayed in `pen_enhanced_text_text` with overflow trimming and ellipsis.
 - AC4. All user-visible messaging follows i18n.
+- AC5. Enhancement source text is selected by active input mode:
+  - Auto mode: source is `pen_original_text_text`
+  - Manual mode: source is `pen_original_text_input`
 
 #### Scenarios
 Scenario F3-US1-S1: Enhance text with selected prompt and provider
@@ -213,7 +319,7 @@ Scenario F3-US1-S1: Enhance text with selected prompt and provider
   And app is in online-login mode
   And AI providers are loaded in `pen_controller_provider`
   And prompts are loaded in `pen_controller_prompts`
-  And `pen_original_text_text` contains source text
+  And active input mode has valid source text
   When enhancement is triggered
   Then prompt message is generated from selected prompt and source text
   And generated message follows RULE_GENERATE_MESSAGE
@@ -237,6 +343,26 @@ Scenario F3-US1-S3: Trigger enhancement on manual paste
   And AI providers and prompts are loaded
   When user clicks `pen_manual_paste_button`
   Then enhancement flow in F3-US1-S1 is executed
+
+Scenario F3-US1-S3b: Trigger enhancement from manual input send action
+  Given Pen is running
+  And user is logged in
+  And app is in online-login mode
+  And input mode is Manual
+  And `pen_original_text_input` contains source text
+  When user triggers manual send action
+  Then enhancement flow in F3-US1-S1 is executed
+  And source text is taken from `pen_original_text_input`
+
+Scenario F3-US1-S3c: Trigger enhancement from manual input Cmd+Enter
+  Given Pen is running
+  And user is logged in
+  And app is in online-login mode
+  And input mode is Manual
+  And `pen_original_text_input` contains source text
+  When user presses Cmd+Enter in `pen_original_text_input`
+  Then enhancement flow in F3-US1-S1 is executed
+  And source text is taken from `pen_original_text_input`
 
 Scenario F3-US1-S4: Trigger enhancement on provider selection change
   Given Pen is running
@@ -263,7 +389,7 @@ Generated prompt format:
 As a Pen user, I want automatic enhancement to run only when clipboard content changes, so that I do not get duplicate enhancements.
 
 #### Acceptance Criteria
-- AC1. On auto-trigger paths, Pen compares latest clipboard text with current original text.
+- AC1. Clipboard comparison is executed only in Auto mode.
 - AC2. If text is unchanged, enhancement is skipped and current texts are preserved.
 - AC3. If text changed, enhancement runs and fields are updated.
 - AC4. Manual paste can bypass comparison and force enhancement.
@@ -273,6 +399,7 @@ Scenario F3-US2-S1: Skip enhancement when clipboard content is unchanged
   Given Pen is running
   And user is logged in
   And app is in online-login mode
+  And input mode is Auto
   And Pen window is open
   And clipboard text equals current text in `pen_original_text_text`
   When an auto-trigger occurs
@@ -286,6 +413,7 @@ Scenario F3-US2-S2: Run enhancement when clipboard content changes
   Given Pen is running
   And user is logged in
   And app is in online-login mode
+  And input mode is Auto
   And Pen window is open
   And clipboard text changes from A to B
   When clipboard change is detected
@@ -297,6 +425,7 @@ Scenario F3-US2-S3: Manual paste force-enhances even when content is unchanged
   Given Pen is running
   And user is logged in
   And app is in online-login mode
+  And input mode is Auto
   And Pen window is open
   And clipboard text equals current text in `pen_original_text_text`
   When user clicks `pen_manual_paste_button`
@@ -349,46 +478,6 @@ Scenario F3-US4-S2: Hide loading indicator when AI response arrives
   When AI response is received
   Then loading indicator is hidden
   And `pen_enhanced_text_text` is updated with enhanced text
-
-### US5. Click original text field to edit and press Enter to enhance
-As a Pen user, I want to edit original text directly in the original text field and press Enter to enhance it, so that I can refine input before sending it to AI.
-
-#### Acceptance Criteria
-- AC1. Clicking `pen_original_text_text` switches the field from normal mode to edit mode.
-- AC2. In edit mode, the field shows full original text (not trimmed display text).
-- AC3. In edit mode, the field gets input focus and caret moves to the end of text.
-- AC4. In edit mode, a localized standard popup message is shown: "Press enter to enhance..."
-- AC5. Pressing Enter in edit mode sends full edited text (not trimmed text) to AI enhancement.
-- AC6. After Enter-triggered enhancement request is posted, the field returns to normal mode.
-
-#### Scenarios
-Scenario F3-US5-S1: Enter edit mode by clicking original text field
-  Given Pen is running
-  And user is logged in
-  And app is in online-login mode
-  And Pen window is open
-  And `pen_original_text_text` is in normal mode
-  And `pen_original_text_text` currently displays trimmed text
-  When user clicks `pen_original_text_text`
-  Then `pen_original_text_text` switches to edit mode
-  And `pen_original_text_text` displays full text
-  And `pen_original_text_text` receives keyboard focus
-  And caret is positioned at the end of text
-  And the keyboard input indicator is at the end of text
-  And localized popup message "Press enter to enhance..." is shown
-
-Scenario F3-US5-S2: Press Enter in edit mode to trigger enhancement with full text
-  Given Pen is running
-  And user is logged in
-  And app is in online-login mode
-  And Pen window is open
-  And `pen_original_text_text` is in edit mode
-  And `pen_original_text_text` contains full editable text
-  When user presses Enter key
-  Then enhancement request is posted to AI
-  And posted content uses full edited text from `pen_original_text_text`
-  And posted content does not use trimmed display text
-  And `pen_original_text_text` switches back to normal mode
 
 ---
 
@@ -444,6 +533,17 @@ Scenario F3-US5-S2: Press Enter in edit mode to trigger enhancement with full te
   - Coordinate: `(20, 258)`
   - Font size: 12pt
   - Border: visible `#C0C0C0`, corner radius `4.0`
+
+- `pen_original_text_input`
+  - Identifier: `pen_original_text_input`
+  - Container size: `338x88`
+  - Coordinate: `(20, 258)` (same frame as `pen_original_text`)
+  - Editable text area: scrollable, multi-line, transparent background
+  - Footer row (inside component): transparent background
+    - Hint text (left): "Command + enter to enhance..."
+    - Send button (right): icon-based button (`send.svg`)
+  - In Manual mode: visible and used as enhancement source
+  - In Auto mode: hidden but keeps existing draft text in memory/state
 
 - `pen_manual_paste`
   - Identifier: `pen_manual_paste`

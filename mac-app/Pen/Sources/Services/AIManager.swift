@@ -387,6 +387,13 @@ public class AIManager {
             throw AIError.providerError("Provider not found")
         }
         
+        func maskSecret(_ value: String) -> String {
+            if value.count <= 8 {
+                return String(repeating: "*", count: value.count)
+            }
+            return "\(value.prefix(4))...\(value.suffix(4))"
+        }
+        
         // Get all base URLs from the provider, sorted by key for consistent ordering
         let sortedKeys = provider.baseURLs.keys.sorted()
         var baseURLs = sortedKeys.map { provider.baseURLs[$0]! }
@@ -441,6 +448,24 @@ public class AIManager {
                 // Encode payload to JSON
                 let jsonData = try JSONSerialization.data(withJSONObject: testPayload)
                 request.httpBody = jsonData
+                
+                let requestBodyString = String(data: jsonData, encoding: .utf8) ?? "{}"
+                var headerSnapshot = request.allHTTPHeaderFields ?? [:]
+                if provider.requiresAuth {
+                    if provider.authHeader == "Authorization" {
+                        headerSnapshot[provider.authHeader] = "Bearer \(maskSecret(apiKey))"
+                    } else {
+                        headerSnapshot[provider.authHeader] = maskSecret(apiKey)
+                    }
+                }
+                print("[AIManager] ---- Outbound Request ----")
+                print("[AIManager] Provider: \(provider.name)")
+                print("[AIManager] Model: \(provider.defaultModel)")
+                print("[AIManager] URL: \(baseURL)")
+                print("[AIManager] Method: \(request.httpMethod ?? "POST")")
+                print("[AIManager] Headers: \(headerSnapshot)")
+                print("[AIManager] Body: \(requestBodyString)")
+                print("[AIManager] --------------------------")
                 
                 // Make API call
                 let (data, response) = try await URLSession.shared.data(for: request)

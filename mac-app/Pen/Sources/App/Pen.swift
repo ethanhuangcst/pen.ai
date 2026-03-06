@@ -16,6 +16,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     private var loginWindow: LoginWindow?
     private var preferencesWindow: PreferencesWindow?
     private var newOrEditPromptWindow: NewOrEditPrompt?
+    private var tmpWindow: TmpWindow?
     private var penWindowService: PenWindowService?
     var shortcutService: ShortcutService?
     private var windowManager: WindowManager = WindowManager.shared
@@ -313,6 +314,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
                     menu.addItem(NSMenuItem.separator())
                 }
                 
+                menu.addItem(NSMenuItem(title: "Open TmpWindow", action: #selector(openTmpWindow), keyEquivalent: "t"))
+                menu.addItem(NSMenuItem.separator())
+                
                 // Always show exit option
                 menu.addItem(NSMenuItem(title: LocalizationService.shared.localizedString(for: "exit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
                 
@@ -433,6 +437,19 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         testWindow.showAndFocus()
     }
     
+    @objc private func openTmpWindow() {
+        closeOtherWindows()
+        
+        if tmpWindow == nil {
+            tmpWindow = TmpWindow()
+        }
+        
+        if let tmpWindow = tmpWindow {
+            positionWindowRelativeToMenuBarIcon(tmpWindow)
+            tmpWindow.showAndFocus()
+        }
+    }
+    
     @objc private func openWindow() {
         if !isOnline || !isLoggedIn {
             return
@@ -474,6 +491,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         loginWindow = nil
         preferencesWindow = nil
         newOrEditPromptWindow = nil
+        tmpWindow = nil
     }
     
     private func setupShortcutKey() {

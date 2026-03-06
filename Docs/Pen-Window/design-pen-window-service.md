@@ -61,12 +61,14 @@ flowchart TD
    - Respond to system events
    - Manage keyboard shortcuts
 
-7. **Original Text Edit Mode**
-   - Switch `pen_original_text_text` between normal mode and edit mode
-   - Show full original text in edit mode instead of trimmed display text
-   - Focus text field and place caret at the end when entering edit mode
-   - Trigger enhancement when Enter key is pressed in edit mode
-   - Send full edited text to AI and return field to normal mode after posting
+7. **Input Mode Switching**
+   - Switch input source between Auto mode and Manual mode
+   - In Auto mode, load clipboard text into `pen_original_text_text`
+   - In Manual mode, use `pen_original_text_input` as editable source
+   - In Manual mode, trigger enhancement by `Cmd+Enter` or send button click
+   - In Manual mode, plain Enter inserts a newline without triggering enhancement
+   - Preserve manual draft text across mode changes
+   - Persist selected mode across logout and app restart
 
 8. **Localization**
    - Apply localized strings to UI components
@@ -105,8 +107,8 @@ class PenWindowService {
     // UI management methods
     func initializeUIComponents()
     func updateUIComponents()
-    func enterOriginalTextEditMode()
-    func exitOriginalTextEditMode()
+    func switchInputMode(_ mode: InputMode)
+    func restoreSavedInputMode()
     
     // Data loading methods
     func loadPrompts()
@@ -121,8 +123,9 @@ class PenWindowService {
     // Event handling methods
     func handlePasteButtonClick()
     func handleCopyButtonClick()
-    func handleOriginalTextClick()
-    func handleOriginalTextEnterKey()
+    func handleInputModeSwitch()
+    func handleManualInputSend()
+    func handleManualInputKeyDown()
     func handlePromptSelection()
     func handleProviderSelection()
     
@@ -140,12 +143,20 @@ struct WindowState {
     var selectedPromptId: String?
     var selectedProviderId: String?
     var originalText: String
+    var manualInputText: String
     var enhancedText: String
-    var isOriginalTextEditing: Bool
+    var inputMode: InputMode
     
     mutating func updateState()
     func saveState()
     static func loadState() -> WindowState
+}
+```
+
+```swift
+enum InputMode {
+    case auto
+    case manual
 }
 ```
 
@@ -185,16 +196,27 @@ sequenceDiagram
     PWS->>PWS: handlePasteButtonClick()
     PWS->>PWS: loadClipboardContent()
     PWS->>BW: updateOriginalText()
-    U->>PWS: click original text field
-    PWS->>PWS: handleOriginalTextClick()
-    PWS->>PWS: enterOriginalTextEditMode()
-    PWS->>BW: display full text in pen_original_text_text
-    PWS->>BW: focus pen_original_text_text and move caret to end
-    PWS->>PWS: displayPopupMessage("Press enter to enhance...")
-    U->>PWS: press Enter in original text field
-    PWS->>PWS: handleOriginalTextEnterKey()
-    PWS->>AM: processText(full original text)
-    PWS->>PWS: exitOriginalTextEditMode()
+    U->>PWS: toggle input mode switch
+    PWS->>PWS: handleInputModeSwitch()
+    alt switched to Auto mode
+        PWS->>PWS: loadClipboardContent()
+        PWS->>BW: update pen_original_text_text
+        PWS->>PWS: keep manualInputText unchanged
+    else switched to Manual mode
+        PWS->>BW: show pen_original_text_input
+        PWS->>BW: reset pen_enhanced_text_text to default hint
+        PWS->>PWS: restore manualInputText draft
+    end
+    U->>PWS: press Cmd+Enter in manual input
+    PWS->>PWS: handleManualInputKeyDown()
+    PWS->>PWS: handleManualInputSend()
+    PWS->>AM: processText(manual input text)
+    U->>PWS: click manual send button
+    PWS->>PWS: handleManualInputSend()
+    PWS->>AM: processText(manual input text)
+    U->>PWS: press Enter without Command in manual input
+    PWS->>PWS: handleManualInputKeyDown()
+    PWS->>BW: insert newline in pen_original_text_input
     U->>PWS: select prompt and provider
     PWS->>PWS: handlePromptSelection()
     PWS->>PWS: handleProviderSelection()
@@ -317,10 +339,10 @@ sequenceDiagram
 |--------|-------------|------------|--------------|
 | `initializeUIComponents()` | Initializes all UI components | None | `Void` |
 | `updateUIComponents()` | Updates UI components with current data | None | `Void` |
-| `updateOriginalText(_:)` | Updates original text field in normal mode with trimmed display text and full-text tooltip storage | `String` | `Void` |
+| `updateOriginalText(_:)` | Updates auto-mode original text field with trimmed display text and full-text tooltip storage | `String` | `Void` |
 | `updateEnhancedText(_:)` | Updates enhanced text field with text, trims it to fit, and adds tooltip for hover-over functionality | `String` | `Void` |
-| `enterOriginalTextEditMode()` | Switches original text field to editable mode, restores full text, and focuses caret at end | None | `Void` |
-| `exitOriginalTextEditMode()` | Restores original text field to normal display mode after posting | None | `Void` |
+| `switchInputMode(_:)` | Switches input source between Auto and Manual mode and updates related UI state | `InputMode` | `Void` |
+| `restoreSavedInputMode()` | Restores previously saved input mode with Auto fallback | None | `Void` |
 | `updatePromptDropdown(_:)` | Updates prompt dropdown with new data | `[Prompt]` | `Void` |
 | `updateProviderDropdown(_:)` | Updates provider dropdown with new data | `[AIProvider]` | `Void` |
 | `trimTextToFitLines(_:in:maxLines:)` | Trims text to fit within specified number of lines and adds "..." at the end | `String` (text to trim), `NSTextField` (text field), `Int` (max lines) | `String` (trimmed text) |
@@ -376,23 +398,27 @@ func trimTextToFitLines(_ text: String, in textField: NSTextField, maxLines: Int
 
 This method implements the requirement from the Pen-Window.md user story that states: "AND it should be trimmed using penWindowController.trimText()" for the enhanced text display. The method name `trimTextToFitLines` is used in the implementation, but it provides the same functionality as the `trimText` method mentioned in the user story.
 
-#### Original Text Mode Design
+#### Input Mode Design
 
-- **Normal Mode**
-  - `pen_original_text_text` is read-only
-  - Displays trimmed content when overflow occurs
-  - Keeps full content available for enhancement/copy behavior
+- **Auto Mode**
+  - Uses `pen_original_text_text` as read-only source view
+  - Loads source text from clipboard on launch and when switched to Auto mode
+  - Uses `pen_original_text_text` as enhancement source
+  - Keeps `manualInputText` unchanged in background state
 
-- **Edit Mode**
-  - Entered by clicking `pen_original_text_text`
-  - Displays full original text (not trimmed)
-  - Field is focused and caret is moved to end
-  - Localized popup is shown: "Press enter to enhance..."
+- **Manual Mode**
+  - Uses `pen_original_text_input` as editable source view
+  - Restores prior `manualInputText` draft if available
+  - Clears `pen_enhanced_text_text` to default hint when switching into Manual mode
+  - Uses `pen_original_text_input` as enhancement source
+  - `Cmd+Enter` triggers manual-send enhancement
+  - Send button click triggers manual-send enhancement
+  - Enter without Command inserts newline and does not trigger enhancement
 
-- **Enter-to-Enhance Transition**
-  - Triggered when Enter key is pressed in edit mode
-  - Posts full edited text to AI (never the trimmed display text)
-  - Returns field to normal mode after request is posted
+- **Mode Persistence**
+  - Saves mode whenever `pen_footer_auto_switch_button` changes
+  - Restores saved mode after logout/login and after app relaunch
+  - Falls back to Auto mode if saved value is invalid
 
 ### 6.4 Data Loading Methods
 
@@ -408,8 +434,9 @@ This method implements the requirement from the Pen-Window.md user story that st
 |--------|-------------|------------|--------------|
 | `handlePasteButtonClick()` | Handles paste button click event | None | `Void` |
 | `handleCopyButtonClick()` | Handles copy button click event | None | `Void` |
-| `handleOriginalTextClick()` | Handles click on `pen_original_text_text` and enters edit mode | None | `Void` |
-| `handleOriginalTextEnterKey()` | Handles Enter key in original text edit mode and triggers enhancement with full text | None | `Void` |
+| `handleInputModeSwitch()` | Handles switch toggle and routes UI/data updates for Auto/Manual mode | None | `Void` |
+| `handleManualInputSend()` | Handles manual input send action and triggers enhancement from `pen_original_text_input` | None | `Void` |
+| `handleManualInputKeyDown()` | Routes manual input keyboard behavior (`Cmd+Enter` send, Enter newline) | None | `Void` |
 | `handlePromptSelection(_:)` | Handles prompt selection change | `String` (prompt ID) | `Void` |
 | `handleProviderSelection(_:)` | Handles provider selection change | `String` (provider ID) | `Void` |
 | `handleEnhanceButtonClick()` | Handles enhance button click event, triggers AI processing, and trims the result | None | `Void` |
@@ -532,10 +559,12 @@ The `initiatePen()` method is the core initialization method that implements all
 
 - **BaseWindow**: Custom window class managed by PenWindowService
 - **NSTextField**: Text fields for original and enhanced text
-  - **pen_original_text_text**: Supports normal mode (trimmed display) and edit mode (full text, focused caret at end, Enter-to-enhance)
+  - **pen_original_text_text**: Auto-mode source text (clipboard-driven, trimmed display with full-text tooltip)
+  - **pen_original_text_input**: Manual-mode source text (editable, scrollable text area with hint row and send button)
   - **pen_enhanced_text_text**: Displays enhanced text with hover-over tooltip for full text
 - **NSPopUpButton**: Dropdowns for prompts and providers
-- **NSButton**: Paste and enhance buttons
+- **NSButton**: Paste, enhance, and manual-send buttons
+- **CustomSwitch**: `pen_footer_auto_switch_button` for mode switching
 
 ## 8. Error Handling
 

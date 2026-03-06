@@ -98,6 +98,12 @@ define container view in Pen window:
 - **Identifier**: `pen_footer_auto_switch_button`
 - **Default State**: On (true)
 - **Implementation**: `Sources/Views/CustomSwitch.swift`
+- **Mode Mapping**:
+  - On = Auto mode (`pen_original_text_text` visible)
+  - Off = Manual mode (`pen_original_text_input` visible)
+- **Persistence**:
+  - Selected mode is persisted across logout/login and app restart
+  - Invalid stored mode falls back to Auto mode
 
 ### Controller Container
 - **Size**: 338px (width) × 30px (height)
@@ -137,7 +143,46 @@ define container view in Pen window:
 - **Properties**: Read-only, selectable, not resizeable
 - **Background**: Transparent
 - **Border**: Visible, color = C0C0C0, rounded corner, 4.0
-- **Identifier**: `Pen_original_text_text`
+- **Identifier**: `pen_original_text_text`
+- **Mode Behavior**: Visible in Auto mode, hidden in Manual mode
+
+### Manual Input Container
+- **Size**: 338px (width) × 88px (height)
+- **Position**: (20, 258) from the bottom-left corner of the window (same frame as original text container)
+- **Background**: Transparent
+- **Identifier**: `pen_original_text_input`
+- **Visibility**: Hidden in Auto mode, visible in Manual mode
+- **Draft Preservation**: Keeps previously typed manual text when hidden and restored
+
+### Manual Input Text Area
+- **Type**: Editable multi-line text area (`NSTextView` inside `NSScrollView`)
+- **Size**: 326px (width) × 58px (height)
+- **Position**: (6, 24) relative to manual input container
+- **Font**: System font, 12pt
+- **Color**: Label color
+- **Background**: Transparent
+- **Border**: Uses outer container border, color = C0C0C0, rounded corner, 4.0
+- **Scroll Behavior**: Vertical scroller auto-shown for overflow text
+
+### Manual Input Footer Row
+- **Size**: 338px (width) × 24px (height)
+- **Position**: Bottom of `pen_original_text_input`
+- **Background**: Transparent
+- **Function**: Provides inline send hint + send button
+
+### Manual Input Hint Text
+- **Content**: "Command + enter to enhance..."
+- **Font**: System font, 10pt
+- **Color**: Secondary label color
+- **Alignment**: Left
+- **Position**: (8, -1) relative to manual input footer row
+
+### Manual Input Send Button
+- **Size**: 18px × 18px
+- **Position**: (312, 2) relative to manual input footer row
+- **Style**: Icon-only, no text label
+- **Image**: `send.svg` from Resources/Assets
+- **Background**: Transparent
 
 ### Manual Paste Container
 - **Size**: 300px (width) × 30px (height)

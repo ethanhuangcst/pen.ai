@@ -5,6 +5,11 @@ import Cocoa
 typealias AIProvider = AIManager.AIProvider
 
 class PenWindowService {
+    private enum InputMode: String {
+        case auto
+        case manual
+    }
+    
     private var window: BaseWindow?
     private var userService: UserService
     private var promptsService: PromptsService
@@ -15,11 +20,22 @@ class PenWindowService {
     private var isWindowOpen: Bool = false
     private var isInitializing: Bool = false
     private var isEnhancing: Bool = false
+    private var inputMode: InputMode = .auto
+    private var manualInputDraft: String = ""
+    private var manualInputObserver: Any?
+    private let inputModeDefaultsKey = "pen.inputMode"
     
     init() {
         self.userService = UserService.shared
         self.promptsService = PromptsService()
+        loadSavedInputMode()
         print("[PenWindowService] Initializer called, currentUser: \(userService.currentUser?.name ?? "nil")")
+    }
+    
+    deinit {
+        if let observer = manualInputObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
     
     // MARK: - Window Lifecycle Methods
@@ -75,6 +91,7 @@ class PenWindowService {
                 }
                 
                 guard isWindowOpen else { break }
+                guard self.inputMode == .auto else { continue }
                 
                 // Load clipboard content and trigger enhancement if changed
                 if loadClipboardContent() != nil {
@@ -126,14 +143,17 @@ class PenWindowService {
         // 3. Load AI Configurations
         await loadAIConfigurations()
         
-        // 4. Load Clipboard Content - Always load regardless of AI configuration status
+        // 4. Load source content by mode
         await MainActor.run {
-            if let clipboardText = loadClipboardContent() {
-                // Trigger text enhancement if clipboard content is loaded successfully
-                Task {
-                    await enhanceText()
+            if self.inputMode == .auto {
+                if self.loadClipboardContent(forceEnhance: true) != nil {
+                    Task {
+                        await self.enhanceText()
+                    }
                 }
             } else {
+                self.restoreManualDraftToInputView()
+                self.resetEnhancedTextToPlaceholder()
             }
         }
         
@@ -291,6 +311,9 @@ class PenWindowService {
         // Add original text container
         addOriginalTextContainer(to: contentView)
         
+        // Add manual input container
+        addManualInputComposer(to: contentView)
+        
         // Add manual paste container
         addManualPasteContainer(to: contentView)
         
@@ -334,6 +357,8 @@ class PenWindowService {
                 }
             }
         }
+        
+        applyInputModeUI(triggerModeTransition: false)
     }
     
     private func addFooterContainer(to contentView: NSView) {
@@ -375,10 +400,12 @@ class PenWindowService {
         // Add auto switch button
         let autoSwitch = CustomSwitch(frame: NSRect(x: 326, y: 6, width: 32, height: 18))
         autoSwitch.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_switch_button")
-        autoSwitch.isOn = true
+        autoSwitch.isOn = inputMode == .auto
+        autoSwitch.target = self
+        autoSwitch.action = #selector(handleModeSwitchChanged(_:))
         
         // Add text label
-        let textLabel = NSTextField(frame: NSRect(x: 330, y: -6, width: 250, height: footerHeight))
+        let textLabel = NSTextField(frame: NSRect(x: 362, y: -6, width: 16, height: footerHeight))
         textLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_label")
         textLabel.isBezeled = false
         textLabel.drawsBackground = false
@@ -389,18 +416,19 @@ class PenWindowService {
         textLabel.alignment = .right
         textLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_lable")
         
+        footerContainer.addSubview(instructionLabel)
+        footerContainer.addSubview(autoLabel)
+        footerContainer.addSubview(textLabel)
+        
         // Add small logo
         if let logo = ColorService.shared.getLogo() {
             let logoSize: CGFloat = 26
             let logoView = NSImageView(frame: NSRect(x: 17, y: 2, width: logoSize, height: logoSize))
             logoView.image = logo
-            
-            footerContainer.addSubview(instructionLabel)
-            footerContainer.addSubview(autoLabel)
-            footerContainer.addSubview(autoSwitch)
-            footerContainer.addSubview(textLabel)
             footerContainer.addSubview(logoView)
         }
+        
+        footerContainer.addSubview(autoSwitch, positioned: .above, relativeTo: nil)
         
         contentView.addSubview(footerContainer)
     }
@@ -574,6 +602,97 @@ class PenWindowService {
         contentView.addSubview(originalTextContainer)
     }
     
+    private func addManualInputComposer(to contentView: NSView) {
+        let inputComposerContainer = NSView(frame: NSRect(x: 20, y: 258, width: 338, height: 88))
+        inputComposerContainer.wantsLayer = true
+        inputComposerContainer.layer?.backgroundColor = NSColor.clear.cgColor
+        inputComposerContainer.identifier = NSUserInterfaceItemIdentifier("pen_original_text_input")
+        inputComposerContainer.isHidden = true
+        
+        let borderColor = NSColor(red: 192.0/255.0, green: 192.0/255.0, blue: 192.0/255.0, alpha: 1.0)
+        
+        let composerBox = NSView(frame: NSRect(x: 0, y: 0, width: 338, height: 88))
+        composerBox.wantsLayer = true
+        composerBox.layer?.backgroundColor = NSColor.clear.cgColor
+        composerBox.layer?.borderWidth = 1.0
+        composerBox.layer?.borderColor = borderColor.cgColor
+        composerBox.layer?.cornerRadius = 4.0
+        composerBox.layer?.masksToBounds = true
+        
+        let textScrollView = NSScrollView(frame: NSRect(x: 6, y: 24, width: 326, height: 58))
+        textScrollView.drawsBackground = false
+        textScrollView.hasVerticalScroller = true
+        textScrollView.autohidesScrollers = true
+        textScrollView.borderType = .noBorder
+        
+        let textView = ManualInputTextView(frame: NSRect(x: 0, y: 0, width: 326, height: 58))
+        textView.identifier = NSUserInterfaceItemIdentifier("pen_original_text_input_textview")
+        textView.font = NSFont.systemFont(ofSize: 12)
+        textView.textColor = NSColor.labelColor
+        textView.drawsBackground = false
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.minSize = NSSize(width: 326, height: 58)
+        textView.maxSize = NSSize(width: 326, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainerInset = NSSize(width: 0, height: 2)
+        textView.textContainer?.containerSize = NSSize(width: 326, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.widthTracksTextView = true
+        textView.string = manualInputDraft
+        textView.onSubmit = { [weak self] in
+            self?.triggerManualEnhancement()
+        }
+        
+        textScrollView.documentView = textView
+        
+        if let observer = manualInputObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        manualInputObserver = NotificationCenter.default.addObserver(
+            forName: NSText.didChangeNotification,
+            object: textView,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            self.manualInputDraft = textView.string
+            if self.inputMode == .manual {
+                self.currentOriginalTextForEnhancement = self.manualInputDraft
+            }
+        }
+        
+        let footerLine = NSView(frame: NSRect(x: 0, y: 0, width: 338, height: 24))
+        footerLine.wantsLayer = true
+        footerLine.layer?.backgroundColor = NSColor.clear.cgColor
+        
+        let hintLabel = NSTextField(frame: NSRect(x: 8, y: -1, width: 210, height: 18))
+        hintLabel.stringValue = "Command + enter to enhance..."
+        hintLabel.isBezeled = false
+        hintLabel.drawsBackground = false
+        hintLabel.isEditable = false
+        hintLabel.isSelectable = false
+        hintLabel.font = NSFont.systemFont(ofSize: 10)
+        hintLabel.textColor = NSColor.secondaryLabelColor
+        hintLabel.alignment = .left
+        
+        let sendButton = NSButton(frame: NSRect(x: 312, y: 2, width: 18, height: 18))
+        sendButton.title = ""
+        sendButton.isBordered = false
+        sendButton.image = NSImage(contentsOfFile: ResourceService.shared.getResourcePath(relativePath: "Assets/send.svg"))
+        sendButton.imagePosition = .imageOnly
+        sendButton.imageScaling = .scaleProportionallyUpOrDown
+        sendButton.identifier = NSUserInterfaceItemIdentifier("pen_original_text_input_send_button")
+        sendButton.target = self
+        sendButton.action = #selector(handleManualSendButton)
+        
+        composerBox.addSubview(textScrollView)
+        footerLine.addSubview(hintLabel)
+        footerLine.addSubview(sendButton)
+        composerBox.addSubview(footerLine)
+        inputComposerContainer.addSubview(composerBox)
+        contentView.addSubview(inputComposerContainer)
+    }
+    
     private func setPlaceholderImage(to imageView: NSImageView) {
         if let logo = ColorService.shared.getLogo() {
             imageView.image = logo
@@ -727,6 +846,99 @@ class PenWindowService {
         manualPasteContainer.addSubview(pasteButton)
         manualPasteContainer.addSubview(pasteLabel)
         contentView.addSubview(manualPasteContainer)
+    }
+    
+    private func loadSavedInputMode() {
+        let rawValue = UserDefaults.standard.string(forKey: inputModeDefaultsKey) ?? InputMode.auto.rawValue
+        inputMode = InputMode(rawValue: rawValue) ?? .auto
+    }
+    
+    private func saveInputMode() {
+        UserDefaults.standard.set(inputMode.rawValue, forKey: inputModeDefaultsKey)
+    }
+    
+    private func findFooterSwitch() -> CustomSwitch? {
+        guard let contentView = window?.contentView else { return nil }
+        
+        for view in contentView.subviews {
+            if view.identifier?.rawValue == "pen_footer" {
+                for subview in view.subviews {
+                    if let `switch` = subview as? CustomSwitch, `switch`.identifier?.rawValue == "pen_footer_auto_switch_button" {
+                        return `switch`
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    
+    private func findManualInputContainer() -> NSView? {
+        guard let contentView = window?.contentView else { return nil }
+        return contentView.subviews.first { $0.identifier?.rawValue == "pen_original_text_input" }
+    }
+    
+    private func findOriginalTextContainer() -> NSView? {
+        guard let contentView = window?.contentView else { return nil }
+        return contentView.subviews.first { $0.identifier?.rawValue == "pen_original_text" }
+    }
+    
+    private func findManualInputTextView() -> ManualInputTextView? {
+        guard let container = findManualInputContainer() else { return nil }
+        
+        for composerSubview in container.subviews {
+            for subview in composerSubview.subviews {
+                if let scrollView = subview as? NSScrollView, let textView = scrollView.documentView as? ManualInputTextView {
+                    return textView
+                }
+            }
+        }
+        return nil
+    }
+    
+    private func applyInputModeUI(triggerModeTransition: Bool) {
+        let isAutoMode = inputMode == .auto
+        
+        findOriginalTextContainer()?.isHidden = !isAutoMode
+        findManualInputContainer()?.isHidden = isAutoMode
+        findFooterSwitch()?.isOn = isAutoMode
+        
+        if isAutoMode {
+            if triggerModeTransition {
+                if loadClipboardContent(forceEnhance: true) != nil {
+                    Task {
+                        await enhanceText()
+                    }
+                }
+            }
+        } else {
+            restoreManualDraftToInputView()
+            currentOriginalTextForEnhancement = manualInputDraft
+            if triggerModeTransition {
+                resetEnhancedTextToPlaceholder()
+            }
+        }
+    }
+    
+    private func restoreManualDraftToInputView() {
+        if let textView = findManualInputTextView() {
+            textView.string = manualInputDraft
+        }
+    }
+    
+    private func resetEnhancedTextToPlaceholder() {
+        guard let contentView = window?.contentView else { return }
+        
+        for subview in contentView.subviews {
+            if subview.identifier?.rawValue == "pen_enhanced_text" {
+                for nestedSubview in subview.subviews {
+                    if let textField = nestedSubview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
+                        let placeholder = LocalizationService.shared.localizedString(for: "pen_enhanced_text_placeholder")
+                        textField.stringValue = placeholder
+                        textField.toolTip = placeholder
+                    }
+                }
+            }
+        }
     }
     
     // MARK: - UI Population Methods
@@ -1221,6 +1433,11 @@ class PenWindowService {
     }
     
     private func getOriginalText() -> String? {
+        if inputMode == .manual {
+            let text = manualInputDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+            return text.isEmpty ? nil : manualInputDraft
+        }
+        
         if let text = currentOriginalTextForEnhancement, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return text
         }
@@ -1235,6 +1452,10 @@ class PenWindowService {
     // MARK: - Event Handling Methods
     
     @objc private func handlePasteButton() {
+        if inputMode == .manual {
+            return
+        }
+        
         if loadClipboardContent(forceEnhance: true) != nil {
             Task {
                 await enhanceText()
@@ -1255,6 +1476,27 @@ class PenWindowService {
         guard !isInitializing else {
             return
         }
+        Task {
+            await enhanceText()
+        }
+    }
+    
+    @objc private func handleModeSwitchChanged(_ sender: CustomSwitch) {
+        inputMode = sender.isOn ? .auto : .manual
+        saveInputMode()
+        applyInputModeUI(triggerModeTransition: true)
+    }
+    
+    @objc private func handleManualSendButton() {
+        triggerManualEnhancement()
+    }
+    
+    private func triggerManualEnhancement() {
+        guard inputMode == .manual else { return }
+        manualInputDraft = findManualInputTextView()?.string ?? manualInputDraft
+        let trimmed = manualInputDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        currentOriginalTextForEnhancement = manualInputDraft
         Task {
             await enhanceText()
         }
