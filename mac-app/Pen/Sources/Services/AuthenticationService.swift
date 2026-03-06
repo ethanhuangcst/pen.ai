@@ -165,7 +165,7 @@ class AuthenticationService {
     
     /// Verifies a password against a stored bcrypt hash
     private func verifyPassword(_ password: String, against storedPassword: String) -> Bool {
-        print("[AuthenticationService] verifyPassword called with password: \(password), storedPassword: \(storedPassword)")
+        print("[AuthenticationService] verifyPassword called")
         print("[AuthenticationService] storedPassword length: \(storedPassword.count)")
         
         let isValid = BCrypt.verify(password, matchesHash: storedPassword)
