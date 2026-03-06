@@ -524,7 +524,7 @@ public class AIManager {
         prompt: String,
         model: String? = nil,
         temperature: Double = 0.7,
-        maxTokens: Int = 50
+        maxTokens: Int = 1200
     ) async throws -> AIResponse {
         // Implementation for testing a complete AI call with custom parameters
         let testMessage = AIMessage(role: "user", content: prompt)

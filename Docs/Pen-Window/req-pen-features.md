@@ -244,6 +244,93 @@ Scenario: enhance text automatically on Pen window initialized
 
 
 
+# User Story 2: Compare clipboard content before enhancing text
+As a Pen user
+I want Pen app to only automatically enhance text when the clipboard content changes
+So that I don't get duplicate enhancements when the clipboard hasn't changed
+
+Scenario: Pen window reloads with same clipboard content
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND system clipboard contains text content
+  AND Pen window is open with the same text in pen_original_text_text
+  WHEN Pen window is initialized
+  OR Pen window is reloaded by pressing shortcut key
+  OR Pen window is reloaded by left-clicking the Pen icon in the menu bar
+  THEN it should get the new content from clipboard
+  AND compare it with the current text in pen_original_text_text
+  AND only call AIManager to enhance text when they are different
+  AND if they are the same, skip the enhancement process
+  AND keep the current text in pen_enhanced_text_text
+  AND keep the current text in pen_original_text_text
+
+Scenario: When Pen window open, auto enhance text in realtime when clipboard content changes
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND system clipboard contains text content A
+  AND Pen window is open with text in pen_original_text_text
+  AND has enhanced text in pen_enhanced_text_text successfully
+  WHEN system clipboard content changes to B
+  AND Pen atumatically detects the clipbard content change
+  AND triggers the enhancement process in real time
+
+Scenario: Click pen_manual_paste_button force enhance text
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND system clipboard contains text content
+  AND Pen window is open with text A in pen_original_text_text
+  WHEN user clicks pen_manual_paste_button
+  THEN it should get the new content A from clipboard
+  AND by pass the comparison process
+  AND force trigger the enhancement process
+
+# User Story 3: Click enhanced text to copy 
+As a Pen user
+I want to click the enhanced text to copy it to the clipboard and close the window
+So that I can quickly use the enhanced text without manual copying
+
+Scenario: Click enhanced text to copy and close window
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND Pen window is open
+  AND text has been enhanced and displayed in pen_enhanced_text_text
+  WHEN user clicks on the text in pen_enhanced_text_text
+  THEN it should copy the enhanced text to the system clipboard
+  AND it should display a popup message for 1 second 
+  AND the message should say: "Text has been copied to clipboard"
+  AND it should follow i18n
+
+# User Story 4: Display loading indicator during AI processing
+As a Pen user
+I want to see a semi-transparent message "Refining content ..." with animation effect floating in front of pen_enhanced_text_text
+So that I know what's going on while waiting for the AI response
+
+Scenario: Display loading indicator when sending chat to AI
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND Pen window is open
+  AND text is ready to be enhanced
+  WHEN the generate prompt event is triggered
+  THEN it should display a semi-transparent message "Refining content ..." with animation effect
+  AND the message should float in front of pen_enhanced_text_text
+  AND the animation should continue until the AI response is received
+
+Scenario: Hide loading indicator when receiving AI response
+  Given Pen is running
+  AND user is logged in
+  AND app is in online-login mode
+  AND Pen window is open
+  AND the loading indicator is displayed
+  WHEN the AI response is received
+  THEN it should hide the loading indicator
+  AND display the enhanced text in pen_enhanced_text_text
+
+
 
 Feature: Pen window UI default display
 As a Pen user
@@ -341,89 +428,3 @@ So that I can have a good user experience
   ### coordinate = 24, -8 (relative to container)
   ### text = "Paste from clipboard", font size = 12
   ### i18n = yes
-
-# User Story 2: Compare clipboard content before enhancing text
-As a Pen user
-I want Pen app to only automatically enhance text when the clipboard content changes
-So that I don't get duplicate enhancements when the clipboard hasn't changed
-
-Scenario: Pen window reloads with same clipboard content
-  Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND system clipboard contains text content
-  AND Pen window is open with the same text in pen_original_text_text
-  WHEN Pen window is initialized
-  OR Pen window is reloaded by pressing shortcut key
-  OR Pen window is reloaded by left-clicking the Pen icon in the menu bar
-  THEN it should get the new content from clipboard
-  AND compare it with the current text in pen_original_text_text
-  AND only call AIManager to enhance text when they are different
-  AND if they are the same, skip the enhancement process
-  AND keep the current text in pen_enhanced_text_text
-  AND keep the current text in pen_original_text_text
-
-Scenario: When Pen window open, auto enhance text in realtime when clipboard content changes
-  Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND system clipboard contains text content A
-  AND Pen window is open with text in pen_original_text_text
-  AND has enhanced text in pen_enhanced_text_text successfully
-  WHEN system clipboard content changes to B
-  AND Pen atumatically detects the clipbard content change
-  AND triggers the enhancement process in real time
-
-Scenario: Click pen_manual_paste_button force enhance text
-  Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND system clipboard contains text content
-  AND Pen window is open with text A in pen_original_text_text
-  WHEN user clicks pen_manual_paste_button
-  THEN it should get the new content A from clipboard
-  AND by pass the comparison process
-  AND force trigger the enhancement process
-
-# User Story 3: Click enhanced text to copy 
-As a Pen user
-I want to click the enhanced text to copy it to the clipboard and close the window
-So that I can quickly use the enhanced text without manual copying
-
-Scenario: Click enhanced text to copy and close window
-  Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND Pen window is open
-  AND text has been enhanced and displayed in pen_enhanced_text_text
-  WHEN user clicks on the text in pen_enhanced_text_text
-  THEN it should copy the enhanced text to the system clipboard
-  AND it should display a popup message for 1 second 
-  AND the message should say: "Text has been copied to clipboard"
-  AND it should follow i18n
-
-# User Story 4: Display loading indicator during AI processing
-As a Pen user
-I want to see a semi-transparent message "Refining content ..." with animation effect floating in front of pen_enhanced_text_text
-So that I know what's going on while waiting for the AI response
-
-Scenario: Display loading indicator when sending chat to AI
-  Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND Pen window is open
-  AND text is ready to be enhanced
-  WHEN the generate prompt event is triggered
-  THEN it should display a semi-transparent message "Refining content ..." with animation effect
-  AND the message should float in front of pen_enhanced_text_text
-  AND the animation should continue until the AI response is received
-
-Scenario: Hide loading indicator when receiving AI response
-  Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND Pen window is open
-  AND the loading indicator is displayed
-  WHEN the AI response is received
-  THEN it should hide the loading indicator
-  AND display the enhanced text in pen_enhanced_text_text

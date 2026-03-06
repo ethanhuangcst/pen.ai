@@ -9,6 +9,7 @@ class PenWindowService {
     private var userService: UserService
     private var promptsService: PromptsService
     private var currentClipboardContent: String?
+    private var currentOriginalTextForEnhancement: String?
     private var isWindowOpen: Bool = false
     private var isInitializing: Bool = false
     private var isEnhancing: Bool = false
@@ -468,7 +469,7 @@ class PenWindowService {
             if subview.identifier?.rawValue == "pen_enhanced_text" {
                 for subview in subview.subviews {
                     if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
-                        return textField.stringValue
+                        return textField.toolTip ?? textField.stringValue
                     }
                 }
             }
@@ -874,23 +875,27 @@ class PenWindowService {
                         // Scenario: Paste valid text from clipboard on window launch
                         updateOriginalText(clipboardText)
                         currentClipboardContent = clipboardText
+                        currentOriginalTextForEnhancement = clipboardText
                         return clipboardText
                     } else {
                         // Scenario: Handle empty clipboard
                         displayEmptyClipboardMessage()
                         currentClipboardContent = nil
+                        currentOriginalTextForEnhancement = nil
                         return nil
                     }
                 } else {
                     // Scenario: Handle clipboard read failure
                     displayClipboardErrorMessage()
                     currentClipboardContent = nil
+                    currentOriginalTextForEnhancement = nil
                     return nil
                 }
             } else {
                 // Scenario: Handle non-text clipboard content
                 displayNonTextClipboardMessage()
                 currentClipboardContent = nil
+                currentOriginalTextForEnhancement = nil
                 return nil
             }
         } catch {
@@ -898,6 +903,7 @@ class PenWindowService {
             print("[PenWindowService] Error reading clipboard: \(error)")
             displayClipboardErrorMessage()
             currentClipboardContent = nil
+            currentOriginalTextForEnhancement = nil
             return nil
         }
     }
@@ -906,6 +912,7 @@ class PenWindowService {
     
     private func updateOriginalText(_ text: String) {
         guard let contentView = window?.contentView else { return }
+        currentOriginalTextForEnhancement = text
         
         for subview in contentView.subviews {
             if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
@@ -963,10 +970,17 @@ class PenWindowService {
         return lineCount
     }
     
+    private func getMaxVisibleLineCount(in textField: NSTextField) -> Int {
+        let font = textField.font ?? NSFont.systemFont(ofSize: 12)
+        let lineHeight = max(1.0, font.ascender - font.descender + font.leading)
+        return max(1, Int(floor(textField.frame.height / lineHeight)))
+    }
+    
     private func trimTextToFitLines(_ text: String, in textField: NSTextField, maxLines: Int) -> String {
         let font = textField.font ?? NSFont.systemFont(ofSize: 12)
         let width = textField.frame.width - 10 // Account for padding
-        let height = textField.frame.height
+        let lineHeight = max(1.0, font.ascender - font.descender + font.leading)
+        let height = min(textField.frame.height, CGFloat(maxLines) * lineHeight)
         
         // Replace newlines with spaces to treat them as normal characters
         let textWithoutNewlines = text.replacingOccurrences(of: "\n", with: " ")
@@ -982,22 +996,19 @@ class PenWindowService {
         let range = layoutManager.glyphRange(forBoundingRect: CGRect(x: 0, y: 0, width: width, height: height), in: textContainer)
         let characterRange = layoutManager.characterRange(forGlyphRange: range, actualGlyphRange: nil)
         
-        // Get the trimmed text from the original text (preserving newlines)
-        var trimmedText = (text as NSString).substring(to: characterRange.upperBound)
-        
-        // Replace last 3 characters with "..."
-        if trimmedText.count >= 3 {
-            trimmedText = String(trimmedText.prefix(trimmedText.count - 3)) + "..."
-        } else {
-            // If text is too short, just return it
-            return trimmedText
+        let textLength = (text as NSString).length
+        if characterRange.upperBound >= textLength {
+            return text
         }
         
-        return trimmedText
+        let safeEnd = max(0, min(textLength, characterRange.upperBound - 3))
+        let trimmedText = (text as NSString).substring(to: safeEnd)
+        return trimmedText + "..."
     }
     
     private func displayEmptyClipboardMessage() {
         guard let contentView = window?.contentView else { return }
+        currentOriginalTextForEnhancement = nil
         
         for subview in contentView.subviews {
             if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
@@ -1016,6 +1027,7 @@ class PenWindowService {
     
     private func displayClipboardErrorMessage() {
         guard let contentView = window?.contentView else { return }
+        currentOriginalTextForEnhancement = nil
         
         for subview in contentView.subviews {
             if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
@@ -1034,6 +1046,7 @@ class PenWindowService {
     
     private func displayNonTextClipboardMessage() {
         guard let contentView = window?.contentView else { return }
+        currentOriginalTextForEnhancement = nil
         
         for subview in contentView.subviews {
             if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
@@ -1057,8 +1070,9 @@ class PenWindowService {
             if let container = subview as? NSView, container.identifier?.rawValue == "pen_enhanced_text" {
                 for subview in container.subviews {
                     if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
-                        textField.stringValue = text
-                        // Set tooltip to show full text on hover
+                        let maxVisibleLines = getMaxVisibleLineCount(in: textField)
+                        textField.stringValue = trimTextToFitLines(text, in: textField, maxLines: maxVisibleLines)
+                        
                         textField.toolTip = text
                         break
                     }
@@ -1143,7 +1157,8 @@ class PenWindowService {
             
             // Call AITestCall to get enhanced text
             let aiResponse = try await aiManager.AITestCall(
-                prompt: promptMessage
+                prompt: promptMessage,
+                maxTokens: 1200
             )
             
             // Update enhanced text field with trimmed response
@@ -1240,17 +1255,14 @@ class PenWindowService {
     }
     
     private func getOriginalText() -> String? {
-        guard let contentView = window?.contentView else { return nil }
-        
-        for subview in contentView.subviews {
-            if subview.identifier?.rawValue == "pen_original_text" {
-                for subview in subview.subviews {
-                    if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
-                        return textField.toolTip ?? textField.stringValue
-                    }
-                }
-            }
+        if let text = currentOriginalTextForEnhancement, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return text
         }
+        
+        if let text = currentClipboardContent, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return text
+        }
+        
         return nil
     }
     
