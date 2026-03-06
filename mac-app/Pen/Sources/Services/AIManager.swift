@@ -407,7 +407,7 @@ public class AIManager {
         
         // Test each base URL in order
         var totalAttempts = 0
-        var lastError: String = ""
+        var lastError: AIError?
         
         for baseURL in baseURLs {
             totalAttempts += 1
@@ -415,8 +415,9 @@ public class AIManager {
             
             do {
                 guard let url = URL(string: baseURL) else {
-                    lastError = "Invalid URL: \(baseURL)"
-                    print("[AIManager] ❌ \(lastError)")
+                    let error = AIError.configurationError("Invalid URL: \(baseURL)")
+                    print("[AIManager] ❌ \(error.localizedDescription)")
+                    lastError = error
                     continue
                 }
                 
@@ -471,13 +472,20 @@ public class AIManager {
                 let (data, response) = try await URLSession.shared.data(for: request)
                 
                 // Check response status code
-                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    let error = AIError.invalidResponse
+                    print("[AIManager] ❌ Failed: Invalid response type - \(baseURL)")
+                    lastError = error
+                    continue
+                }
+                
+                guard (200...299).contains(httpResponse.statusCode) else {
                     let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                    let errorMessage = "HTTP \(statusCode)"
                     let responseBody = String(data: data, encoding: .utf8) ?? "No response body"
                     print("[AIManager] ❌ Failed: HTTP \(statusCode) - \(baseURL)")
                     print("[AIManager] Response: \(responseBody.prefix(200))")
-                    lastError = errorMessage
+                    let mappedError = mapError(data, response: httpResponse)
+                    lastError = mappedError
                     continue
                 }
                 
@@ -494,7 +502,7 @@ public class AIManager {
                         let errorMessage = "Server returned non-JSON response (likely wrong endpoint). Response starts with: \(preview)"
                         print("[AIManager] ❌ Failed: Non-JSON response - \(baseURL)")
                         print("[AIManager] Response preview: \(preview)")
-                        lastError = errorMessage
+                        lastError = AIError.invalidJSONResponse(errorMessage)
                         continue
                     }
                     
@@ -512,13 +520,13 @@ public class AIManager {
                         let errorMsg = errorDict["message"] as? String ?? "Unknown error"
                         let errorType = errorDict["type"] as? String ?? "unknown"
                         print("[AIManager] ❌ API Error: \(errorMsg) (type: \(errorType)) - \(baseURL)")
-                        lastError = "API error: \(errorMsg)"
+                        lastError = AIError.providerError("\(errorMsg) (type: \(errorType))")
                         continue
                     } else {
                         let errorMessage = "Invalid API response format - missing expected fields"
                         print("[AIManager] ❌ Failed: \(errorMessage) - \(baseURL)")
                         print("[AIManager] Response keys: \(responseData?.keys.sorted().joined(separator: ", ") ?? "none")")
-                        lastError = errorMessage
+                        lastError = AIError.invalidResponse
                         continue
                     }
                 } catch let jsonError as NSError {
@@ -527,21 +535,21 @@ public class AIManager {
                     let errorMessage = "JSON parsing failed: \(jsonError.localizedDescription)"
                     print("[AIManager] ❌ Failed: \(errorMessage) - \(baseURL)")
                     print("[AIManager] Response preview: \(responsePreview)")
-                    lastError = errorMessage
+                    lastError = AIError.invalidJSONResponse(errorMessage)
                     continue
                 }
             } catch {
                 let errorMessage = "Network error: \(error.localizedDescription)"
                 print("[AIManager] ❌ Failed: \(errorMessage) - \(baseURL)")
-                lastError = errorMessage
+                lastError = AIError.networkError
                 continue
             }
         }
         
         // All URLs failed
         print("[AIManager] ❌ All \(totalAttempts) attempts failed for \(providerName)")
-        print("[AIManager] Last error: \(lastError)")
-        throw AIError.networkError
+        print("[AIManager] Last error: \(lastError?.localizedDescription ?? "Unknown error")")
+        throw lastError ?? AIError.networkError
     }
     
     // Test Call
@@ -1253,7 +1261,24 @@ public class AIManager {
             print("[AIManager] Failed to parse error response as JSON: \(error)")
         }
         
-        print("[AIManager] Returning generic error for HTTP \(statusCode)")
-        return AIError.clientError(statusCode, String(responseBody.prefix(200)))
+        let responsePrefix = String(responseBody.prefix(200))
+        
+        switch statusCode {
+        case 401:
+            return AIError.unauthorized("Authentication failed. Response: \(responsePrefix)")
+        case 403:
+            return AIError.forbidden("Access denied. Response: \(responsePrefix)")
+        case 404:
+            return AIError.notFound("Endpoint not found. Response: \(responsePrefix)")
+        case 429:
+            return AIError.rateLimited
+        case 400...499:
+            return AIError.clientError(statusCode, responsePrefix)
+        case 500...599:
+            return AIError.serverError(statusCode, responsePrefix)
+        default:
+            print("[AIManager] Returning generic error for HTTP \(statusCode)")
+            return AIError.clientError(statusCode, responsePrefix)
+        }
     }
 }

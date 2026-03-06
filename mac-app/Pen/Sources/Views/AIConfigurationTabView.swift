@@ -524,6 +524,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
             // Test failed
             print(" $$$$$$$$$$$$$$$$$$$$ AI Connection test failed $$$$$$$$$$$$$$$$$$$$")
             print("Error testing configuration: \(error)")
+            let errorDescription = error.localizedDescription
             
             DispatchQueue.main.async {
                 // Check if the row still exists
@@ -533,7 +534,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                         textField.layer?.borderWidth = 1.0
                         textField.layer?.borderColor = NSColor.systemRed.cgColor
                         textField.layer?.cornerRadius = 4.0
-                        textField.toolTip = LocalizationService.shared.localizedString(for: "ai_connection_test_failed")
+                        textField.toolTip = errorDescription
                         
                         // Reset highlight after 2 seconds
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -561,6 +562,7 @@ class AIConfigurationTabView: NSView, NSTableViewDataSource, NSTableViewDelegate
                         WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "ai_connection_test_failed_updated_no_user"))
                     }
                 }
+                WindowManager.shared.displayPopupMessage(errorDescription)
             }
         }
     }
