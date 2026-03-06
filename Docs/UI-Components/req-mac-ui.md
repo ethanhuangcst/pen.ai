@@ -1,8 +1,8 @@
-# PenAI Mac App Generic UI Requirements
+# Pen Mac App Generic UI Requirements
 
 ## User Story 1
 
-As a PenAI user, I want all application windows to have a consistent and professional UI design so that the app feels polished and easy to use
+As a Pen user, I want all application windows to have a consistent and professional UI design so that the app feels polished and easy to use
 
 ### Acceptance Criteria
 
@@ -60,10 +60,10 @@ Scenario: Close buttons function consistently
   And the menubar icon is still available
   And all app functionality remains accessible
 
-Scenario: Windows display PenAI logo
+Scenario: Windows display Pen logo
   Given the Pen app is running
-  When any PenAI window opens
-  Then the window displays the PenAI logo (38x38px)
+  When any Pen window opens
+  Then the window displays the Pen logo (38x38px)
   And the logo is positioned in front of the window title text label
   AND aligned center vertically with the title text
   And the logo is placed at the same position across all windows
@@ -105,7 +105,7 @@ Scenario: System popup messages shows at the position relative to the Pen icon i
 
 ## User Story 2
 
-As a PenAI user, I want a consistent menubar interface so that I can easily access app functions
+As a Pen user, I want a consistent menubar interface so that I can easily access app functions
 
 ### Acceptance Criteria
 
@@ -122,7 +122,7 @@ Scenario: Menubar icon is always present
 
 ## User Story 3
 
-As a PenAI user, I want tabbed interfaces to be consistent across the app so that navigation is intuitive
+As a Pen user, I want tabbed interfaces to be consistent across the app so that navigation is intuitive
 
 ### Acceptance Criteria
 
@@ -149,7 +149,7 @@ Scenario: Tab switching works consistently
 
 ## User Story 4
 
-As a PenAI user, I want consistent window sizing behavior so that the app feels predictable
+As a Pen user, I want consistent window sizing behavior so that the app feels predictable
 
 ### Acceptance Criteria
 
@@ -171,7 +171,7 @@ Scenario: All windows maintain consistent proportions
 
 ## User Story 5
 
-As a PenAI user, I want window controls to handle user input correctly so that I can interact with the app efficiently
+As a Pen user, I want window controls to handle user input correctly so that I can interact with the app efficiently
 
 ### Acceptance Criteria
 

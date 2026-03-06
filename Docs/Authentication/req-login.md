@@ -1,4 +1,4 @@
-# PenAI Account Management Feature
+# Pen Account Management Feature
 
 # User Story 0: Close Other Windows when launch login window
 As a Pen user, I want Pen app to close all other windows when I launch login window, so that I can focus on the login window
@@ -10,7 +10,7 @@ Scenario: close other windows when launch login window
 
 ## User Story 1
 
-As a PenAI user, I want to log in to my account so that I can access my personalized settings and data
+As a Pen user, I want to log in to my account so that I can access my personalized settings and data
 
 ### Acceptance Criteria
 
@@ -114,7 +114,7 @@ Scenario: User requests to reset password
 
 ## User Story 3
 
-As a new user, I want to register for a PenAI account so that I can start using the application
+As a new user, I want to register for a Pen account so that I can start using the application
 
 ### Acceptance Criteria
 
@@ -173,7 +173,7 @@ Scenario: User cancels registration
 
 ## User Story 2
 
-As a PenAI user, I want to log out of my account so that I can secure my account and prevent unauthorized access
+As a Pen user, I want to log out of my account so that I can secure my account and prevent unauthorized access
 
 ### Acceptance Criteria
 
@@ -204,7 +204,7 @@ Scenario: Consistent logout behavior
 
 ## User Story 4
 
-As a PenAI user, I want to reset my password if I forget it so that I can regain access to my account
+As a Pen user, I want to reset my password if I forget it so that I can regain access to my account
 
 ### Acceptance Criteria
 

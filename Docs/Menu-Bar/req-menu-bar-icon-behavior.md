@@ -18,7 +18,7 @@ Scenario: Load menu bar icon and it's behaviors as online-login mode when all in
   And wait until the menubar icon is fully loaded
   And display a tooltip message "Hello, {user_name}, I'm Pen, your AI writing assistent."
   And the tooltip message will fade out after 2 seconds
-  And left click the icon opens the PenAI window
+  And left click the icon opens the Pen window
   And right click the icon displays a dropdown menu with preferences and exit
 
 Scenario: Load menu bar icon and it's behaviors as online-logout mode when initialization steps 1-2 pass but step 3 fails
@@ -44,7 +44,7 @@ Scenario: Load menu bar icon and it's behaviors as online-login mode when user m
   And display a tooltip message "Hello, {user_name}, I'm Pen, your AI writing assistent." 
   And the tooltip message will fade out after 2 seconds
   And the icon is clickable
-  And left click the icon opens the PenAI window
+  And left click the icon opens the Pen window
   And right click the icon displays a dropdown menu with preferences, logout and exit
 
 Scenario: Load menu bar icon and it's behaviors as online-login mode when user manually logout

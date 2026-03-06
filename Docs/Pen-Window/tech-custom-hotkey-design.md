@@ -64,7 +64,7 @@ The UI component for shortcut configuration:
   - Provide visual feedback during recording
   - Display conflict warnings
 
-#### 2.3 PenAI (App Delegate)
+#### 2.3 Pen (App Delegate)
 
 The application entry point:
 
@@ -119,7 +119,7 @@ class ShortcutService {
     
     func togglePenWindow() {
         // Get the application delegate
-        guard let appDelegate = NSApplication.shared.delegate as? PenAIDelegate else {
+        guard let appDelegate = NSApplication.shared.delegate as? PenDelegate else {
             return
         }
         
@@ -157,12 +157,12 @@ recorderView.frame = NSRect(x: 20, y: sectionHeight - 80, width: 300, height: 40
 section.addSubview(recorderView)
 ```
 
-#### 3.5 Updating PenAI App Delegate
+#### 3.5 Updating Pen App Delegate
 
 Add window toggling functionality:
 
 ```swift
-// In PenAI.swift
+// In Pen.swift
 func toggleMainWindow() {
     // Implement window toggling logic
     if let window = self.window {
