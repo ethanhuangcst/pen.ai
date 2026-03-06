@@ -341,7 +341,7 @@ class PenWindowService {
         footerContainer.identifier = NSUserInterfaceItemIdentifier("pen_footer")
         
         // Add instruction label
-        let instructionLabel = NSTextField(frame: NSRect(x: 46, y: -7, width: 180, height: footerHeight))
+        let instructionLabel = NSTextField(frame: NSRect(x: 44, y: -7, width: 180, height: footerHeight))
         let defaults = UserDefaults.standard
         let shortcutKeyDefaultsKey = "pen.shortcutKey"
         let defaultShortcut = "Command+Option+P"
@@ -358,7 +358,7 @@ class PenWindowService {
         instructionLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_instruction")
         
         // Add auto label
-        let autoLabel = NSTextField(frame: NSRect(x: 270, y: -7, width: 40, height: footerHeight))
+        let autoLabel = NSTextField(frame: NSRect(x: 288, y: -7, width: 40, height: footerHeight))
         autoLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_auto")
         autoLabel.isBezeled = false
         autoLabel.drawsBackground = false
@@ -370,9 +370,9 @@ class PenWindowService {
         autoLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_label")
         
         // Add auto switch button
-        let autoSwitch = NSSwitch(frame: NSRect(x: 318, y: 6, width: 40, height: 18))
+        let autoSwitch = CustomSwitch(frame: NSRect(x: 326, y: 6, width: 32, height: 18))
         autoSwitch.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_switch_button")
-        autoSwitch.state = .on
+        autoSwitch.isOn = true
         
         // Add text label
         let textLabel = NSTextField(frame: NSRect(x: 330, y: -6, width: 250, height: footerHeight))
@@ -389,7 +389,7 @@ class PenWindowService {
         // Add small logo
         if let logo = ColorService.shared.getLogo() {
             let logoSize: CGFloat = 26
-            let logoView = NSImageView(frame: NSRect(x: 19, y: 2, width: logoSize, height: logoSize))
+            let logoView = NSImageView(frame: NSRect(x: 17, y: 2, width: logoSize, height: logoSize))
             logoView.image = logo
             
             footerContainer.addSubview(instructionLabel)

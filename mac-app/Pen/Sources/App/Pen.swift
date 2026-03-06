@@ -207,9 +207,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         autoLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_label")
         
         // Add auto switch button
-        let autoSwitch = NSSwitch(frame: NSRect(x: 0, y: 0, width: 40, height: 18))
+        let autoSwitch = CustomSwitch(frame: NSRect(x: 0, y: 0, width: 32, height: 18))
         autoSwitch.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_switch_button")
-        autoSwitch.state = .on
+        autoSwitch.isOn = true
         
         // Add text label
         let textLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 250, height: footerHeight))
@@ -229,20 +229,20 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             let logoView = NSImageView(frame: NSRect(x: 0, y: 0, width: logoSize, height: logoSize))
             logoView.image = logo
             
-            // Set instruction label position to 46, -7
-            let instructionX: CGFloat = 46
+            // Set instruction label position to 44, -7 (absolute 44, 23)
+            let instructionX: CGFloat = 44
             let instructionY: CGFloat = -7
-            // Set auto label position to 270, -7
-            let autoLabelX: CGFloat = 270
+            // Set auto label position to 288, -7 (absolute 288, 23)
+            let autoLabelX: CGFloat = 288
             let autoLabelY: CGFloat = -7
-            // Set auto switch position to 318, 6 (right edge 20px from window right edge)
-            let autoSwitchX: CGFloat = 318
+            // Set auto switch position to 326, 6
+            let autoSwitchX: CGFloat = 326
             let autoSwitchY: CGFloat = 6
             // Set text label position to 330, -6
             let textX: CGFloat = 330
             let textY: CGFloat = -6
-            // Set logo position to 19, 2
-            let logoX: CGFloat = 19
+            // Set logo position to 17, 2
+            let logoX: CGFloat = 17
             let logoY: CGFloat = 2
             
             instructionLabel.frame.origin.x = instructionX

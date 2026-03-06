@@ -58,7 +58,7 @@ define container view in Pen window:
 - **Font**: System font, 12pt
 - **Color**: Secondary label color
 - **Alignment**: Left
-- **Position**: (46, 23) absolute (relative to window bottom-left)
+- **Position**: (44, 23) absolute (relative to window bottom-left)
 - **Identifier**: `pen_footer_instruction`
 - **Localization**: Uses `pen_footer_instruction` key in Localizable.strings
 
@@ -74,7 +74,7 @@ define container view in Pen window:
 ### Logo
 - **Size**: 26px × 26px
 - **Image**: `logo.png` from Resources/Assets
-- **Position**: (19, 2) absolute (relative to window bottom-left)
+- **Position**: (17, 2) absolute (relative to window bottom-left)
 
 ### Auto Switch Container
 - **Size**: 80px (width) × 30px (height)
@@ -87,16 +87,17 @@ define container view in Pen window:
 - **Font**: System font, 12pt
 - **Color**: Secondary label color
 - **Alignment**: Left
-- **Position**: Left side of auto switch container
+- **Position**: (288, 23) absolute (relative to window bottom-left)
 - **Identifier**: `pen_footer_auto_label`
 - **Localization**: Uses `pen_footer_auto` key in Localizable.strings
 
 ### Auto Switch Button
-- **Size**: 40px (width) × 18px (height)
-- **Position**: Right edge 20px from right edge of window (x: 318)
-- **Style**: NSSwitch (toggle switch)
+- **Size**: 32px (width) × 18px (height)
+- **Position**: (326, 6) absolute (relative to window bottom-left)
+- **Style**: CustomSwitch (custom NSControl subclass)
 - **Identifier**: `pen_footer_auto_switch_button`
 - **Default State**: On (true)
+- **Implementation**: `Sources/Views/CustomSwitch.swift`
 
 ### Controller Container
 - **Size**: 338px (width) × 30px (height)
