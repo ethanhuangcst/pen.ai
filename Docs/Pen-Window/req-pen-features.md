@@ -1,430 +1,453 @@
-Feature: Pen window initialization when launch
+# Pen Window Requirements (ATDD / BDD)
 
-# User Story 1: Close Other Windows when open Pen window
-As a Pen user, I want Pen app to close all other windows when I open the Pen window, so that I can focus on the Pen window
-Scenario: close other windows when open Pen window
-    Given Pen app is running
-    AND other windows are open
-    When I open the Pen window
-    Then all other windows should be closed
+## 0. Index
 
+- F1. Pen Window Startup and Initialization
+  - US1. Close non-Pen windows when Pen window opens
+  - US2. Load user information on Pen window launch
+  - US3. Load AI configurations on Pen window launch
+- F2. Clipboard Intake to Original Text
+  - US1. Automatically load clipboard text into `pen_original_text_text`
+  - US2. Manually load clipboard text into `pen_original_text_text`
+- F3. Text Enhancement Workflow
+  - US1. Post original text to AI and display enhanced text
+  - US2. Compare clipboard content before automatic enhancement
+  - US3. Click enhanced text to copy
+  - US4. Display loading indicator during AI processing
+  - US5. Click original text field to edit and press Enter to enhance
+- F4. Default UI Display Reference
+  - UI component definitions
 
-# User Story 2: Load user information on window launch
-As a Pen user
-I want Pen app to load my AI model and settings when I am logged in
-So that Pen can provide personalized service according to my own settings
+---
 
-Scenario: Load user information when launching Pen app in online-login mode
+## F1. Pen Window Startup and Initialization
+
+### US1. Close non-Pen windows when Pen window opens
+As a Pen user, I want Pen app to close all other windows when I open the Pen window, so that I can focus on the Pen window.
+
+#### Acceptance Criteria
+- AC1. When Pen window opens, all other app windows are closed.
+- AC2. Pen window remains active and focused.
+
+#### Scenarios
+Scenario F1-US1-S1: Close non-Pen windows on Pen window open
+  Given Pen app is running
+  And one or more non-Pen windows are open
+  When I open the Pen window
+  Then all non-Pen windows are closed
+  And Pen window stays open and focused
+
+### US2. Load user information on Pen window launch
+As a logged-in Pen user, I want Pen app to load my account information and preferences on launch, so that Pen can provide personalized behavior.
+
+#### Acceptance Criteria
+- AC1. In online-login mode, user information is loaded on Pen window launch.
+- AC2. In online-logout mode, default UI is shown and initialization stops with a clear message.
+- AC3. If user information loading fails, default UI is shown, error is logged, and user sees a clear message.
+
+#### Scenarios
+Scenario F1-US2-S1: Load user information in online-login mode
   Given Pen is running
   And app initialization is completed
   And user is logged in
   And app is in online-login mode
   When Pen window launches
-  Then it should load user information including:
-    - Account settings
-    - User preferences
-    - Usage history
-  And it print the user information in terminal
+  Then user information is loaded
+  And account settings are available
+  And user preferences are available
+  And usage history is available
+  And user information is logged in terminal
 
-Scenario: Handle online-logout mode on window launch
+Scenario F1-US2-S2: Handle online-logout mode on launch
   Given Pen is running
   And app initialization is completed
   And user is not logged in
   And app is in online-logout mode
   When Pen window launches
-  Then it shows only the default UI
-  And it ends the initialization process
-  And it displays a popup message:
-    "Pen cannot serve when you are not logged in.\nPlease log in and try again."
+  Then only default UI is shown
+  And initialization process is stopped
+  And a popup is shown with the localized not-logged-in message
 
-Scenario: Handle user information load failure
+Scenario F1-US2-S3: Handle user information load failure
   Given Pen is running
   And app initialization is completed
   And user is logged in
   And app is in online-login mode
+  And user information cannot be loaded
   When Pen window launches
-  And loading user information fails
-  Then it shows only the default UI
-  And it ends the initialization process
-  And it displays a popup message:
-    "Pen cannot load your login information.\nPlease log in and try again."
-  And it logs the error for troubleshooting
+  Then only default UI is shown
+  And initialization process is stopped
+  And a popup is shown with the localized load-failure message
+  And the failure is logged for troubleshooting
 
-# User Story 3: Load AI configurations on window launch
-As a Pen user
-I want Pen app to load my AI model and settings when I am logged in
-So that my AI services are available immediately
+### US3. Load AI configurations on Pen window launch
+As a logged-in Pen user, I want Pen app to load my AI configurations and prompts on launch, so that AI services are ready immediately.
 
-Scenario: Load AI configurations from global AIManager
+#### Acceptance Criteria
+- AC1. When global `AIManager` exists, Pen loads AI configurations from it.
+- AC2. When global `AIManager` is unavailable, Pen creates a fallback `AIManager` and loads configurations.
+- AC3. On configuration load failure, Pen shows localized error feedback and keeps clipboard intake available.
+- AC4. If no providers are configured, Pen shows setup guidance and still loads clipboard text into original text field.
+
+#### Scenarios
+Scenario F1-US3-S1: Load AI configurations from global AIManager
   Given Pen is running
   And user is logged in
   And app is in online-login mode
-  And global AIManager object is initialized with AI configurations
+  And global AIManager is initialized with configurations
   When Pen window launches
-  Then it should load AI configurations from the global AIManager object
-  And it should populate the AI providers drop-down box with available providers
-  And it should populate the prompts drop-down box with user's predefined prompts
-  And it should select the user's default AI provider and prompt
-  And print in terminal "^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager found in global object, AI configuration and Prompts loaded successfully. #################@@@@@@@@@@@@@@@"
+  Then AI configurations are loaded from global AIManager
+  And `pen_controller_provider` is populated with available providers
+  And `pen_controller_prompts` is populated with user prompts
+  And default provider and prompt are selected
+  And success is logged in terminal
 
-
-Scenario: Create new AIManager as fallback
+Scenario F1-US3-S2: Create fallback AIManager when global object is unavailable
   Given Pen is running
   And user is logged in
   And app is in online-login mode
-  And global AIManager object is not available
+  And global AIManager is unavailable
   When Pen window launches
-  Then it should create a new AIManager object
-  And it should load AI configurations from storage
-  And it should populate the AI providers drop-down box with available providers
-  And it should populate the prompts drop-down box with user's predefined prompts
-   And print in terminal "^^^^^^^^^^^^^^^^^^$$$$$$$$$$$$$$$ AIManager NOT found in global object and a new one created. AI configuration and Prompts loaded successfully. #################@@@@@@@@@@@@@@@"
+  Then a new AIManager is created
+  And AI configurations are loaded from storage
+  And `pen_controller_provider` is populated with available providers
+  And `pen_controller_prompts` is populated with user prompts
+  And success is logged in terminal
 
-Scenario: Handle AI configuration load failure
+Scenario F1-US3-S3: Handle AI configuration load failure
   Given Pen is running
   And user is logged in
   And app is in online-login mode
+  And AI configuration loading fails
   When Pen window launches
-  And loading AI configurations fails
-  And it should log the error for troubleshooting
-  And pops up a popup message: "Failed to load your AI connections.\nPlease try again later."
-  And pen_original_text_text should still fetch the text from system clipboard
+  Then a localized popup is shown for AI load failure
+  And the failure is logged for troubleshooting
+  And clipboard text is still loaded into `pen_original_text_text` when available
 
-Scenario: Handle no AI providers configured
+Scenario F1-US3-S4: Handle no AI providers configured
   Given Pen is running
   And user is logged in
   And app is in online-login mode
   And user has no AI providers configured
   When Pen window launches
-  Then it should display a popup message: "You don't have any available AI connections yet, go to Preference - AI Connections to set up a new connection."
-  And it should display the same text in pen_enhanced_text_text
-  And pen_original_text_text should still fetch the text from system clipboard
+  Then a localized setup-guidance popup is shown
+  And guidance text is displayed in `pen_enhanced_text_text`
+  And clipboard text is still loaded into `pen_original_text_text` when available
 
-//TODO: add "auto mode"
-# User Story 4: Automatically load clipboard text type content to pen_original_text_text text field
-As a Pen user
-I want Pen app to automatically identify text from system clipboard and paste it into the original text field
-So that I can easily use Pen to process the text without manual input
+---
 
-Scenario: Paste valid text from clipboard on window launch
+## F2. Clipboard Intake to Original Text
+
+### US1. Automatically load clipboard text into `pen_original_text_text`
+As a Pen user, I want Pen app to automatically detect and load clipboard text into original text field, so that I can process content without manual input.
+
+#### Acceptance Criteria
+- AC1. Valid clipboard text is loaded into `pen_original_text_text` on Pen window launch.
+- AC2. Display text is trimmed to fit with ellipsis when needed.
+- AC3. Non-text clipboard content does not replace original text and user sees placeholder.
+- AC4. Empty clipboard and clipboard read failure are handled with clear localized messages.
+
+#### Scenarios
+Scenario F2-US1-S1: Load valid clipboard text on window launch
   Given Pen is running
-  And system clipboard contains valid text content
+  And system clipboard contains valid text
   When Pen window launches
-  Then it should automatically read the most recent text from system clipboard
-  And it should paste the text into pen_original_text_text text field
-  And trim the text to fit the size with the ellipsis "..." displayed at the last line
-  And it should display the text as-is without modification
+  Then the latest clipboard text is read
+  And text is displayed in `pen_original_text_text`
+  And displayed text is trimmed with ellipsis when overflow occurs
+  And full text remains available for processing
 
-Scenario: Handle non-text clipboard content
+Scenario F2-US1-S2: Handle non-text clipboard content
   Given Pen is running
-  And system clipboard contains non-text content (e.g., image, file)
+  And system clipboard contains non-text content
   When Pen window launches
-  Then it should not paste anything into pen_original_text_text text field
-  And it should display the default placeholder text: "The text content in your clipboard will be automatically retrieved here"
-  And it should follow i18n 
+  Then `pen_original_text_text` is not replaced with non-text content
+  And localized placeholder text is shown
 
-Scenario: Handle empty clipboard
+Scenario F2-US1-S3: Handle empty clipboard
   Given Pen is running
   And system clipboard is empty
   When Pen window launches
-  Then it should display the message: "Clipboard is empty. Copy your text and click paste button, or use hot key [shortcut_key] to process."
-  And it should follow i18n 
+  Then localized empty-clipboard guidance is shown in `pen_original_text_text`
 
-Scenario: Handle clipboard read failure
+Scenario F2-US1-S4: Handle clipboard read failure
   Given Pen is running
+  And clipboard read operation fails
   When Pen window launches
-  And reading from clipboard fails
-  Then it should display the message: "Unable to access clipboard. Please try again."
-  And it should enable the manual paste button
-  And it should log the error for troubleshooting
+  Then localized clipboard-access error message is shown in `pen_original_text_text`
+  And manual paste remains available
+  And the failure is logged for troubleshooting
 
+### US2. Manually load clipboard text into `pen_original_text_text`
+As a Pen user, I want to manually load clipboard text into original text field, so that I can explicitly refresh content when needed.
 
-//TODO: add "auto mode"
-# User Story 5: Manually load clipboard text type content to pen_original_text_text text field
-As a Pen user
-I want to manually load text from system clipboard and paste it into the original text field
-So that I can easily use Pen to process the text without manual input
+#### Acceptance Criteria
+- AC1. Clicking `pen_manual_paste_button` triggers clipboard text intake.
+- AC2. Manual intake follows the same validation and display rules as automatic intake.
 
-Scenario: user clicks pen_manual_paste_button
+#### Scenarios
+Scenario F2-US2-S1: User clicks manual paste button
   Given Pen is running
-  AND pen window is opened
-  When user clicks button pen_manual_paste_button
-  Then Pen should identify text content from clipboard, consistent with the scenarios described in User Story Automatically load clipboard text type content to pen_original_text_text text field
+  And Pen window is open
+  When user clicks `pen_manual_paste_button`
+  Then clipboard intake is executed
+  And the same behavior as F2-US1 scenarios is applied
 
-//TODO: add "auto mode"
-Feature: Pen window post text to AI and get enhanced text
-# User Story 1: post original text to AI and get enhanced text
-As a Pen user
-I want to post the text in pen_original_text_text text field to AI and get the enhanced text in pen_enhanced_text_text text field
-So that I can easily use Pen to process the text without manual input
+---
 
-Scenario: enhance text
+## F3. Text Enhancement Workflow
+
+### US1. Post original text to AI and display enhanced text
+As a Pen user, I want Pen app to send original text to AI and display enhanced text, so that I can quickly improve content quality.
+
+#### Acceptance Criteria
+- AC1. Enhancement request uses selected provider and selected prompt.
+- AC2. Generated message follows the standard prompt format.
+- AC3. AI response is displayed in `pen_enhanced_text_text` with overflow trimming and ellipsis.
+- AC4. All user-visible messaging follows i18n.
+
+#### Scenarios
+Scenario F3-US1-S1: Enhance text with selected prompt and provider
   Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND user AI Configuratinos are loaded in pen_controller_provider drop-down box
-  AND user prompts are loaded in pen_controller_prompts drop-down box
-  WHEN generate prompt event is triggered
-  THEN it will generate default prompt using the current selected prompt in pen_controller_prompts drop-down box
-  AND the current text in pen_original_text_text text field
-  AND follow RULE_GENERAGE_MESSAGE
-  AND call AIManager and send the gnerated text to AI, initialized with the current selected AI provider in pen_controller_provider drop-down box
-  AND display the response in pen_enhanced_text_text text field
-  AND it should be trimmed using penWindowController.trimText()
-  And it should follow i18n
+  And user is logged in
+  And app is in online-login mode
+  And AI providers are loaded in `pen_controller_provider`
+  And prompts are loaded in `pen_controller_prompts`
+  And `pen_original_text_text` contains source text
+  When enhancement is triggered
+  Then prompt message is generated from selected prompt and source text
+  And generated message follows RULE_GENERATE_MESSAGE
+  And AI request is sent using selected provider
+  And AI response is displayed in `pen_enhanced_text_text`
+  And displayed enhanced text is trimmed with ellipsis when overflow occurs
+  And user-visible text follows i18n
 
-Scenario: enhance text automatically on Pen window initialized
+Scenario F3-US1-S2: Trigger enhancement on Pen window initialization
   Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND user AI Configuratinos are loaded in pen_controller_provider drop-down box
-  AND user prompts are loaded in pen_controller_prompts drop-down box
-  WHEN Pen window is initialized
-  OR user presses button pen_manual_paste_button
-  OR Pen window is reloaded by pressing shortcut key
-  OR Pen window is reloaded by left-clicking the Pen icon in the menu bar
-  OR user slects a different AI provider in pen_controller_provider drop-down box
-  OR user slects a different prompt in pen_controller_prompts drop-down box
-  THEN it will trigger enhence text event as described in enhance text Scenario
+  And user is logged in
+  And app is in online-login mode
+  And AI providers and prompts are loaded
+  When Pen window initializes
+  Then enhancement flow in F3-US1-S1 is executed
 
-
-  ## RULE_GENERAGE_MESSAGE
-  ### The generated prompt should follow the format: "PROMPT:\n{current_prompt}\n\nTEXT:\n{current_original_text}"
-  ### Example
-  #### prompt:
-  ```
-    # Enhance English Content
-    ## Act as a professional English editor and writing coach.
-    Improve the following text to sound natural, fluent, and professional while keeping my original meaning.
-
-    Please:
-
-    1. Correct grammar, spelling, and punctuation.
-    2. Improve sentence structure and clarity.
-    3. Replace unnatural phrasing with native-level expressions.
-    4. Suggest stronger vocabulary where appropriate, but keep it natural and not overly complex.
-    5. Briefly explain the most important corrections so I can learn from them.
-    6. Provide a final polished version at the end.
-
-    Rewrite this to sound like natural spoken English. Make it conversational and fluent.
-
-    Here is my text:
-  ```
-
-  #### Text:
-  ```
-    Hello, I want to express my gratitude for your help. Your support means a lot to me.
-  ```
-  #### postMessage:
-  ```
-    PROMPT:
-    # Enhance English Content
-    ## Act as a professional English editor and writing coach.
-    Improve the following text to sound natural, fluent, and professional while keeping my original meaning.
-
-    Please:
-
-    1. Correct grammar, spelling, and punctuation.
-    2. Improve sentence structure and clarity.
-    3. Replace unnatural phrasing with native-level expressions.
-    4. Suggest stronger vocabulary where appropriate, but keep it natural and not overly complex.
-    5. Briefly explain the most important corrections so I can learn from them.
-    6. Provide a final polished version at the end.
-
-    Rewrite this to sound like natural spoken English. Make it conversational and fluent.
-
-    Here is my text:
-
-    TEXT:
-    Hello, I want to express my gratitude for your help. Your support means a lot to me.
-  ```
-
-
-
-
-
-
-# User Story 2: Compare clipboard content before enhancing text
-As a Pen user
-I want Pen app to only automatically enhance text when the clipboard content changes
-So that I don't get duplicate enhancements when the clipboard hasn't changed
-
-Scenario: Pen window reloads with same clipboard content
+Scenario F3-US1-S3: Trigger enhancement on manual paste
   Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND system clipboard contains text content
-  AND Pen window is open with the same text in pen_original_text_text
-  WHEN Pen window is initialized
-  OR Pen window is reloaded by pressing shortcut key
-  OR Pen window is reloaded by left-clicking the Pen icon in the menu bar
-  THEN it should get the new content from clipboard
-  AND compare it with the current text in pen_original_text_text
-  AND only call AIManager to enhance text when they are different
-  AND if they are the same, skip the enhancement process
-  AND keep the current text in pen_enhanced_text_text
-  AND keep the current text in pen_original_text_text
+  And user is logged in
+  And app is in online-login mode
+  And AI providers and prompts are loaded
+  When user clicks `pen_manual_paste_button`
+  Then enhancement flow in F3-US1-S1 is executed
 
-Scenario: When Pen window open, auto enhance text in realtime when clipboard content changes
+Scenario F3-US1-S4: Trigger enhancement on provider selection change
   Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND system clipboard contains text content A
-  AND Pen window is open with text in pen_original_text_text
-  AND has enhanced text in pen_enhanced_text_text successfully
-  WHEN system clipboard content changes to B
-  AND Pen atumatically detects the clipbard content change
-  AND triggers the enhancement process in real time
+  And user is logged in
+  And app is in online-login mode
+  And AI providers and prompts are loaded
+  When user selects a different provider in `pen_controller_provider`
+  Then enhancement flow in F3-US1-S1 is executed
 
-Scenario: Click pen_manual_paste_button force enhance text
+Scenario F3-US1-S5: Trigger enhancement on prompt selection change
   Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND system clipboard contains text content
-  AND Pen window is open with text A in pen_original_text_text
-  WHEN user clicks pen_manual_paste_button
-  THEN it should get the new content A from clipboard
-  AND by pass the comparison process
-  AND force trigger the enhancement process
+  And user is logged in
+  And app is in online-login mode
+  And AI providers and prompts are loaded
+  When user selects a different prompt in `pen_controller_prompts`
+  Then enhancement flow in F3-US1-S1 is executed
 
-# User Story 3: Click enhanced text to copy 
-As a Pen user
-I want to click the enhanced text to copy it to the clipboard and close the window
-So that I can quickly use the enhanced text without manual copying
+#### RULE_GENERATE_MESSAGE
+Generated prompt format:
 
-Scenario: Click enhanced text to copy and close window
+`PROMPT:\n{current_prompt}\n\nTEXT:\n{current_original_text}`
+
+### US2. Compare clipboard content before automatic enhancement
+As a Pen user, I want automatic enhancement to run only when clipboard content changes, so that I do not get duplicate enhancements.
+
+#### Acceptance Criteria
+- AC1. On auto-trigger paths, Pen compares latest clipboard text with current original text.
+- AC2. If text is unchanged, enhancement is skipped and current texts are preserved.
+- AC3. If text changed, enhancement runs and fields are updated.
+- AC4. Manual paste can bypass comparison and force enhancement.
+
+#### Scenarios
+Scenario F3-US2-S1: Skip enhancement when clipboard content is unchanged
   Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND Pen window is open
-  AND text has been enhanced and displayed in pen_enhanced_text_text
-  WHEN user clicks on the text in pen_enhanced_text_text
-  THEN it should copy the enhanced text to the system clipboard
-  AND it should display a popup message for 1 second 
-  AND the message should say: "Text has been copied to clipboard"
-  AND it should follow i18n
+  And user is logged in
+  And app is in online-login mode
+  And Pen window is open
+  And clipboard text equals current text in `pen_original_text_text`
+  When an auto-trigger occurs
+  Then clipboard text is re-read
+  And comparison is executed
+  And AI enhancement is skipped
+  And current text in `pen_original_text_text` is preserved
+  And current text in `pen_enhanced_text_text` is preserved
 
-# User Story 4: Display loading indicator during AI processing
-As a Pen user
-I want to see a semi-transparent message "Refining content ..." with animation effect floating in front of pen_enhanced_text_text
-So that I know what's going on while waiting for the AI response
-
-Scenario: Display loading indicator when sending chat to AI
+Scenario F3-US2-S2: Run enhancement when clipboard content changes
   Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND Pen window is open
-  AND text is ready to be enhanced
-  WHEN the generate prompt event is triggered
-  THEN it should display a semi-transparent message "Refining content ..." with animation effect
-  AND the message should float in front of pen_enhanced_text_text
-  AND the animation should continue until the AI response is received
+  And user is logged in
+  And app is in online-login mode
+  And Pen window is open
+  And clipboard text changes from A to B
+  When clipboard change is detected
+  Then new clipboard text B is loaded into `pen_original_text_text`
+  And enhancement flow in F3-US1-S1 is executed
+  And `pen_enhanced_text_text` is updated with result for B
 
-Scenario: Hide loading indicator when receiving AI response
+Scenario F3-US2-S3: Manual paste force-enhances even when content is unchanged
   Given Pen is running
-  AND user is logged in
-  AND app is in online-login mode
-  AND Pen window is open
-  AND the loading indicator is displayed
-  WHEN the AI response is received
-  THEN it should hide the loading indicator
-  AND display the enhanced text in pen_enhanced_text_text
+  And user is logged in
+  And app is in online-login mode
+  And Pen window is open
+  And clipboard text equals current text in `pen_original_text_text`
+  When user clicks `pen_manual_paste_button`
+  Then comparison is bypassed
+  And enhancement flow in F3-US1-S1 is executed
 
+### US3. Click enhanced text to copy
+As a Pen user, I want to click enhanced text to copy it to clipboard, so that I can reuse it quickly.
 
+#### Acceptance Criteria
+- AC1. Clicking `pen_enhanced_text_text` copies full enhanced text to clipboard.
+- AC2. A localized success popup is shown.
 
-Feature: Pen window UI default display
-As a Pen user
-I want Pen app to have well-organized UI sections
-So that I can have a good user experience
+#### Scenarios
+Scenario F3-US3-S1: Copy enhanced text by clicking enhanced text area
+  Given Pen is running
+  And user is logged in
+  And app is in online-login mode
+  And Pen window is open
+  And enhanced text is displayed in `pen_enhanced_text_text`
+  When user clicks `pen_enhanced_text_text`
+  Then full enhanced text is copied to system clipboard
+  And localized copy-success popup is shown
 
+### US4. Display loading indicator during AI processing
+As a Pen user, I want to see a loading indicator while waiting for AI response, so that I understand processing is in progress.
 
-# UI Components Definition
+#### Acceptance Criteria
+- AC1. Loading indicator appears when enhancement request starts.
+- AC2. Loading indicator stays visible until response is received or request fails.
+- AC3. Loading indicator disappears after completion.
 
-- pen_footer
-  define container view pen_footer
-  # pen_footer
-  ## size = 378x30
-  ## coordinate = 0, 0
-  ## background = transparent
-  ## identifier = pen_footer
-  ### text label pen_footer_instruction
-  #### content = "Hot key: [shortcut_key] ."
-  #### font = 12pt
-  #### color = Secondary label color
-  #### alignment = left
-  #### position = 30, 9
-  #### localization = Uses pen_footer_instruction key in Localizable.strings
-  ### text label pen_footer_label
-  #### content = " Pen "
-  #### font = System font, 14pt
-  #### color = Secondary label color
-  #### alignment = Right
-  #### position = 330, 9
-  #### localization = Uses pen_footer_label key in Localizable.strings
-  ### logo
-  #### size = 26x26
-  #### image = logo.png
-  #### position = 336, 2
+#### Scenarios
+Scenario F3-US4-S1: Show loading indicator while sending AI request
+  Given Pen is running
+  And user is logged in
+  And app is in online-login mode
+  And Pen window is open
+  And source text is ready
+  When enhancement request starts
+  Then loading indicator is shown over `pen_enhanced_text_text`
+  And loading indicator remains visible during processing
 
-- pen_enhanced_text
-  define container view "pen_enhanced_text"
-  # text field pen_enhanced_text_text 
-  ## read-only 
-  ## background = transparent
-  ## not resize-able 
-  ## size 338x198 
-  ## font color = 6899D2
-  ## font size = 12pt
-  ## border is visible, color = C0C0C0, rounded corner, 4.0
-  ## coordinate: 20, 30 
+Scenario F3-US4-S2: Hide loading indicator when AI response arrives
+  Given Pen is running
+  And user is logged in
+  And app is in online-login mode
+  And Pen window is open
+  And loading indicator is visible
+  When AI response is received
+  Then loading indicator is hidden
+  And `pen_enhanced_text_text` is updated with enhanced text
 
-- pen_controller
-  define container view pen_controller
-  # pen_controller
-  ## size = 338x30
-  ## coordinate = (20, 228)
-  ## drop-down box pen_controller_prompts
-  ### border = visible, color = C0C0C0, rounded corner, 4.0
-  ### background = transparent
-  ### font size = 12pt
-  ### size = 222x20
-  ### coordinate = (20, 233)
-  ## drop-down box pen_controller_provider
-  ### size = 110x20
-  ### coordinate = (250, 233)
-  ### border = visible, color = C0C0C0, rounded corner, 4.0
-  ### background = transparent
-  ### font size = 12pt
+### US5. Click original text field to edit and press Enter to enhance
+As a Pen user, I want to edit original text directly in the original text field and press Enter to enhance it, so that I can refine input before sending it to AI.
 
-- pen_original_text
-  define container view "pen_original_text": 
-  # text field Pen_original_text_text
-  ## read-only 
-  ## background = transparent
-  ## not resize-able 
-  ## size 338x88 
-  ## border is visible, color = C0C0C0, rounded corner, 4.0
-  ## coordinate: 20, 258 
-  ## font size = 12pt
+#### Acceptance Criteria
+- AC1. Clicking `pen_original_text_text` switches the field from normal mode to edit mode.
+- AC2. In edit mode, the field shows full original text (not trimmed display text).
+- AC3. In edit mode, the field gets input focus and caret moves to the end of text.
+- AC4. In edit mode, a localized standard popup message is shown: "Press enter to enhance..."
+- AC5. Pressing Enter in edit mode sends full edited text (not trimmed text) to AI enhancement.
+- AC6. After Enter-triggered enhancement request is posted, the field returns to normal mode.
 
-- pen_manual_paste
-  define container view "pen_manual_paste":
-  # pen_manual_paste
-  ## size = 300x30
-  ## background = transparent
-  ## coordinate = 20, 346
-  ## button "pen_manual_paste_button"
-  ### text disabled
-  ### image = ../mac-app/Pen/Resources/Assets/paste.svg
-  ### size = 20x20
-  ### coordinate = -1, 5 (relative to container)
-  ### label disabled
-  ### selected = false
-  ### focused = false
-  ## text label "pen_manual_paste_text"
-  ### read only
-  ### background = transparent
-  ### size = 270x30
-  ### coordinate = 24, -8 (relative to container)
-  ### text = "Paste from clipboard", font size = 12
-  ### i18n = yes
+#### Scenarios
+Scenario F3-US5-S1: Enter edit mode by clicking original text field
+  Given Pen is running
+  And user is logged in
+  And app is in online-login mode
+  And Pen window is open
+  And `pen_original_text_text` is in normal mode
+  And `pen_original_text_text` currently displays trimmed text
+  When user clicks `pen_original_text_text`
+  Then `pen_original_text_text` switches to edit mode
+  And `pen_original_text_text` displays full text
+  And `pen_original_text_text` receives keyboard focus
+  And caret is positioned at the end of text
+  And the keyboard input indicator is at the end of text
+  And localized popup message "Press enter to enhance..." is shown
+
+Scenario F3-US5-S2: Press Enter in edit mode to trigger enhancement with full text
+  Given Pen is running
+  And user is logged in
+  And app is in online-login mode
+  And Pen window is open
+  And `pen_original_text_text` is in edit mode
+  And `pen_original_text_text` contains full editable text
+  When user presses Enter key
+  Then enhancement request is posted to AI
+  And posted content uses full edited text from `pen_original_text_text`
+  And posted content does not use trimmed display text
+  And `pen_original_text_text` switches back to normal mode
+
+---
+
+## F4. Default UI Display Reference
+
+### UI Component Definitions
+
+- `pen_footer`
+  - Container size: `378x30`
+  - Coordinate: `(0, 0)`
+  - Background: transparent
+  - Identifier: `pen_footer`
+  - `pen_footer_instruction`
+    - Content: localized `pen_footer_instruction`
+    - Font: 12pt
+    - Color: secondary label color
+    - Alignment: left
+  - `pen_footer_auto_label`
+    - Content: localized `pen_footer_auto`
+    - Font: 12pt
+    - Color: secondary label color
+    - Alignment: right
+    - Frame: `(176, -6, 150, 30)`
+  - `pen_footer_auto_switch_button`
+    - Frame: `(326, 6, 32, 18)`
+  - `pen_footer_label`
+    - Content: localized `pen_footer_label`
+    - Font: 14pt
+    - Color: secondary label color
+    - Alignment: right
+
+- `pen_enhanced_text`
+  - Identifier: `pen_enhanced_text`
+  - Text field: `pen_enhanced_text_text`
+  - Read-only, transparent, non-resizable
+  - Size: `338x198`
+  - Coordinate: `(20, 30)`
+  - Font size: 12pt
+  - Font color: `#6899D2`
+  - Border: visible `#C0C0C0`, corner radius `4.0`
+
+- `pen_controller`
+  - Container size: `338x30`
+  - Coordinate: `(20, 228)`
+  - `pen_controller_prompts`: `222x20`, visible border, transparent background, 12pt
+  - `pen_controller_provider`: `110x20`, visible border, transparent background, 12pt
+
+- `pen_original_text`
+  - Identifier: `pen_original_text`
+  - Text field: `pen_original_text_text`
+  - Read-only, transparent, non-resizable
+  - Size: `338x88`
+  - Coordinate: `(20, 258)`
+  - Font size: 12pt
+  - Border: visible `#C0C0C0`, corner radius `4.0`
+
+- `pen_manual_paste`
+  - Identifier: `pen_manual_paste`
+  - Container size: `300x30`
+  - Coordinate: `(20, 346)`
+  - `pen_manual_paste_button`: image-based button (`paste.svg`), size `20x20`
+  - `pen_manual_paste_text`: read-only label, transparent, 12pt, localized

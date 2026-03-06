@@ -61,11 +61,18 @@ flowchart TD
    - Respond to system events
    - Manage keyboard shortcuts
 
-7. **Localization**
+7. **Original Text Edit Mode**
+   - Switch `pen_original_text_text` between normal mode and edit mode
+   - Show full original text in edit mode instead of trimmed display text
+   - Focus text field and place caret at the end when entering edit mode
+   - Trigger enhancement when Enter key is pressed in edit mode
+   - Send full edited text to AI and return field to normal mode after posting
+
+8. **Localization**
    - Apply localized strings to UI components
    - Handle language changes
 
-8. **Error Handling**
+9. **Error Handling**
    - Handle window-related errors
    - Handle clipboard-related errors
    - Display appropriate error messages
@@ -98,6 +105,8 @@ class PenWindowService {
     // UI management methods
     func initializeUIComponents()
     func updateUIComponents()
+    func enterOriginalTextEditMode()
+    func exitOriginalTextEditMode()
     
     // Data loading methods
     func loadPrompts()
@@ -112,6 +121,8 @@ class PenWindowService {
     // Event handling methods
     func handlePasteButtonClick()
     func handleCopyButtonClick()
+    func handleOriginalTextClick()
+    func handleOriginalTextEnterKey()
     func handlePromptSelection()
     func handleProviderSelection()
     
@@ -130,6 +141,7 @@ struct WindowState {
     var selectedProviderId: String?
     var originalText: String
     var enhancedText: String
+    var isOriginalTextEditing: Bool
     
     mutating func updateState()
     func saveState()
@@ -173,6 +185,16 @@ sequenceDiagram
     PWS->>PWS: handlePasteButtonClick()
     PWS->>PWS: loadClipboardContent()
     PWS->>BW: updateOriginalText()
+    U->>PWS: click original text field
+    PWS->>PWS: handleOriginalTextClick()
+    PWS->>PWS: enterOriginalTextEditMode()
+    PWS->>BW: display full text in pen_original_text_text
+    PWS->>BW: focus pen_original_text_text and move caret to end
+    PWS->>PWS: displayPopupMessage("Press enter to enhance...")
+    U->>PWS: press Enter in original text field
+    PWS->>PWS: handleOriginalTextEnterKey()
+    PWS->>AM: processText(full original text)
+    PWS->>PWS: exitOriginalTextEditMode()
     U->>PWS: select prompt and provider
     PWS->>PWS: handlePromptSelection()
     PWS->>PWS: handleProviderSelection()
@@ -295,8 +317,10 @@ sequenceDiagram
 |--------|-------------|------------|--------------|
 | `initializeUIComponents()` | Initializes all UI components | None | `Void` |
 | `updateUIComponents()` | Updates UI components with current data | None | `Void` |
-| `updateOriginalText(_:)` | Updates original text field with text, trims it to fit, and adds tooltip for hover-over functionality | `String` | `Void` |
+| `updateOriginalText(_:)` | Updates original text field in normal mode with trimmed display text and full-text tooltip storage | `String` | `Void` |
 | `updateEnhancedText(_:)` | Updates enhanced text field with text, trims it to fit, and adds tooltip for hover-over functionality | `String` | `Void` |
+| `enterOriginalTextEditMode()` | Switches original text field to editable mode, restores full text, and focuses caret at end | None | `Void` |
+| `exitOriginalTextEditMode()` | Restores original text field to normal display mode after posting | None | `Void` |
 | `updatePromptDropdown(_:)` | Updates prompt dropdown with new data | `[Prompt]` | `Void` |
 | `updateProviderDropdown(_:)` | Updates provider dropdown with new data | `[AIProvider]` | `Void` |
 | `trimTextToFitLines(_:in:maxLines:)` | Trims text to fit within specified number of lines and adds "..." at the end | `String` (text to trim), `NSTextField` (text field), `Int` (max lines) | `String` (trimmed text) |
@@ -352,6 +376,24 @@ func trimTextToFitLines(_ text: String, in textField: NSTextField, maxLines: Int
 
 This method implements the requirement from the Pen-Window.md user story that states: "AND it should be trimmed using penWindowController.trimText()" for the enhanced text display. The method name `trimTextToFitLines` is used in the implementation, but it provides the same functionality as the `trimText` method mentioned in the user story.
 
+#### Original Text Mode Design
+
+- **Normal Mode**
+  - `pen_original_text_text` is read-only
+  - Displays trimmed content when overflow occurs
+  - Keeps full content available for enhancement/copy behavior
+
+- **Edit Mode**
+  - Entered by clicking `pen_original_text_text`
+  - Displays full original text (not trimmed)
+  - Field is focused and caret is moved to end
+  - Localized popup is shown: "Press enter to enhance..."
+
+- **Enter-to-Enhance Transition**
+  - Triggered when Enter key is pressed in edit mode
+  - Posts full edited text to AI (never the trimmed display text)
+  - Returns field to normal mode after request is posted
+
 ### 6.4 Data Loading Methods
 
 | Method | Description | Parameters | Return Value |
@@ -366,6 +408,8 @@ This method implements the requirement from the Pen-Window.md user story that st
 |--------|-------------|------------|--------------|
 | `handlePasteButtonClick()` | Handles paste button click event | None | `Void` |
 | `handleCopyButtonClick()` | Handles copy button click event | None | `Void` |
+| `handleOriginalTextClick()` | Handles click on `pen_original_text_text` and enters edit mode | None | `Void` |
+| `handleOriginalTextEnterKey()` | Handles Enter key in original text edit mode and triggers enhancement with full text | None | `Void` |
 | `handlePromptSelection(_:)` | Handles prompt selection change | `String` (prompt ID) | `Void` |
 | `handleProviderSelection(_:)` | Handles provider selection change | `String` (provider ID) | `Void` |
 | `handleEnhanceButtonClick()` | Handles enhance button click event, triggers AI processing, and trims the result | None | `Void` |
@@ -488,7 +532,7 @@ The `initiatePen()` method is the core initialization method that implements all
 
 - **BaseWindow**: Custom window class managed by PenWindowService
 - **NSTextField**: Text fields for original and enhanced text
-  - **pen_original_text_text**: Displays original text from clipboard with hover-over tooltip for full text
+  - **pen_original_text_text**: Supports normal mode (trimmed display) and edit mode (full text, focused caret at end, Enter-to-enhance)
   - **pen_enhanced_text_text**: Displays enhanced text with hover-over tooltip for full text
 - **NSPopUpButton**: Dropdowns for prompts and providers
 - **NSButton**: Paste and enhance buttons
