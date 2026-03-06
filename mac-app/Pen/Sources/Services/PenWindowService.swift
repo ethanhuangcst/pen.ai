@@ -341,12 +341,13 @@ class PenWindowService {
         footerContainer.identifier = NSUserInterfaceItemIdentifier("pen_footer")
         
         // Add instruction label
-        let instructionLabel = NSTextField(frame: NSRect(x: 20, y: -6, width: 250, height: footerHeight))
+        let instructionLabel = NSTextField(frame: NSRect(x: 46, y: -7, width: 250, height: footerHeight))
         let defaults = UserDefaults.standard
         let shortcutKeyDefaultsKey = "pen.shortcutKey"
         let defaultShortcut = "Command+Option+P"
         let savedShortcut = defaults.string(forKey: shortcutKeyDefaultsKey) ?? defaultShortcut
-        instructionLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_instruction", withFormat: savedShortcut)
+        let displayShortcut = LocalizationService.shared.formatShortcutForDisplay(savedShortcut)
+        instructionLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_instruction", withFormat: displayShortcut)
         instructionLabel.isBezeled = false
         instructionLabel.drawsBackground = false
         instructionLabel.isEditable = false
@@ -371,7 +372,7 @@ class PenWindowService {
         // Add small logo
         if let logo = ColorService.shared.getLogo() {
             let logoSize: CGFloat = 26
-            let logoView = NSImageView(frame: NSRect(x: 336, y: 2, width: logoSize, height: logoSize))
+            let logoView = NSImageView(frame: NSRect(x: 20, y: 2, width: logoSize, height: logoSize))
             logoView.image = logo
             
             footerContainer.addSubview(instructionLabel)
@@ -434,17 +435,11 @@ class PenWindowService {
     }
     
     @objc private func handleEnhancedTextClick() {
-        // Get the enhanced text
         guard let enhancedText = getEnhancedText() else { return }
         
-        // Copy to clipboard
         copyToClipboard(enhancedText)
         
-        // Display popup message with completion handler
-        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "text_copied_to_clipboard")) {
-            // Close the window after message disappears
-            self.closeWindow()
-        }
+        WindowManager.shared.displayPopupMessage(LocalizationService.shared.localizedString(for: "text_copied_to_clipboard"))
     }
     
     private func getEnhancedText() -> String? {

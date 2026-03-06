@@ -41,10 +41,11 @@ define container view in Pen window:
 - **Alignment**: Left
 - **Size**: 338px (width) × 198px (height)
 - **Position**: (0, 0) relative to container
-- **Properties**: Read-only, selectable, not resizeable
+- **Properties**: Read-only, selectable, not resizeable, clickable
 - **Background**: Transparent
 - **Border**: Visible, color = C0C0C0, rounded corner, 4.0
 - **Identifier**: `pen_enhanced_text_text`
+- **Click Behavior**: Copies enhanced text to clipboard and displays popup message "Text has been copied to clipboard" (does not close window)
 
 ### Footer Container
 - **Size**: 378px (width) × 30px (height)
@@ -57,7 +58,7 @@ define container view in Pen window:
 - **Font**: System font, 12pt
 - **Color**: Secondary label color
 - **Alignment**: Left
-- **Position**: (20, 24) absolute (relative to window bottom-left)
+- **Position**: (46, 23) absolute (relative to window bottom-left)
 - **Identifier**: `pen_footer_instruction`
 - **Localization**: Uses `pen_footer_instruction` key in Localizable.strings
 
@@ -73,7 +74,7 @@ define container view in Pen window:
 ### Logo
 - **Size**: 26px × 26px
 - **Image**: `logo.png` from Resources/Assets
-- **Position**: (336, 2) absolute (relative to window bottom-left)
+- **Position**: (20, 2) absolute (relative to window bottom-left)
 
 ### Controller Container
 - **Size**: 338px (width) × 30px (height)

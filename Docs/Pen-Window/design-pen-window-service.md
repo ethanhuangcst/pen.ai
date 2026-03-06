@@ -369,6 +369,7 @@ This method implements the requirement from the Pen-Window.md user story that st
 | `handlePromptSelection(_:)` | Handles prompt selection change | `String` (prompt ID) | `Void` |
 | `handleProviderSelection(_:)` | Handles provider selection change | `String` (provider ID) | `Void` |
 | `handleEnhanceButtonClick()` | Handles enhance button click event, triggers AI processing, and trims the result | None | `Void` |
+| `handleEnhancedTextClick()` | Handles click on enhanced text to copy to clipboard | None | `Void` |
 
 ### 6.6 Clipboard Methods
 

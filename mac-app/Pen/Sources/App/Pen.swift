@@ -184,7 +184,8 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         let shortcutKeyDefaultsKey = "pen.shortcutKey"
         let defaultShortcut = "Command+Option+P"
         let savedShortcut = defaults.string(forKey: shortcutKeyDefaultsKey) ?? defaultShortcut
-        instructionLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_instruction", withFormat: savedShortcut)
+        let displayShortcut = LocalizationService.shared.formatShortcutForDisplay(savedShortcut)
+        instructionLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_instruction", withFormat: displayShortcut)
         instructionLabel.isBezeled = false
         instructionLabel.drawsBackground = false
         instructionLabel.isEditable = false
@@ -212,14 +213,14 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             let logoView = NSImageView(frame: NSRect(x: 0, y: 0, width: logoSize, height: logoSize))
             logoView.image = logo
             
-            // Set instruction label position to 30, 8
-            let instructionX: CGFloat = 30
-            let instructionY: CGFloat = -7 // 0 (footer Y) + (-7) + 15 (text center) = 8
-            // Set text label position to 330, 9
+            // Set instruction label position to 46, -7 (absolute 46, 23)
+            let instructionX: CGFloat = 46
+            let instructionY: CGFloat = -7
+            // Set text label position to 330, -6
             let textX: CGFloat = 330
-            let textY: CGFloat = -6 // 0 (footer Y) + (-6) + 15 (text center) = 9
-            // Set logo position to 336, 2
-            let logoX: CGFloat = 336
+            let textY: CGFloat = -6
+            // Set logo position to 20, 2
+            let logoX: CGFloat = 20
             let logoY: CGFloat = 2
             
             instructionLabel.frame.origin.x = instructionX

@@ -88,6 +88,13 @@ class LocalizationService {
         return String(format: format, arguments: arguments)
     }
     
+    func formatShortcutForDisplay(_ shortcut: String) -> String {
+        return shortcut
+            .replacingOccurrences(of: "Command", with: "Cmd")
+            .replacingOccurrences(of: "Option", with: "Opt")
+            .replacingOccurrences(of: "Control", with: "Ctrl")
+    }
+    
     func setLanguage(_ language: AppLanguage) {
         guard language != currentLanguage else {
             print("LocalizationService: Language unchanged: \(language.displayName)")

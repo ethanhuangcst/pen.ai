@@ -100,6 +100,7 @@ Scenario: Handle no AI providers configured
   And it should display the same text in pen_enhanced_text_text
   And pen_original_text_text should still fetch the text from system clipboard
 
+//TODO: add "auto mode"
 # User Story 4: Automatically load clipboard text type content to pen_original_text_text text field
 As a Pen user
 I want Pen app to automatically identify text from system clipboard and paste it into the original text field
@@ -137,6 +138,8 @@ Scenario: Handle clipboard read failure
   And it should enable the manual paste button
   And it should log the error for troubleshooting
 
+
+//TODO: add "auto mode"
 # User Story 5: Manually load clipboard text type content to pen_original_text_text text field
 As a Pen user
 I want to manually load text from system clipboard and paste it into the original text field
@@ -148,7 +151,7 @@ Scenario: user clicks pen_manual_paste_button
   When user clicks button pen_manual_paste_button
   Then Pen should identify text content from clipboard, consistent with the scenarios described in User Story Automatically load clipboard text type content to pen_original_text_text text field
 
-
+//TODO: add "auto mode"
 Feature: Pen window post text to AI and get enhanced text
 # User Story 1: post original text to AI and get enhanced text
 As a Pen user
@@ -382,7 +385,7 @@ Scenario: Click pen_manual_paste_button force enhance text
   AND by pass the comparison process
   AND force trigger the enhancement process
 
-# User Story 3: Click enhanced text to copy and close window
+# User Story 3: Click enhanced text to copy 
 As a Pen user
 I want to click the enhanced text to copy it to the clipboard and close the window
 So that I can quickly use the enhanced text without manual copying
@@ -395,8 +398,7 @@ Scenario: Click enhanced text to copy and close window
   AND text has been enhanced and displayed in pen_enhanced_text_text
   WHEN user clicks on the text in pen_enhanced_text_text
   THEN it should copy the enhanced text to the system clipboard
-  AND it should display a popup message for 1 second
-  AND the Pen window will be closed after the message is disappeared
+  AND it should display a popup message for 1 second 
   AND the message should say: "Text has been copied to clipboard"
   AND it should follow i18n
 
