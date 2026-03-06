@@ -341,7 +341,7 @@ class PenWindowService {
         footerContainer.identifier = NSUserInterfaceItemIdentifier("pen_footer")
         
         // Add instruction label
-        let instructionLabel = NSTextField(frame: NSRect(x: 46, y: -7, width: 250, height: footerHeight))
+        let instructionLabel = NSTextField(frame: NSRect(x: 46, y: -7, width: 180, height: footerHeight))
         let defaults = UserDefaults.standard
         let shortcutKeyDefaultsKey = "pen.shortcutKey"
         let defaultShortcut = "Command+Option+P"
@@ -356,6 +356,23 @@ class PenWindowService {
         instructionLabel.textColor = NSColor.secondaryLabelColor
         instructionLabel.alignment = .left
         instructionLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_instruction")
+        
+        // Add auto label
+        let autoLabel = NSTextField(frame: NSRect(x: 270, y: -7, width: 40, height: footerHeight))
+        autoLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_auto")
+        autoLabel.isBezeled = false
+        autoLabel.drawsBackground = false
+        autoLabel.isEditable = false
+        autoLabel.isSelectable = false
+        autoLabel.font = NSFont.systemFont(ofSize: 12)
+        autoLabel.textColor = NSColor.secondaryLabelColor
+        autoLabel.alignment = .left
+        autoLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_label")
+        
+        // Add auto switch button
+        let autoSwitch = NSSwitch(frame: NSRect(x: 310, y: 0, width: 40, height: footerHeight))
+        autoSwitch.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_switch_button")
+        autoSwitch.state = .on
         
         // Add text label
         let textLabel = NSTextField(frame: NSRect(x: 330, y: -6, width: 250, height: footerHeight))
@@ -372,10 +389,12 @@ class PenWindowService {
         // Add small logo
         if let logo = ColorService.shared.getLogo() {
             let logoSize: CGFloat = 26
-            let logoView = NSImageView(frame: NSRect(x: 20, y: 2, width: logoSize, height: logoSize))
+            let logoView = NSImageView(frame: NSRect(x: 19, y: 2, width: logoSize, height: logoSize))
             logoView.image = logo
             
             footerContainer.addSubview(instructionLabel)
+            footerContainer.addSubview(autoLabel)
+            footerContainer.addSubview(autoSwitch)
             footerContainer.addSubview(textLabel)
             footerContainer.addSubview(logoView)
         }

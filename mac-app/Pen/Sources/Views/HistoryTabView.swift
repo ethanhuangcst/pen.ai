@@ -211,36 +211,70 @@ class HistoryTabView: NSView {
         clickToCopyLabel.frame = NSRect(x: 20, y: tableContainer.frame.maxY + 10, width: 100, height: 20)
     }
     
+    // MARK: - Load History
     private func loadHistory() {
+        print("HistoryTabView: loadHistory called")
         guard let user = UserService.shared.currentUser else { 
+            print("HistoryTabView: No user available")
             updateStatusIndicator(count: 0, limit: 0)
             return 
         }
         let userID = user.id
         
+        print("HistoryTabView: Loading history for user ID: \(userID)")
+        
         Task {
             do {
+                // Get history limit first
+                print("HistoryTabView: Getting history limit")
                 let limit = try await ContentHistoryService.shared.getUserHistoryLimit(userID: userID)
-                let historyResult = await ContentHistoryService.shared.loadHistoryByUserID(userID: userID, count: limit)
+                print("HistoryTabView: History limit: \(limit)")
+                
+                // Load history items with the limit
+                print("HistoryTabView: Calling ContentHistoryService.loadHistoryByUserID with limit: \(limit)")
+                let historyResult = await ContentHistoryService.shared.loadHistoryByUserID(userID: userID, count: limit) // Load exactly the limit number of items
+                
+                // Get history count
+                print("HistoryTabView: Getting history count")
                 let countResult = await ContentHistoryService.shared.readHistoryCount(userID: userID)
                 let count = try countResult.get()
+                print("HistoryTabView: History count: \(count), limit: \(limit)")
                 
                 await MainActor.run {
                     switch historyResult {
                     case .success(let items):
+                        print("HistoryTabView: Loaded \(items.count) history items")
                         historyItems = items
+                        // Debug: Print history items
+                        for (index, item) in items.enumerated() {
+                            print("HistoryTabView: Item \(index + 1):")
+                            print("  UUID: \(item.uuid)")
+                            print("  User ID: \(item.userID)")
+                            print("  Enhance DateTime: \(item.enhanceDateTime)")
+                            print("  Enhanced content length: \(item.enhancedContent.count)")
+                            print("  Enhanced content: \(item.enhancedContent.isEmpty ? "[EMPTY]" : item.enhancedContent.prefix(100) + "...")")
+                            print("  Original content length: \(item.originalContent.count)")
+                            print("  Original content: \(item.originalContent.isEmpty ? "[EMPTY]" : item.originalContent.prefix(100) + "...")")
+                            print("  Prompt text length: \(item.promptText.count)")
+                            print("  Prompt text: \(item.promptText.isEmpty ? "[EMPTY]" : item.promptText.prefix(100) + "...")")
+                            print("  AI provider: \(item.aiProvider)")
+                        }
+                        print("HistoryTabView: Reloading table view")
                         tableView.reloadData()
+                        print("HistoryTabView: Updating empty state")
                         updateEmptyState()
                     case .failure(let error):
-                        print("[HistoryTabView] Error loading history: \(error)")
+                        print("HistoryTabView: Error loading history: \(error)")
                     }
                     
+                    // Update status indicator
+                    print("HistoryTabView: Updating status indicator with count: \(count), limit: \(limit)")
                     updateStatusIndicator(count: count, limit: limit)
                 }
             } catch {
-                print("[HistoryTabView] Error loading history data: \(error)")
+                print("HistoryTabView: Error loading history data: \(error)")
                 await MainActor.run {
-                    updateStatusIndicator(count: 0, limit: 40)
+                    updateStatusIndicator(count: 0, limit: 40) // Default limit
                 }
             }
         }
@@ -392,17 +426,25 @@ extension HistoryTabView: NSTableViewDelegate {
         let button = NSButton(frame: NSRect(x: 5, y: 0, width: 20, height: 20))
         button.setButtonType(.momentaryPushIn)
         button.isBordered = false
-        button.title = ""
+        button.title = "" // Explicitly set empty title to ensure no text is displayed
         
-        let iconPath = ResourceService.shared.getResourcePath(relativePath: "Assets/copy.svg")
+        // Load the copy.svg icon
+        let iconPath = "\(FileManager.default.currentDirectoryPath)/Resources/Assets/copy.svg"
+        print("HistoryTabView: Loading copy.svg from path: \(iconPath)")
         if let image = NSImage(contentsOfFile: iconPath) {
+            print("HistoryTabView: Image loaded successfully: \(image)")
             image.size = NSSize(width: 20, height: 20)
             button.image = image
+            print("HistoryTabView: Button image set successfully")
+        } else {
+            print("HistoryTabView: Error: Could not load copy.svg")
         }
         
+        // Set action
         button.target = self
         button.action = #selector(copyButtonClicked(_:))
         
+        // Store the content using associated object
         objc_setAssociatedObject(button, &Self.rowKey, historyItem.enhancedContent, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         
         return button
@@ -412,7 +454,10 @@ extension HistoryTabView: NSTableViewDelegate {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .short
         dateFormatter.timeStyle = .short
+        print("[HistoryTabView] enhanceDateTime: \(historyItem.enhanceDateTime)")
+        print("[HistoryTabView] createdAt: \(historyItem.createdAt)")
         let dateString = dateFormatter.string(from: historyItem.enhanceDateTime)
+        print("[HistoryTabView] Date string: \(dateString)")
         
         let textField = NSTextField(frame: NSRect(x: 5, y: 2, width: 90, height: 16))
         textField.stringValue = dateString

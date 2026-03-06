@@ -74,7 +74,29 @@ define container view in Pen window:
 ### Logo
 - **Size**: 26px × 26px
 - **Image**: `logo.png` from Resources/Assets
-- **Position**: (20, 2) absolute (relative to window bottom-left)
+- **Position**: (19, 2) absolute (relative to window bottom-left)
+
+### Auto Switch Container
+- **Size**: 80px (width) × 30px (height)
+- **Position**: Right side of footer, 20px from right edge of window
+- **Background**: Transparent
+- **Identifier**: `pen_footer_auto_switch`
+
+### Auto Label
+- **Content**: "Auto:" (localized)
+- **Font**: System font, 12pt
+- **Color**: Secondary label color
+- **Alignment**: Left
+- **Position**: Left side of auto switch container
+- **Identifier**: `pen_footer_auto_label`
+- **Localization**: Uses `pen_footer_auto` key in Localizable.strings
+
+### Auto Switch Button
+- **Size**: 40px (width) × 20px (height)
+- **Position**: Right side of auto switch container
+- **Style**: NSSwitch (toggle switch)
+- **Identifier**: `pen_footer_auto_switch_button`
+- **Default State**: On (true)
 
 ### Controller Container
 - **Size**: 338px (width) × 30px (height)

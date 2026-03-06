@@ -170,7 +170,6 @@ class PenDelegate: NSObject, NSApplicationDelegate {
     
     /// Adds a footer container with text label and logo
     private func addFooterContainer(to contentView: NSView, size: NSSize) {
-        // Create footer container with fixed width of 378px
         let footerHeight: CGFloat = 30
         let footerContainer = NSView(frame: NSRect(x: 0, y: 0, width: 378, height: footerHeight))
         footerContainer.wantsLayer = true
@@ -178,7 +177,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         footerContainer.identifier = NSUserInterfaceItemIdentifier("pen_footer")
         
         // Add instruction label
-        let instructionLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 250, height: footerHeight))
+        let instructionLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 180, height: footerHeight))
         // Load saved shortcut from UserDefaults
         let defaults = UserDefaults.standard
         let shortcutKeyDefaultsKey = "pen.shortcutKey"
@@ -194,6 +193,23 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         instructionLabel.textColor = NSColor.secondaryLabelColor
         instructionLabel.alignment = .left
         instructionLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_instruction")
+        
+        // Add auto label
+        let autoLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 40, height: footerHeight))
+        autoLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_footer_auto")
+        autoLabel.isBezeled = false
+        autoLabel.drawsBackground = false
+        autoLabel.isEditable = false
+        autoLabel.isSelectable = false
+        autoLabel.font = NSFont.systemFont(ofSize: 12)
+        autoLabel.textColor = NSColor.secondaryLabelColor
+        autoLabel.alignment = .left
+        autoLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_label")
+        
+        // Add auto switch button
+        let autoSwitch = NSSwitch(frame: NSRect(x: 0, y: 0, width: 40, height: footerHeight))
+        autoSwitch.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_switch_button")
+        autoSwitch.state = .on
         
         // Add text label
         let textLabel = NSTextField(frame: NSRect(x: 0, y: 0, width: 250, height: footerHeight))
@@ -213,24 +229,36 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             let logoView = NSImageView(frame: NSRect(x: 0, y: 0, width: logoSize, height: logoSize))
             logoView.image = logo
             
-            // Set instruction label position to 46, -7 (absolute 46, 23)
+            // Set instruction label position to 46, -7
             let instructionX: CGFloat = 46
             let instructionY: CGFloat = -7
+            // Set auto label position to 270, -7
+            let autoLabelX: CGFloat = 270
+            let autoLabelY: CGFloat = -7
+            // Set auto switch position to 310, 0
+            let autoSwitchX: CGFloat = 310
+            let autoSwitchY: CGFloat = 0
             // Set text label position to 330, -6
             let textX: CGFloat = 330
             let textY: CGFloat = -6
-            // Set logo position to 20, 2
-            let logoX: CGFloat = 20
+            // Set logo position to 19, 2
+            let logoX: CGFloat = 19
             let logoY: CGFloat = 2
             
             instructionLabel.frame.origin.x = instructionX
             instructionLabel.frame.origin.y = instructionY
+            autoLabel.frame.origin.x = autoLabelX
+            autoLabel.frame.origin.y = autoLabelY
+            autoSwitch.frame.origin.x = autoSwitchX
+            autoSwitch.frame.origin.y = autoSwitchY
             textLabel.frame.origin.x = textX
             textLabel.frame.origin.y = textY
             logoView.frame.origin.x = logoX
             logoView.frame.origin.y = logoY
             
             footerContainer.addSubview(instructionLabel)
+            footerContainer.addSubview(autoLabel)
+            footerContainer.addSubview(autoSwitch)
             footerContainer.addSubview(textLabel)
             footerContainer.addSubview(logoView)
         }
