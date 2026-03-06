@@ -10,6 +10,8 @@ class PenWindowService {
     private var promptsService: PromptsService
     private var currentClipboardContent: String?
     private var currentOriginalTextForEnhancement: String?
+    private let originalTextMaxVisibleLines = 5
+    private let enhancedTextMaxVisibleLines = 11
     private var isWindowOpen: Bool = false
     private var isInitializing: Bool = false
     private var isEnhancing: Bool = false
@@ -918,18 +920,7 @@ class PenWindowService {
             if let container = subview as? NSView, container.identifier?.rawValue == "pen_original_text" {
                 for subview in container.subviews {
                     if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_original_text_text" {
-                        let maxVisibleLines = 5
-                        
-                        let lines = getVisibleLineCount(for: text, in: textField)
-                        
-                        if lines <= maxVisibleLines {
-                            // Text fits, display as-is
-                            textField.stringValue = text
-                        } else {
-                            // Text is too long, trim to 5 lines and replace last 3 characters with "..."
-                            let trimmedText = trimTextToFitLines(text, in: textField, maxLines: 5)
-                            textField.stringValue = trimmedText
-                        }
+                        textField.stringValue = trimTextToFitLines(text, in: textField, maxLines: originalTextMaxVisibleLines)
                         
                         // Set tooltip to show full text on hover
                         textField.toolTip = text
@@ -941,7 +932,7 @@ class PenWindowService {
         }
     }
     
-    private func getVisibleLineCount(for text: String, in textField: NSTextField) -> Int {
+    private func trimTextToFitLines(_ text: String, in textField: NSTextField, maxLines: Int) -> String {
         let font = textField.font ?? NSFont.systemFont(ofSize: 12)
         let width = textField.frame.width - 10 // Account for padding
         let height = textField.frame.height
@@ -952,58 +943,34 @@ class PenWindowService {
         let textStorage = NSTextStorage(string: textWithoutNewlines, attributes: [.font: font])
         let layoutManager = NSLayoutManager()
         textStorage.addLayoutManager(layoutManager)
-        let textContainer = NSTextContainer(size: CGSize(width: width, height: height))
+        let textContainer = NSTextContainer(size: CGSize(width: width, height: max(height, 10000)))
         textContainer.lineFragmentPadding = 0.0
         layoutManager.addTextContainer(textContainer)
         
-        var lineCount = 0
+        var visibleLineCount = 0
         var glyphIndex = 0
-        let textLength = textStorage.length
+        let glyphCount = layoutManager.numberOfGlyphs
         
-        while glyphIndex < textLength {
+        while glyphIndex < glyphCount && visibleLineCount < maxLines {
             var lineRange = NSRange()
             layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: &lineRange)
-            lineCount += 1
             glyphIndex = NSMaxRange(lineRange)
+            visibleLineCount += 1
         }
         
-        return lineCount
-    }
-    
-    private func getMaxVisibleLineCount(in textField: NSTextField) -> Int {
-        let font = textField.font ?? NSFont.systemFont(ofSize: 12)
-        let lineHeight = max(1.0, font.ascender - font.descender + font.leading)
-        return max(1, Int(floor(textField.frame.height / lineHeight)))
-    }
-    
-    private func trimTextToFitLines(_ text: String, in textField: NSTextField, maxLines: Int) -> String {
-        let font = textField.font ?? NSFont.systemFont(ofSize: 12)
-        let width = textField.frame.width - 10 // Account for padding
-        let lineHeight = max(1.0, font.ascender - font.descender + font.leading)
-        let height = min(textField.frame.height, CGFloat(maxLines) * lineHeight)
-        
-        // Replace newlines with spaces to treat them as normal characters
-        let textWithoutNewlines = text.replacingOccurrences(of: "\n", with: " ")
-        
-        let textStorage = NSTextStorage(string: textWithoutNewlines, attributes: [.font: font])
-        let layoutManager = NSLayoutManager()
-        textStorage.addLayoutManager(layoutManager)
-        let textContainer = NSTextContainer(size: CGSize(width: width, height: height))
-        textContainer.lineFragmentPadding = 0.0
-        layoutManager.addTextContainer(textContainer)
-        
-        // Calculate the range that fits within the text field
-        let range = layoutManager.glyphRange(forBoundingRect: CGRect(x: 0, y: 0, width: width, height: height), in: textContainer)
-        let characterRange = layoutManager.characterRange(forGlyphRange: range, actualGlyphRange: nil)
-        
         let textLength = (text as NSString).length
-        if characterRange.upperBound >= textLength {
+        if glyphIndex >= glyphCount {
             return text
         }
         
+        let characterRange = layoutManager.characterRange(
+            forGlyphRange: NSRange(location: 0, length: glyphIndex),
+            actualGlyphRange: nil
+        )
+        
         let safeEnd = max(0, min(textLength, characterRange.upperBound - 3))
-        let trimmedText = (text as NSString).substring(to: safeEnd)
-        return trimmedText + "..."
+        let trimmedText = (text as NSString).substring(to: safeEnd).trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedText.isEmpty ? "..." : trimmedText + "..."
     }
     
     private func displayEmptyClipboardMessage() {
@@ -1070,8 +1037,7 @@ class PenWindowService {
             if let container = subview as? NSView, container.identifier?.rawValue == "pen_enhanced_text" {
                 for subview in container.subviews {
                     if let textField = subview as? NSTextField, textField.identifier?.rawValue == "pen_enhanced_text_text" {
-                        let maxVisibleLines = getMaxVisibleLineCount(in: textField)
-                        textField.stringValue = trimTextToFitLines(text, in: textField, maxLines: maxVisibleLines)
+                        textField.stringValue = trimTextToFitLines(text, in: textField, maxLines: enhancedTextMaxVisibleLines)
                         
                         textField.toolTip = text
                         break
