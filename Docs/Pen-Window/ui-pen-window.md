@@ -92,8 +92,8 @@ define container view in Pen window:
 - **Localization**: Uses `pen_footer_auto` key in Localizable.strings
 
 ### Auto Switch Button
-- **Size**: 40px (width) × 20px (height)
-- **Position**: Right side of auto switch container
+- **Size**: 40px (width) × 18px (height)
+- **Position**: Right edge 20px from right edge of window (x: 318)
 - **Style**: NSSwitch (toggle switch)
 - **Identifier**: `pen_footer_auto_switch_button`
 - **Default State**: On (true)

@@ -207,7 +207,7 @@ class PenDelegate: NSObject, NSApplicationDelegate {
         autoLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_label")
         
         // Add auto switch button
-        let autoSwitch = NSSwitch(frame: NSRect(x: 0, y: 0, width: 40, height: footerHeight))
+        let autoSwitch = NSSwitch(frame: NSRect(x: 0, y: 0, width: 40, height: 18))
         autoSwitch.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_switch_button")
         autoSwitch.state = .on
         
@@ -235,9 +235,9 @@ class PenDelegate: NSObject, NSApplicationDelegate {
             // Set auto label position to 270, -7
             let autoLabelX: CGFloat = 270
             let autoLabelY: CGFloat = -7
-            // Set auto switch position to 310, 0
-            let autoSwitchX: CGFloat = 310
-            let autoSwitchY: CGFloat = 0
+            // Set auto switch position to 318, 6 (right edge 20px from window right edge)
+            let autoSwitchX: CGFloat = 318
+            let autoSwitchY: CGFloat = 6
             // Set text label position to 330, -6
             let textX: CGFloat = 330
             let textY: CGFloat = -6

@@ -370,7 +370,7 @@ class PenWindowService {
         autoLabel.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_label")
         
         // Add auto switch button
-        let autoSwitch = NSSwitch(frame: NSRect(x: 310, y: 0, width: 40, height: footerHeight))
+        let autoSwitch = NSSwitch(frame: NSRect(x: 318, y: 6, width: 40, height: 18))
         autoSwitch.identifier = NSUserInterfaceItemIdentifier("pen_footer_auto_switch_button")
         autoSwitch.state = .on
         
