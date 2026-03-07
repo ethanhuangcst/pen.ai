@@ -13,7 +13,7 @@ define container view in Pen window:
 ### identifier = pen_userlabel
 ### size = 120x30
 ### background = transparent
-### coordinate = 232, 352
+### coordinate = 232, 359
 ### user profile image thumbnail 
 #### identifier = pen_userlabel_img
 #### image = user profile image
@@ -186,7 +186,7 @@ define container view in Pen window:
 
 ### Manual Paste Container
 - **Size**: 300px (width) × 30px (height)
-- **Position**: (20, 346) from the bottom-left corner of the window
+- **Position**: (20, 353) from the bottom-left corner of the window
 - **Background**: Transparent
 - **Identifier**: `pen_manual_paste`
 

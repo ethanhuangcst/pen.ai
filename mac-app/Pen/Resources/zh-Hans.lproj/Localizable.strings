@@ -145,6 +145,7 @@
 "pen_footer_auto" = "自动复制剪贴板：";
 "paste_from_clipboard" = "从剪贴板粘贴，或按 %@";
 "paste_from_clipboard_simple" = "从剪贴板粘贴";
+"pen_manual_input_hint" = "Command + 回车进行增强...";
 
 /* Login window */
 "pen_ai_login" = "Pen - 登录";

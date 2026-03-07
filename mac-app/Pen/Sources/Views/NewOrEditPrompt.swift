@@ -1,6 +1,12 @@
 import Cocoa
 import Foundation
 
+private final class ClickThroughLabel: NSTextField {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+}
+
 class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
     
     // MARK: - Properties
@@ -8,7 +14,7 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
     private let promptNameField = NSTextField()
     private let promptLabel = NSTextField()
     private let promptTextField = NSTextView()
-    private let promptPlaceholderLabel = NSTextField()
+    private let promptPlaceholderLabel = ClickThroughLabel()
     private let saveButton = FocusableButton()
     private let cancelButton = FocusableButton()
     private let defaultPromptCheckbox = NSButton()
@@ -85,11 +91,8 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
         promptScrollView.hasVerticalScroller = true
         promptScrollView.autohidesScrollers = false
         
-        // Create container view
-        let containerView = NSView(frame: NSRect(x: 0, y: 0, width: promptScrollView.frame.width, height: 336))
-        
         // Create placeholder label
-        promptPlaceholderLabel.frame = NSRect(x: 8, y: 8, width: promptScrollView.frame.width - 16, height: 336 - 16)
+        promptPlaceholderLabel.frame = NSRect(x: 8, y: 8, width: promptScrollView.frame.width - 32, height: 336 - 16)
         promptPlaceholderLabel.stringValue = localizedString(for: "markdown_format_recommended_tooltip")
         promptPlaceholderLabel.textColor = NSColor.lightGray
         promptPlaceholderLabel.isBezeled = false
@@ -97,6 +100,7 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
         promptPlaceholderLabel.isEditable = false
         promptPlaceholderLabel.isSelectable = false
         promptPlaceholderLabel.font = NSFont.systemFont(ofSize: 14)
+        promptPlaceholderLabel.autoresizingMask = [.width]
         
         // Set up text view
         promptTextField.frame = NSRect(x: 0, y: 0, width: promptScrollView.frame.width, height: 336)
@@ -107,21 +111,19 @@ class NewOrEditPrompt: BaseWindow, NSTextViewDelegate {
         promptTextField.layer?.borderWidth = 1.0
         promptTextField.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.5).cgColor
         promptTextField.layer?.cornerRadius = 4.0
-        promptTextField.autoresizingMask = [.width, .height]
-        promptTextField.maxSize = NSSize(width: promptScrollView.frame.width, height: 336)
-        promptTextField.minSize = NSSize(width: promptScrollView.frame.width, height: 336)
-        promptTextField.isVerticallyResizable = false
+        promptTextField.autoresizingMask = [.width]
+        promptTextField.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        promptTextField.minSize = NSSize(width: 0, height: 336)
+        promptTextField.isVerticallyResizable = true
         promptTextField.isHorizontallyResizable = false
         promptTextField.textContainerInset = NSSize(width: 8, height: 8)
-        promptTextField.textContainer?.containerSize = NSSize(width: promptScrollView.frame.width - 16, height: 336 - 16)
+        promptTextField.textContainer?.containerSize = NSSize(width: promptScrollView.contentSize.width - 16, height: CGFloat.greatestFiniteMagnitude)
+        promptTextField.textContainer?.heightTracksTextView = false
         promptTextField.textContainer?.widthTracksTextView = true
         
-        // Add subviews to container
-        containerView.addSubview(promptPlaceholderLabel)
-        containerView.addSubview(promptTextField)
-        
-        // Set container as document view
-        promptScrollView.documentView = containerView
+        // Set text view as document view and overlay placeholder in clip view
+        promptScrollView.documentView = promptTextField
+        promptScrollView.contentView.addSubview(promptPlaceholderLabel)
         
         // Set up text view delegate to handle placeholder visibility
         promptTextField.delegate = self

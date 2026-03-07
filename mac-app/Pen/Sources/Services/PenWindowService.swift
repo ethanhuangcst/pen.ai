@@ -666,7 +666,7 @@ class PenWindowService {
         footerLine.layer?.backgroundColor = NSColor.clear.cgColor
         
         let hintLabel = NSTextField(frame: NSRect(x: 8, y: -1, width: 210, height: 18))
-        hintLabel.stringValue = "Command + enter to enhance..."
+        hintLabel.stringValue = LocalizationService.shared.localizedString(for: "pen_manual_input_hint")
         hintLabel.isBezeled = false
         hintLabel.drawsBackground = false
         hintLabel.isEditable = false
@@ -708,7 +708,7 @@ class PenWindowService {
     }
     
     private func addUserLabelContainer(to contentView: NSView) {
-        let userLabelContainer = NSView(frame: NSRect(x: 232, y: 352, width: 120, height: 30))
+        let userLabelContainer = NSView(frame: NSRect(x: 232, y: 359, width: 120, height: 30))
         userLabelContainer.wantsLayer = true
         userLabelContainer.layer?.backgroundColor = NSColor.clear.cgColor
         userLabelContainer.identifier = NSUserInterfaceItemIdentifier("pen_userlabel")
@@ -814,7 +814,7 @@ class PenWindowService {
     }
     
     private func addManualPasteContainer(to contentView: NSView) {
-        let manualPasteContainer = NSView(frame: NSRect(x: 20, y: 346, width: 300, height: 30))
+        let manualPasteContainer = NSView(frame: NSRect(x: 20, y: 353, width: 300, height: 30))
         manualPasteContainer.wantsLayer = true
         manualPasteContainer.layer?.backgroundColor = NSColor.clear.cgColor
         manualPasteContainer.identifier = NSUserInterfaceItemIdentifier("pen_manual_paste")

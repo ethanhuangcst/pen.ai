@@ -145,6 +145,7 @@
 "pen_footer_auto" = "Auto copy clipboard:";
 "paste_from_clipboard" = "Paste from clipboard, or press %@";
 "paste_from_clipboard_simple" = "Paste from clipboard";
+"pen_manual_input_hint" = "Command + enter to enhance...";
 
 /* Login window */
 "pen_ai_login" = "Pen - Login";

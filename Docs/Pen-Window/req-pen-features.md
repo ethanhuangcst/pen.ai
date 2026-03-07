@@ -548,6 +548,6 @@ Scenario F3-US4-S2: Hide loading indicator when AI response arrives
 - `pen_manual_paste`
   - Identifier: `pen_manual_paste`
   - Container size: `300x30`
-  - Coordinate: `(20, 346)`
+  - Coordinate: `(20, 353)`
   - `pen_manual_paste_button`: image-based button (`paste.svg`), size `20x20`
   - `pen_manual_paste_text`: read-only label, transparent, 12pt, localized
