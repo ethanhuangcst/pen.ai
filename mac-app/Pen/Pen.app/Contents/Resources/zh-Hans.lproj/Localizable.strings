@@ -142,6 +142,7 @@
 "pen_footer_shortcut" = " Pen ";
 "pen_footer_label" = " Pen ";
 "pen_footer_instruction" = "热键：%@ .";
+"pen_footer_auto" = "自动复制剪贴板：";
 "paste_from_clipboard" = "从剪贴板粘贴，或按 %@";
 "paste_from_clipboard_simple" = "从剪贴板粘贴";
 

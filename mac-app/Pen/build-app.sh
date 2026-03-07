@@ -8,7 +8,7 @@ echo "Building Pen.app..."
 
 # Configuration
 APP_NAME="Pen"
-VERSION="1.0.0"
+VERSION="1.1.0"
 BUILD_DIR=".build/release"
 APP_BUNDLE="${APP_NAME}.app"
 RESOURCES_DIR="Resources"
@@ -48,6 +48,44 @@ cp -R "${RESOURCES_DIR}/Assets" "${APP_BUNDLE}/Contents/Resources/"
 cp -R "${RESOURCES_DIR}/config" "${APP_BUNDLE}/Contents/Resources/"
 cp -R "${RESOURCES_DIR}/en.lproj" "${APP_BUNDLE}/Contents/Resources/"
 cp -R "${RESOURCES_DIR}/zh-Hans.lproj" "${APP_BUNDLE}/Contents/Resources/"
+
+# Copy app icon
+if [ -f "${RESOURCES_DIR}/Assets/AppIcon.icns" ]; then
+    cp "${RESOURCES_DIR}/Assets/AppIcon.icns" "${APP_BUNDLE}/Contents/Resources/"
+    echo "  App icon: AppIcon.icns"
+elif [ -f "${RESOURCES_DIR}/Assets/logo.png" ]; then
+    echo "  Generating AppIcon.icns from logo.png..."
+    mkdir -p Pen.iconset
+    sips -z 16 16 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_16x16.png 2>/dev/null
+    sips -z 32 32 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_16x16@2x.png 2>/dev/null
+    sips -z 32 32 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_32x32.png 2>/dev/null
+    sips -z 64 64 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_32x32@2x.png 2>/dev/null
+    sips -z 128 128 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_128x128.png 2>/dev/null
+    sips -z 256 256 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_128x128@2x.png 2>/dev/null
+    sips -z 256 256 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_256x256.png 2>/dev/null
+    sips -z 512 512 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_256x256@2x.png 2>/dev/null
+    sips -z 512 512 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_512x512.png 2>/dev/null
+    sips -z 1024 1024 "${RESOURCES_DIR}/Assets/logo.png" --out Pen.iconset/icon_512x512@2x.png 2>/dev/null
+    iconutil -c icns Pen.iconset -o "${APP_BUNDLE}/Contents/Resources/AppIcon.icns"
+    rm -rf Pen.iconset
+    echo "  App icon: AppIcon.icns (generated from logo.png)"
+elif [ -f "${RESOURCES_DIR}/Assets/icon.png" ]; then
+    echo "  Generating AppIcon.icns from icon.png..."
+    mkdir -p Pen.iconset
+    sips -z 16 16 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_16x16.png 2>/dev/null
+    sips -z 32 32 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_16x16@2x.png 2>/dev/null
+    sips -z 32 32 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_32x32.png 2>/dev/null
+    sips -z 64 64 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_32x32@2x.png 2>/dev/null
+    sips -z 128 128 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_128x128.png 2>/dev/null
+    sips -z 256 256 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_128x128@2x.png 2>/dev/null
+    sips -z 256 256 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_256x256.png 2>/dev/null
+    sips -z 512 512 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_256x256@2x.png 2>/dev/null
+    sips -z 512 512 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_512x512.png 2>/dev/null
+    sips -z 1024 1024 "${RESOURCES_DIR}/Assets/icon.png" --out Pen.iconset/icon_512x512@2x.png 2>/dev/null
+    iconutil -c icns Pen.iconset -o "${APP_BUNDLE}/Contents/Resources/AppIcon.icns"
+    rm -rf Pen.iconset
+    echo "  App icon: AppIcon.icns (generated from icon.png)"
+fi
 
 # Set permissions
 echo "Setting permissions..."

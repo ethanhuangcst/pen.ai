@@ -141,7 +141,8 @@
 "pen_footer_text" = "Pen - AI writing assistent";
 "pen_footer_shortcut" = " Pen ";
 "pen_footer_label" = " Pen ";
-"pen_footer_instruction" = "Hot key: %@ .";
+"pen_footer_instruction" = "Hotkey: %@";
+"pen_footer_auto" = "Auto copy clipboard:";
 "paste_from_clipboard" = "Paste from clipboard, or press %@";
 "paste_from_clipboard_simple" = "Paste from clipboard";
 
