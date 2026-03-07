@@ -150,6 +150,46 @@ class AuthenticationService {
             return false
         }
     }
+
+    func authenticate(email: String, password: String) async -> User? {
+        print("[AuthenticationService] Authenticating user: \(email)")
+
+        guard let connection = DatabaseConnectivityPool.shared.getConnection() else {
+            print("[AuthenticationService] Failed to get database connection")
+            return nil
+        }
+
+        defer {
+            DatabaseConnectivityPool.shared.returnConnection(connection)
+        }
+
+        do {
+            let query = "SELECT id, name, email, password, profileImage, createdAt, system_flag, pen_content_history FROM users WHERE email = ?"
+            let parameters: [MySQLData] = [MySQLData(string: email)]
+            let results = try await connection.execute(query: query, parameters: parameters)
+
+            guard let firstRow = results.first else {
+                print("[AuthenticationService] User not found: \(email)")
+                return nil
+            }
+
+            guard let passwordHash = firstRow["password"] as? String else {
+                print("[AuthenticationService] No password found for user")
+                return nil
+            }
+
+            let isValid = verifyPassword(password, against: passwordHash)
+            print("[AuthenticationService] Authentication result: \(isValid)")
+            guard isValid else {
+                return nil
+            }
+
+            return User.fromDatabaseRow(firstRow)
+        } catch {
+            print("[AuthenticationService] Authentication query failed: \(error)")
+            return nil
+        }
+    }
     
     // MARK: - Password Hashing
     

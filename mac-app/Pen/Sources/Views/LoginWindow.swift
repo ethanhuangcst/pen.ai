@@ -252,39 +252,31 @@ class LoginWindow: BaseWindow, NSTextFieldDelegate {
     
     @objc private func login() {
         // Handle login logic
-        let email = emailField.stringValue
+        let email = emailField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let password = isPasswordSecure ? securePasswordField.stringValue : plainPasswordField.stringValue
         let rememberMe = rememberMeCheckbox.state == .on
         
         Task {
-            // First check if user exists
             let authService = AuthenticationService.shared
-            if let user = await authService.getUserByEmail(email: email) {
-                if await authService.validateCredentials(email: email, password: password) {
-                    if rememberMe {
-                        authService.storeCredentials(email: email, password: password)
-                    } else {
-                        authService.clearCredentials()
-                    }
-                    
-                    DispatchQueue.main.async { [weak self] in
-                        guard let self = self else { return }
-                        
-                        self.penDelegate?.setAppMode(.onlineLogin)
-                        self.penDelegate?.updateMenuBarIcon()
-                        self.penDelegate?.createGlobalUserObject(user: user)
-                        
-                        self.orderOut(nil)
-                    }
+            if let user = await authService.authenticate(email: email, password: password) {
+                if rememberMe {
+                    authService.storeCredentials(email: email, password: password)
                 } else {
-                    DispatchQueue.main.async {
-                        self.showErrorMessage(LocalizationService.shared.localizedString(for: "invalid_credentials"))
-                    }
+                    authService.clearCredentials()
                 }
-            } else {
-                DispatchQueue.main.async {
-                    self.showErrorMessage(LocalizationService.shared.localizedString(for: "invalid_credentials"))
+
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.penDelegate?.setAppMode(.onlineLogin)
+                    self.penDelegate?.updateMenuBarIcon()
+                    self.penDelegate?.createGlobalUserObject(user: user)
+                    self.orderOut(nil)
                 }
+                return
+            }
+
+            DispatchQueue.main.async {
+                self.showErrorMessage(LocalizationService.shared.localizedString(for: "invalid_credentials"))
             }
         }
     }
